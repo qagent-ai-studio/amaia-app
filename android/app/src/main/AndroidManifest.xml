@@ -51,18 +51,6 @@
         <meta-data
             android:name="flutterEmbedding"
             android:value="2"/>
-        <!-- configuration of background_locator_2 -->
-        <receiver android:name="yukams.app.background_locator_2.BootBroadcastReceiver"
-            android:enabled="true"
-            android:exported="true">
-            <intent-filter>
-                <action android:name="android.intent.action.BOOT_COMPLETED"/>
-            </intent-filter>
-        </receiver>
-        <service android:name="yukams.app.background_locator_2.IsolateHolderService"
-            android:permission="android.permission.FOREGROUND_SERVICE"
-            android:exported="true"
-            android:foregroundServiceType = "location"/>
         <receiver
             android:name=".BootReceiver"
             android:enabled="false"

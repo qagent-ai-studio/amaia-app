@@ -1,3 +1,4 @@
+import 'package:amaia/pages/config_page.dart';
 import 'package:amaia/pages/info_page.dart';
 import 'package:amaia/pages/send_sms_page.dart';
 import 'package:flutter/material.dart';
@@ -10,24 +11,22 @@ class HomePage extends StatelessWidget {
     return PopScope(
         canPop: false,
         child: MaterialApp(
-          debugShowCheckedModeBanner: false,
-          theme: ThemeData(useMaterial3: true),
-          home: const Scaffold(
-            body: _Home(),
-          )
-        )
-    );
+            debugShowCheckedModeBanner: false,
+            theme: ThemeData(useMaterial3: true),
+            home: const Scaffold(
+              body: _Home(),
+            )));
   }
 }
 
 class _Home extends StatefulWidget {
-  const _Home({super.key});
+  const _Home();
 
   @override
   State<_Home> createState() => _HomeState();
 }
 
-class _HomeState extends State<_Home>{
+class _HomeState extends State<_Home> {
   int currentPageIndex = 0;
 
   @override
@@ -51,6 +50,11 @@ class _HomeState extends State<_Home>{
             icon: Icon(Icons.info),
             label: 'Información',
           ),
+          NavigationDestination(
+            selectedIcon: Icon(Icons.info_outline),
+            icon: Icon(Icons.settings),
+            label: 'Configuración',
+          ),
         ],
       ),
       body: <Widget>[
@@ -59,6 +63,9 @@ class _HomeState extends State<_Home>{
 
         /// Information Page
         const InfoPage(),
+
+        /// Configuration Page
+        const ConfigPage(),
       ][currentPageIndex],
     );
   }
