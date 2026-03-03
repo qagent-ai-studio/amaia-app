@@ -8,8 +8,10 @@ plugins {
 dependencies {
     implementation("com.google.android.material:material:1.12.0")
     // para el import de import androidx.work.WorkManager
-    // en el archivo amaia/android/app/src/main/kotlin/com/example/amaia/MainActivity.kt
+    // en el archivo amaia/android/app/src/main/kotlin/com/mistatas/amaia/MainActivity.kt
     implementation "androidx.work:work-runtime-ktx:2.8.1"
+    implementation project(path: ':mokosupport')
+    implementation 'com.elvishew:xlog:1.11.0'
 }
 
 def keystoreProperties = new Properties()
@@ -19,8 +21,8 @@ if (keystorePropertiesFile.exists()) {
 }
 
 android {
-    namespace = "com.example.amaia"
-    compileSdk = 35
+    namespace = "com.mistatas.amaia"
+    compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
 
     compileOptions {
@@ -37,8 +39,8 @@ android {
         applicationId = "cl.mistatas.amaia"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
-        minSdk = flutter.minSdkVersion
-        targetSdk = 35
+        minSdk = 26
+        targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
     }

@@ -6,8 +6,8 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
-// Location Channel amaia/android/app/src/main/kotlin/com/example/amaia/MainActivity.kt
-const platformMainActivity = MethodChannel('com.example.amaia.sms');
+// Location Channel amaia/android/app/src/main/kotlin/com/mistatas/amaia/MainActivity.kt
+const platformMainActivity = MethodChannel('com.mistatas.amaia.sms');
 
 class SmsService {
   Future<String> sms(String geo, List<String> listRecipients) async {

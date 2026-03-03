@@ -20,7 +20,7 @@ class BackGroundService {
 
   Future<void> getTasksFromNative() async {
     if (Platform.isAndroid) {
-      const platform = MethodChannel('com.example.amaia.task');
+      const platform = MethodChannel('com.mistatas.amaia.task');
       try {
         final tasks = await platform.invokeMethod<List>('getTasks');
         print("Tareas registradas: $tasks");

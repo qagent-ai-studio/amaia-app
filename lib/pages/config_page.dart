@@ -4,6 +4,12 @@ import 'package:amaia/services/geolocation-service.dart';
 import 'package:amaia/services/sms-service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:amaia/pages/ble_button/bloc/ble_button_bloc.dart';
+import 'package:amaia/pages/ble_button/data/ble_button_repository.dart';
+import 'package:amaia/pages/ble_button/presentation/scan_page.dart';
+
 import 'dart:io' show Platform;
 
 class ConfigPage extends StatelessWidget {
@@ -55,14 +61,19 @@ class _ConfigState extends State<_Config> {
   }
 
   Future<void> _callExecutive() async {
-    try {
-      await CallService()
-          .call(phoneNumber: dotenv.env['RECIPIENTS_CALL_EMERGENCY'] as String);
-    } catch (error) {
-      if (context.mounted) {
-        _alertSnackBar(type: 'error', msg: 'Error en solicitud de llamada!');
-      }
-    }
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => RepositoryProvider<BleButtonRepository>(
+          create: (_) => BleButtonRepositoryImpl(),
+          child: BlocProvider(
+            create: (context) => BleButtonBloc(
+              repository: context.read<BleButtonRepository>(),
+            ),
+            child: const ScanPage(),
+          ),
+        ),
+      ),
+    );
   }
 
   Future<void> _showMyDialog(String origin) async {
@@ -230,59 +241,7 @@ class _ConfigState extends State<_Config> {
                 onPressed: () {
                   _callExecutive();
                 },
-                child: const Text('Llamar'),
-              ),
-            ],
-          )
-        ],
-      ),
-    );
-  }
-
-  Card cardBackground() {
-    return Card(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-      margin: const EdgeInsets.all(15),
-      elevation: 5,
-      color: const Color.fromRGBO(0, 191, 238, 1),
-      child: Column(
-        children: <Widget>[
-          const ListTile(
-            contentPadding: EdgeInsets.fromLTRB(15, 10, 25, 0),
-            title: Text('Permisos requeridos',
-                style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 17,
-                    letterSpacing: -0.5,
-                    fontWeight: FontWeight.bold)),
-            subtitle: Text(
-                'Esta aplicación, requiere de los permisos de Llamada, SMS y Geolocalización. Si no los tiene autorizados, no podrá enviar la alerta de emergencia correspondiente.\n Favor de validar los permisos y autorizarlos',
-                style: TextStyle(color: Colors.white)),
-            leading: Icon(
-              Icons.settings,
-              color: Colors.white,
-            ),
-          ),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: <Widget>[
-              TextButton(
-                style: ButtonStyle(
-                  foregroundColor: WidgetStateProperty.all<Color>(Colors.white),
-                ),
-                onPressed: () {
-                  _checkdisableBatteryOptimization();
-                },
-                child: const Text('Quitar optimización'),
-              ),
-              TextButton(
-                style: ButtonStyle(
-                  foregroundColor: WidgetStateProperty.all<Color>(Colors.white),
-                ),
-                onPressed: () {
-                  _activeTask();
-                },
-                child: const Text('Tareas activas'),
+                child: const Text('VEr ble'),
               ),
             ],
           )
