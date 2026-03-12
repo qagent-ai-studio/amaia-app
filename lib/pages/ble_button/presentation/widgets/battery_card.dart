@@ -81,7 +81,7 @@ class BatteryCard extends StatelessWidget {
               icon: const Icon(Icons.refresh_rounded,
                   color: Colors.white38, size: 20),
               onPressed: onRefresh,
-              tooltip: 'Actualizar batería',
+              tooltip: 'Leer batería (puede causar desconexión)',
             ),
           ],
         ),

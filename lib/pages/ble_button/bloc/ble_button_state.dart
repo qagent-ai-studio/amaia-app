@@ -15,15 +15,25 @@ class BleButtonInitial extends BleButtonState {
 
 /// Currently scanning for devices
 class BleButtonScanning extends BleButtonState {
-  const BleButtonScanning({this.devices = const []});
+  const BleButtonScanning({
+    this.devices = const [],
+    this.savedDevices = const [],
+  });
 
-  final List<ScannedDevice> devices;
+  final List<ScannedDevice> devices; // Dispositivos encontrados en el escaneo
+  final List<SavedDevice> savedDevices; // Dispositivos guardados en BD
 
-  BleButtonScanning copyWith({List<ScannedDevice>? devices}) =>
-      BleButtonScanning(devices: devices ?? this.devices);
+  BleButtonScanning copyWith({
+    List<ScannedDevice>? devices,
+    List<SavedDevice>? savedDevices,
+  }) =>
+      BleButtonScanning(
+        devices: devices ?? this.devices,
+        savedDevices: savedDevices ?? this.savedDevices,
+      );
 
   @override
-  List<Object?> get props => [devices];
+  List<Object?> get props => [devices, savedDevices];
 }
 
 /// Connecting to a device
@@ -70,7 +80,8 @@ class BleButtonConnected extends BleButtonState {
       );
 
   @override
-  List<Object?> get props => [mac, deviceInfo, lastButtonPress, isLoading, errorMessage];
+  List<Object?> get props =>
+      [mac, deviceInfo, lastButtonPress, isLoading, errorMessage];
 }
 
 /// Disconnected state

@@ -1,0 +1,97 @@
+import 'package:path/path.dart';
+import 'package:sqflite/sqflite.dart';
+
+/// Helper para gestionar la base de datos SQLite de dispositivos MK Button
+class DatabaseHelper {
+  DatabaseHelper._();
+  static final DatabaseHelper instance = DatabaseHelper._();
+
+  static Database? _database;
+
+  Future<Database> get database async {
+    if (_database != null) return _database!;
+    _database = await _initDatabase();
+    return _database!;
+  }
+
+  Future<Database> _initDatabase() async {
+    final dbPath = await getDatabasesPath();
+    final path = join(dbPath, 'mk_button_devices.db');
+
+    return await openDatabase(
+      path,
+      version: 4, // v4: Cambiar buttonAction por defecto a 'sms_and_call'
+      onCreate: _onCreate,
+      onUpgrade: _onUpgrade,
+    );
+  }
+
+  Future<void> _onCreate(Database db, int version) async {
+    await db.execute('''
+      CREATE TABLE devices (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        mac TEXT UNIQUE NOT NULL,
+        name TEXT NOT NULL,
+        password TEXT NOT NULL,
+        batteryPercent INTEGER,
+        firmwareVersion TEXT,
+        hardwareVersion TEXT,
+        advIntervalMs INTEGER,
+        txPower INTEGER,
+        isPasswordEnabled INTEGER,
+        lastConnectedAt INTEGER,
+        totalClicks INTEGER DEFAULT 0,
+        lastSingleClick INTEGER,
+        lastDoubleClick INTEGER,
+        lastLongClick INTEGER,
+        clickToOpenApp TEXT DEFAULT 'single',
+        buttonAction TEXT DEFAULT 'sms_and_call',
+        emergencyPhone TEXT
+      )
+    ''');
+
+    // Índice para búsqueda rápida por MAC
+    await db.execute('''
+      CREATE INDEX idx_mac ON devices(mac)
+    ''');
+  }
+
+  Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
+    if (oldVersion < 2) {
+      // Agregar columna clickToOpenApp para dispositivos existentes
+      await db.execute('''
+        ALTER TABLE devices ADD COLUMN clickToOpenApp TEXT DEFAULT 'single'
+      ''');
+    }
+    if (oldVersion < 3) {
+      // Agregar columnas buttonAction y emergencyPhone
+      await db.execute('''
+        ALTER TABLE devices ADD COLUMN buttonAction TEXT DEFAULT 'sms_and_call'
+      ''');
+      await db.execute('''
+        ALTER TABLE devices ADD COLUMN emergencyPhone TEXT
+      ''');
+    }
+    if (oldVersion < 4) {
+      // Actualizar dispositivos existentes de 'open_app' a 'sms_and_call'
+      await db.execute('''
+        UPDATE devices SET buttonAction = 'sms_and_call' WHERE buttonAction = 'open_app'
+      ''');
+    }
+  }
+
+  /// Cierra la base de datos
+  Future<void> close() async {
+    final db = await database;
+    await db.close();
+    _database = null;
+  }
+
+  /// Elimina la base de datos (útil para testing)
+  Future<void> deleteDatabase() async {
+    final dbPath = await getDatabasesPath();
+    final path = join(dbPath, 'mk_button_devices.db');
+    await databaseFactory.deleteDatabase(path);
+    _database = null;
+  }
+}

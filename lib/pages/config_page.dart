@@ -217,14 +217,14 @@ class _ConfigState extends State<_Config> {
         children: <Widget>[
           const ListTile(
             contentPadding: EdgeInsets.fromLTRB(15, 10, 25, 0),
-            title: Text('Para hablar con un ejecutivo',
+            title: Text('Configuración de dispositivos',
                 style: TextStyle(
                     color: Colors.white,
                     fontSize: 17,
                     letterSpacing: -0.5,
                     fontWeight: FontWeight.bold)),
             subtitle: Text(
-                'Para diferentes consultas, debe llamar al 32 2800 410 o al +56 9 5421 9767.',
+                'Configura acá tus dispositivos',
                 style: TextStyle(color: Colors.white)),
             leading: Icon(
               Icons.call,

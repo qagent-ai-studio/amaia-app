@@ -3,11 +3,26 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../bloc/ble_button_bloc.dart';
 import '../domain/models.dart';
+import '../domain/saved_device.dart';
 import 'device_page.dart';
 
 /// Screen that scans for MK Button BLE devices and lists them.
-class ScanPage extends StatelessWidget {
+class ScanPage extends StatefulWidget {
   const ScanPage({super.key});
+
+  @override
+  State<ScanPage> createState() => _ScanPageState();
+}
+
+class _ScanPageState extends State<ScanPage> {
+  @override
+  void initState() {
+    super.initState();
+    // Intentar reconectar automáticamente al último dispositivo al abrir la app
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<BleButtonBloc>().add(const AutoReconnectRequested());
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -82,10 +97,11 @@ class ScanPage extends StatelessWidget {
             );
           }
           if (state is BleButtonScanning) {
-            if (state.devices.isEmpty) {
-              return const _SearchingIndicator();
-            }
-            return _DeviceList(devices: state.devices);
+            // Mostrar dispositivos guardados y escaneados
+            return _DeviceList(
+              savedDevices: state.savedDevices,
+              scannedDevices: state.devices,
+            );
           }
           if (state is BleButtonConnecting) {
             return Center(
@@ -196,23 +212,212 @@ class _SearchingIndicator extends StatelessWidget {
 }
 
 class _DeviceList extends StatelessWidget {
-  const _DeviceList({required this.devices});
+  const _DeviceList({
+    required this.savedDevices,
+    required this.scannedDevices,
+  });
 
-  final List<ScannedDevice> devices;
+  final List<SavedDevice> savedDevices;
+  final List<ScannedDevice> scannedDevices;
 
   @override
   Widget build(BuildContext context) {
-    return ListView.separated(
+    // Si no hay dispositivos guardados ni escaneados, mostrar indicador de búsqueda
+    if (savedDevices.isEmpty && scannedDevices.isEmpty) {
+      return const _SearchingIndicator();
+    }
+
+    return ListView(
       padding: const EdgeInsets.all(16),
-      itemCount: devices.length,
-      separatorBuilder: (_, __) => const SizedBox(height: 8),
-      itemBuilder: (context, index) => _DeviceTile(device: devices[index]),
+      children: [
+        // Sección de dispositivos guardados
+        if (savedDevices.isNotEmpty) ...[
+          const _SectionTitle(title: 'Mis Dispositivos'),
+          const SizedBox(height: 8),
+          ...savedDevices.map((device) => Padding(
+                padding: const EdgeInsets.only(bottom: 8),
+                child: _SavedDeviceTile(device: device),
+              )),
+          const SizedBox(height: 16),
+        ],
+
+        // Sección de dispositivos escaneados
+        if (scannedDevices.isNotEmpty) ...[
+          const _SectionTitle(title: 'Dispositivos Cercanos'),
+          const SizedBox(height: 8),
+          ...scannedDevices.map((device) => Padding(
+                padding: const EdgeInsets.only(bottom: 8),
+                child: _ScannedDeviceTile(device: device),
+              )),
+        ],
+      ],
     );
   }
 }
 
-class _DeviceTile extends StatelessWidget {
-  const _DeviceTile({required this.device});
+class _SectionTitle extends StatelessWidget {
+  const _SectionTitle({required this.title});
+
+  final String title;
+
+  @override
+  Widget build(BuildContext context) {
+    return Text(
+      title,
+      style: const TextStyle(
+        color: Color(0xFF38BDF8),
+        fontSize: 14,
+        fontWeight: FontWeight.w700,
+        letterSpacing: 0.5,
+      ),
+    );
+  }
+}
+
+// Widget para dispositivos guardados (con opción de eliminar)
+class _SavedDeviceTile extends StatelessWidget {
+  const _SavedDeviceTile({required this.device});
+
+  final SavedDevice device;
+
+  void _connectToDevice(BuildContext context) {
+    context.read<BleButtonBloc>().add(DeviceConnectRequested(
+          mac: device.mac,
+          password: device.password,
+        ));
+  }
+
+  void _deleteDevice(BuildContext context) {
+    showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        backgroundColor: const Color(0xFF1E293B),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Text(
+          '¿Eliminar dispositivo?',
+          style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700),
+        ),
+        content: Text(
+          '¿Deseas eliminar "${device.name}" de tus dispositivos guardados?',
+          style: const TextStyle(color: Colors.white70),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child:
+                const Text('Cancelar', style: TextStyle(color: Colors.white54)),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red.shade700,
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8)),
+            ),
+            onPressed: () {
+              Navigator.of(dialogContext).pop(true);
+              context
+                  .read<BleButtonBloc>()
+                  .add(SavedDeviceDeleteRequested(mac: device.mac));
+            },
+            child: const Text('Eliminar'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: const Color(0xFF1E293B),
+      borderRadius: BorderRadius.circular(12),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(12),
+        onTap: () => _connectToDevice(context),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          child: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF0F172A),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: const Icon(
+                  Icons.bluetooth_connected_rounded,
+                  color: Color(0xFF4ADE80),
+                  size: 22,
+                ),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      device.name,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w600,
+                        fontSize: 15,
+                      ),
+                    ),
+                    const SizedBox(height: 3),
+                    Text(
+                      device.mac,
+                      style: const TextStyle(
+                        color: Colors.white38,
+                        fontSize: 12,
+                        fontFamily: 'monospace',
+                      ),
+                    ),
+                    if (device.lastConnectedAt != null) ...[
+                      const SizedBox(height: 3),
+                      Text(
+                        'Última conexión: ${_formatDate(device.lastConnectedAt!)}',
+                        style: const TextStyle(
+                          color: Colors.white24,
+                          fontSize: 11,
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+              IconButton(
+                icon: const Icon(Icons.delete_outline_rounded,
+                    color: Colors.red, size: 20),
+                onPressed: () => _deleteDevice(context),
+                tooltip: 'Eliminar dispositivo',
+              ),
+              const SizedBox(width: 8),
+              const Icon(
+                Icons.chevron_right_rounded,
+                color: Colors.white24,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  String _formatDate(DateTime date) {
+    final now = DateTime.now();
+    final diff = now.difference(date);
+
+    if (diff.inMinutes < 1) return 'Ahora';
+    if (diff.inMinutes < 60) return 'Hace ${diff.inMinutes}m';
+    if (diff.inHours < 24) return 'Hace ${diff.inHours}h';
+    if (diff.inDays < 7) return 'Hace ${diff.inDays}d';
+    return '${date.day}/${date.month}/${date.year}';
+  }
+}
+
+// Widget para dispositivos escaneados (dispositivos cercanos)
+class _ScannedDeviceTile extends StatelessWidget {
+  const _ScannedDeviceTile({required this.device});
 
   final ScannedDevice device;
 
@@ -251,8 +456,8 @@ class _DeviceTile extends StatelessWidget {
                   borderRadius: BorderRadius.circular(16)),
               title: const Text(
                 'Contraseña del dispositivo',
-                style: TextStyle(
-                    color: Colors.white, fontWeight: FontWeight.w700),
+                style:
+                    TextStyle(color: Colors.white, fontWeight: FontWeight.w700),
               ),
               content: TextField(
                 controller: controller,
@@ -283,9 +488,8 @@ class _DeviceTile extends StatelessWidget {
                         borderRadius: BorderRadius.circular(8)),
                   ),
                   onPressed: () {
-                    final password = controller.text.isEmpty
-                        ? '123456'
-                        : controller.text;
+                    final password =
+                        controller.text.isEmpty ? '123456' : controller.text;
                     // Usar el bloc capturado antes del diálogo — seguro
                     bloc.add(DeviceConnectRequested(
                       mac: device.mac,

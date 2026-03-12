@@ -2,9 +2,11 @@ import 'dart:convert';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:amaia/services/call-service.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:amaia/services/geolocation-service.dart';
 import 'package:amaia/services/sms-service.dart';
+import 'package:vibration/vibration.dart';
 
 class SendSmsPage extends StatelessWidget {
   const SendSmsPage({super.key});
@@ -91,6 +93,31 @@ class _SendSmsState extends State<_SendSms>
     });
   }
 
+  Future<void> _playNotificationSoundAndVibrate() async {
+    try {
+      // Verificar si el dispositivo tiene vibración
+      bool? hasVibrator = await Vibration.hasVibrator();
+
+      if (hasVibrator == true) {
+        // Patrón de vibración: vibrar, pausar, vibrar
+        // [duración vibración, pausa, duración vibración]
+        await Vibration.vibrate(
+          pattern: [0, 500, 200, 500],
+          intensities: [0, 255, 0, 255],
+        );
+      }
+
+      // Reproducir sonido de notificación del sistema usando HapticFeedback
+      // Esto da feedback táctil y auditivo en dispositivos compatibles
+      await HapticFeedback.heavyImpact();
+      await Future.delayed(const Duration(milliseconds: 200));
+      await HapticFeedback.heavyImpact();
+    } catch (e) {
+      // Si hay error con sonido o vibración, continuar sin interrumpir
+      debugPrint('Error al reproducir sonido o vibración: $e');
+    }
+  }
+
   Future<void> _sendSMS() async {
     setState(() {
       statusSendAll = true;
@@ -104,8 +131,11 @@ class _SendSmsState extends State<_SendSms>
     String geoencoded = stringToBase64.encode(geo);
 
     try {
-      await SmsService()
-          .sms(geoencoded, recipients);
+      await SmsService().sms(geoencoded, recipients);
+
+      // Reproducir sonido y vibración al enviar SMS exitosamente
+      await _playNotificationSoundAndVibrate();
+
       _alertSnackBar(type: 'success', msg: 'SMS de ayuda enviado con éxito!');
     } catch (error) {
       _alertSnackBar(type: 'error', msg: error.toString());

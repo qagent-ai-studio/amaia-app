@@ -142,3 +142,23 @@ class _TaskResultReceived extends BleButtonEvent {
   @override
   List<Object?> get props => [result];
 }
+
+/// Load saved devices from database
+class SavedDevicesLoadRequested extends BleButtonEvent {
+  const SavedDevicesLoadRequested();
+}
+
+/// Delete a saved device
+class SavedDeviceDeleteRequested extends BleButtonEvent {
+  const SavedDeviceDeleteRequested({required this.mac});
+
+  final String mac;
+
+  @override
+  List<Object?> get props => [mac];
+}
+
+/// Auto-reconnect to last connected device
+class AutoReconnectRequested extends BleButtonEvent {
+  const AutoReconnectRequested();
+}

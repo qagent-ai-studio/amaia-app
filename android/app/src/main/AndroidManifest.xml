@@ -13,6 +13,7 @@
     <uses-permission
         android:name="android.permission.ACCESS_BACKGROUND_LOCATION"/>
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_CONNECTED_DEVICE" />
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.WAKE_LOCK" />
     <uses-permission android:name="android.permission.CALL_PHONE" />
@@ -24,6 +25,11 @@
     <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" />
     <uses-permission android:name="android.permission.BLUETOOTH_SCAN" />
     <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
+    <uses-permission android:name="android.permission.USE_FULL_SCREEN_INTENT" />
+    <uses-permission android:name="android.permission.REORDER_TASKS" />
+    <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
+    <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
+    <uses-permission android:name="android.permission.VIBRATE" />
     <uses-feature android:name="android.hardware.bluetooth_le" android:required="true" />
     <application
         android:label="Amaia"
@@ -51,6 +57,28 @@
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
         </activity>
+
+        <!-- Trampoline Activity para evitar restricciones de Samsung -->
+        <activity
+            android:name=".ble.TrampolineActivity"
+            android:exported="false"
+            android:excludeFromRecents="true"
+            android:theme="@android:style/Theme.Translucent.NoTitleBar"
+            android:noHistory="true"
+            android:turnScreenOn="true"
+            android:showWhenLocked="true" />
+
+        <!-- Activity flotante que aparece cuando se presiona el botón -->
+        <activity
+            android:name=".ble.ButtonPressedActivity"
+            android:exported="false"
+            android:excludeFromRecents="true"
+            android:theme="@android:style/Theme.Translucent.NoTitleBar"
+            android:noHistory="true"
+            android:turnScreenOn="true"
+            android:showWhenLocked="true"
+            android:showForAllUsers="true" />
+
         <!-- Don't delete the meta-data below.
              This is used by the Flutter tool to generate GeneratedPluginRegistrant.java -->
         <meta-data
@@ -75,6 +103,48 @@
             android:enabled="true"
             android:exported="false"
             android:foregroundServiceType="location" />
+
+        <!-- Servicio BLE en foreground para MK Button -->
+        <service
+            android:name=".ble.MkButtonBackgroundService"
+            android:enabled="true"
+            android:exported="false"
+            android:foregroundServiceType="connectedDevice" />
+
+        <!-- Servicio de overlay flotante -->
+        <service
+            android:name=".ble.OverlayService"
+            android:enabled="true"
+            android:exported="false" />
+
+        <!-- BroadcastReceiver para abrir la app cuando se presiona el botón -->
+        <receiver
+            android:name=".ble.OpenAppReceiver"
+            android:enabled="true"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="com.mistatas.amaia.OPEN_APP_FROM_BUTTON" />
+            </intent-filter>
+        </receiver>
+
+        <!-- BroadcastReceiver para llamadas de emergencia -->
+        <receiver
+            android:name=".ble.EmergencyCallReceiver"
+            android:enabled="true"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="com.mistatas.amaia.MAKE_EMERGENCY_CALL" />
+            </intent-filter>
+        </receiver>
+
+        <!-- Actividad trampolín para llamadas de emergencia (fallback) -->
+        <activity
+            android:name=".ble.EmergencyCallActivity"
+            android:theme="@android:style/Theme.Translucent.NoTitleBar"
+            android:excludeFromRecents="true"
+            android:exported="false"
+            android:taskAffinity=""
+            android:launchMode="singleInstance" />
 
         <service
             android:name="androidx.work.impl.background.systemjob.SystemJobService"

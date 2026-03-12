@@ -1,7 +1,14 @@
 package com.mistatas.amaia.ble
 
+import android.app.NotificationManager
 import android.bluetooth.BluetoothAdapter
 import android.content.Context
+import android.content.Intent
+import android.net.Uri
+import android.os.Build
+import android.os.PowerManager
+import android.provider.Settings
+import androidx.core.app.NotificationManagerCompat
 import com.moko.ble.lib.MokoConstants
 import com.moko.ble.lib.event.ConnectStatusEvent
 import com.moko.ble.lib.event.OrderTaskResponseEvent
@@ -31,7 +38,6 @@ class MkButtonChannel(
 
     private var scanner: MokoBleScanner? = null
     private var isRegistered = false
-    private var keepAliveHandler: android.os.Handler? = null
     private var isDeviceConnected = false
     private var pendingPassword: String = "123456"
 
@@ -47,8 +53,6 @@ class MkButtonChannel(
     }
 
     fun unregister() {
-        keepAliveHandler?.removeCallbacks(keepAliveRunnable)
-        keepAliveHandler = null
         if (isRegistered) {
             EventBus.getDefault().unregister(this)
             isRegistered = false
@@ -62,18 +66,25 @@ class MkButtonChannel(
 
     override fun onMethodCall(call: MethodCall, result: MethodChannel.Result) {
         when (call.method) {
-            "startScan"           -> handleStartScan(result)
-            "stopScan"            -> handleStopScan(result)
-            "connect"             -> handleConnect(call, result)
-            "disconnect"          -> handleDisconnect(result)
-            "readDeviceInfo"      -> handleReadDeviceInfo(result)
-            "setAdvInterval"      -> handleSetAdvInterval(call, result)
-            "setTxPower"          -> handleSetTxPower(call, result)
-            "setDeviceName"       -> handleSetDeviceName(call, result)
-            "changePassword"      -> handleChangePassword(call, result)
-            "enableButtonNotify"  -> handleEnableButtonNotify(call, result)
-            "resetDevice"         -> handleResetDevice(result)
-            else                  -> result.notImplemented()
+            "startScan"                     -> handleStartScan(result)
+            "stopScan"                      -> handleStopScan(result)
+            "connect"                       -> handleConnect(call, result)
+            "disconnect"                    -> handleDisconnect(result)
+            "readDeviceInfo"                -> handleReadDeviceInfo(result)
+            "readBattery"                   -> handleReadBattery(result)
+            "setAdvInterval"                -> handleSetAdvInterval(call, result)
+            "setTxPower"                    -> handleSetTxPower(call, result)
+            "setDeviceName"                 -> handleSetDeviceName(call, result)
+            "changePassword"                -> handleChangePassword(call, result)
+            "enableButtonNotify"            -> handleEnableButtonNotify(call, result)
+            "resetDevice"                   -> handleResetDevice(result)
+            "startBackgroundService"        -> handleStartBackgroundService(call, result)
+            "stopBackgroundService"         -> handleStopBackgroundService(result)
+            "checkPermissions"              -> handleCheckPermissions(result)
+            "requestBatteryOptimization"    -> handleRequestBatteryOptimization(result)
+            "requestNotificationPermission" -> handleRequestNotificationPermission(result)
+            "requestOverlayPermission"      -> handleRequestOverlayPermission(result)
+            else                            -> result.notImplemented()
         }
     }
 
@@ -93,12 +104,24 @@ class MkButtonChannel(
 
                 override fun onScanDevice(device: DeviceInfo) {
                     val name = device.name ?: ""
-                    // Filtrar solo dispositivos que comiencen con "MK Button"
-                    if (!name.startsWith("MK Button", ignoreCase = true)) return
+                    val mac = device.mac ?: ""
+                    
+                    // Log TODOS los dispositivos detectados para debug
+                    android.util.Log.d("MkButtonSDK", "BLE device found: name='$name' mac=$mac rssi=${device.rssi}")
+                    
+                    // Mostrar TODOS los dispositivos BLE detectados
+                    // (El nombre puede estar vacío en el advertising packet)
+                    val displayName = if (name.isEmpty()) {
+                        // Si no hay nombre, mostrar los últimos 8 caracteres del MAC
+                        "Device ${mac.takeLast(8)}"
+                    } else {
+                        name
+                    }
 
+                    android.util.Log.d("MkButtonSDK", "Sending device to Flutter: $displayName ($mac)")
                     val map = mapOf(
-                        "mac"  to (device.mac  ?: ""),
-                        "name" to name,
+                        "mac"  to mac,
+                        "name" to displayName,
                         "rssi" to device.rssi,
                     )
                     channel.invokeMethod("onDeviceScanned", map)
@@ -133,14 +156,10 @@ class MkButtonChannel(
         DMokoSupport.getInstance().setPassword(pendingPassword)
         
         DMokoSupport.getInstance().connDevice(mac)
-        keepAliveHandler = android.os.Handler(android.os.Looper.getMainLooper())
-        keepAliveHandler?.postDelayed(keepAliveRunnable, 60_000)
         result.success(null)
     }
 
     private fun handleDisconnect(result: MethodChannel.Result) {
-        keepAliveHandler?.removeCallbacks(keepAliveRunnable)
-        keepAliveHandler = null
         DMokoSupport.getInstance().disConnectBle()
         result.success(null)
     }
@@ -152,14 +171,35 @@ class MkButtonChannel(
     // ---------------------------------------------------------------------------
 
     private fun handleReadDeviceInfo(result: MethodChannel.Result) {
-        DMokoSupport.getInstance().sendOrder(
-            OrderTaskAssembler.getBatteryPercent(),
-            OrderTaskAssembler.getDeviceName(),
-            OrderTaskAssembler.getFirmwareVersion(0),
-            OrderTaskAssembler.getHardwareVersion(0),
-            OrderTaskAssembler.getVerifyPasswordEnable(),
-        )
+        // IMPORTANTE: El dispositivo MK Button NO tolera comandos adicionales después
+        // de la inicialización. Enviar comandos de lectura (batería, nombre, etc.) causa
+        // ORDER TIMEOUT y desconexión inmediata.
+        // 
+        // Si necesitas esta información, debes implementar una estrategia diferente:
+        // 1. Obtener el nombre del dispositivo durante el escaneo BLE (antes de conectar)
+        // 2. La batería puede leerse solo si es absolutamente necesario y con cuidado
+        // 
+        // Por ahora, este método retorna success sin hacer nada para mantener la compatibilidad
+        // con el código existente.
+        android.util.Log.w("MkButton", "readDeviceInfo called but disabled - MK Button doesn't support commands after init")
         result.success(null)
+    }
+
+    private fun handleReadBattery(result: MethodChannel.Result) {
+        // ADVERTENCIA: Leer batería después de la inicialización puede causar desconexión
+        // Este comando solo debe usarse cuando el usuario lo solicita manualmente
+        android.util.Log.w("MkButton", "readBattery requested - may cause disconnection!")
+        
+        try {
+            // Comando 0x62 = leer batería
+            DMokoSupport.getInstance().sendOrder(
+                OrderTaskAssembler.getBatteryPercent()
+            )
+            result.success(null)
+        } catch (e: Exception) {
+            android.util.Log.e("MkButton", "Failed to read battery", e)
+            result.error("BATTERY_READ_FAILED", e.message, null)
+        }
     }
 
     // ---------------------------------------------------------------------------
@@ -248,6 +288,135 @@ class MkButtonChannel(
     }
 
     // ---------------------------------------------------------------------------
+    // Background Service
+    // ---------------------------------------------------------------------------
+
+    private fun handleStartBackgroundService(call: MethodCall, result: MethodChannel.Result) {
+        val mac = call.argument<String>("mac") ?: run {
+            result.error("INVALID_ARG", "mac is required", null)
+            return
+        }
+        val password = call.argument<String>("password") ?: "Moko4321"
+        val clickType = call.argument<String>("clickType") ?: "single"
+        val buttonAction = call.argument<String>("buttonAction") ?: "open_app"
+        val emergencyPhone = call.argument<String>("emergencyPhone")
+
+        try {
+            MkButtonBackgroundService.startService(
+                context = context,
+                mac = mac,
+                password = password,
+                clickType = clickType,
+                buttonAction = buttonAction,
+                emergencyPhone = emergencyPhone
+            )
+            result.success(null)
+        } catch (e: Exception) {
+            android.util.Log.e("MkButton", "Failed to start background service", e)
+            result.error("SERVICE_START_FAILED", e.message, null)
+        }
+    }
+
+    private fun handleStopBackgroundService(result: MethodChannel.Result) {
+        try {
+            MkButtonBackgroundService.stopService(context)
+            result.success(null)
+        } catch (e: Exception) {
+            android.util.Log.e("MkButton", "Failed to stop background service", e)
+            result.error("SERVICE_STOP_FAILED", e.message, null)
+        }
+    }
+
+    // ---------------------------------------------------------------------------
+    // Permissions Management
+    // ---------------------------------------------------------------------------
+
+    private fun handleCheckPermissions(result: MethodChannel.Result) {
+        val permissions = mutableMapOf<String, Any>()
+        
+        // Check battery optimization
+        permissions["batteryOptimizationDisabled"] = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            val powerManager = context.getSystemService(Context.POWER_SERVICE) as PowerManager
+            powerManager.isIgnoringBatteryOptimizations(context.packageName)
+        } else {
+            true // No battery optimization on older versions
+        }
+        
+        // Check notification permission
+        permissions["notificationPermission"] = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            NotificationManagerCompat.from(context).areNotificationsEnabled()
+        } else {
+            true // Notifications always enabled on older versions
+        }
+        
+        // Check overlay permission
+        permissions["overlayPermission"] = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            Settings.canDrawOverlays(context)
+        } else {
+            true
+        }
+        
+        result.success(permissions)
+    }
+
+    private fun handleRequestBatteryOptimization(result: MethodChannel.Result) {
+        try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                val intent = Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS).apply {
+                    data = Uri.parse("package:${context.packageName}")
+                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                }
+                context.startActivity(intent)
+            }
+            result.success(null)
+        } catch (e: Exception) {
+            android.util.Log.e("MkButton", "Failed to request battery optimization", e)
+            result.error("PERMISSION_ERROR", e.message, null)
+        }
+    }
+
+    private fun handleRequestNotificationPermission(result: MethodChannel.Result) {
+        try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                // For Android 13+, need to request permission at runtime
+                // This will be handled by Flutter's permission_handler or similar
+                val intent = Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).apply {
+                    putExtra(Settings.EXTRA_APP_PACKAGE, context.packageName)
+                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                }
+                context.startActivity(intent)
+            } else {
+                // For older versions, open app settings
+                val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
+                    data = Uri.parse("package:${context.packageName}")
+                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                }
+                context.startActivity(intent)
+            }
+            result.success(null)
+        } catch (e: Exception) {
+            android.util.Log.e("MkButton", "Failed to request notification permission", e)
+            result.error("PERMISSION_ERROR", e.message, null)
+        }
+    }
+    
+    private fun handleRequestOverlayPermission(result: MethodChannel.Result) {
+        try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                val intent = Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION).apply {
+                    data = Uri.parse("package:${context.packageName}")
+                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                }
+                context.startActivity(intent)
+            }
+            result.success(null)
+        } catch (e: Exception) {
+            android.util.Log.e("MkButton", "Failed to request overlay permission", e)
+            result.error("PERMISSION_ERROR", e.message, null)
+        }
+    }
+
+    // ---------------------------------------------------------------------------
     // EventBus — Connection status
     // ---------------------------------------------------------------------------
 
@@ -302,11 +471,17 @@ class MkButtonChannel(
         val value    = response.responseValue ?: return
         val map      = mutableMapOf<String, Any?>()
 
+        android.util.Log.d("MkButton", "handleOrderResult: orderCHAR=${response.orderCHAR}, value=${value.joinToString("") { "%02X".format(it) }}")
+
         when (response.orderCHAR as? OrderCHAR) {
             OrderCHAR.CHAR_PARAMS -> {
-                // getBatteryPercent devuelve por CHAR_PARAMS — primer byte = porcentaje
-                if (value.isNotEmpty()) {
-                    map["batteryPercent"] = value[0].toInt() and 0xFF
+                // Formato de respuesta: EB 00 [KEY] [LEN] [DATA...]
+                // Para batería (0x62): EB 00 62 01 XX donde XX es el porcentaje
+                if (value.size >= 5 && (value[0].toInt() and 0xFF) == 0xEB && 
+                    (value[1].toInt() and 0xFF) == 0x00 && (value[2].toInt() and 0xFF) == 0x62) {
+                    // Batería está en el byte 4
+                    map["batteryPercent"] = value[4].toInt() and 0xFF
+                    android.util.Log.d("MkButton", "Battery parsed: ${value[4].toInt() and 0xFF}%")
                 }
             }
             OrderCHAR.CHAR_MODEL_NUMBER -> {
@@ -347,26 +522,17 @@ class MkButtonChannel(
         channel.invokeMethod("onButtonPress", mapOf("type" to pressType))
     }
 
-    // CHAR_CLICK_EVENT puede contener el tipo en el primer byte
+    // CHAR_CLICK_EVENT formato: EB 02 06 01 XX donde XX es el tipo de click
+    // XX = 01 (single), 02 (double), 03 (long press)
     private fun parseCHARClickEvent(value: ByteArray): String {
-        if (value.isEmpty()) return "single"
-        return when (value[0].toInt() and 0xFF) {
+        if (value.size < 5) return "single"
+        // El tipo de click está en el último byte (posición 4)
+        return when (value[4].toInt() and 0xFF) {
+            0x01 -> "single"
             0x02 -> "double"
             0x03 -> "long"
             else -> "single"
         }
     }
 
-    
-    private val keepAliveRunnable = object : Runnable {
-        override fun run() {
-            if (isDeviceConnected) {
-                // Leer batería cada 60s para mantener la conexión activa
-                DMokoSupport.getInstance().sendOrder(
-                    OrderTaskAssembler.getBatteryPercent()
-                )
-                keepAliveHandler?.postDelayed(this, 60_000)
-            }
-        }
-    }
 }
