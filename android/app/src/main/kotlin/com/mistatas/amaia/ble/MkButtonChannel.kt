@@ -109,19 +109,16 @@ class MkButtonChannel(
                     // Log TODOS los dispositivos detectados para debug
                     android.util.Log.d("MkButtonSDK", "BLE device found: name='$name' mac=$mac rssi=${device.rssi}")
                     
-                    // Mostrar TODOS los dispositivos BLE detectados
-                    // (El nombre puede estar vacío en el advertising packet)
-                    val displayName = if (name.isEmpty()) {
-                        // Si no hay nombre, mostrar los últimos 8 caracteres del MAC
-                        "Device ${mac.takeLast(8)}"
-                    } else {
-                        name
+                    // FILTRAR: Solo mostrar dispositivos cuyo nombre empiece con "MK"
+                    if (!name.startsWith("MK", ignoreCase = true)) {
+                        android.util.Log.d("MkButtonSDK", "Device filtered out (name doesn't start with 'MK'): $name")
+                        return
                     }
-
-                    android.util.Log.d("MkButtonSDK", "Sending device to Flutter: $displayName ($mac)")
+                    
+                    android.util.Log.d("MkButtonSDK", "Sending MK device to Flutter: $name ($mac)")
                     val map = mapOf(
                         "mac"  to mac,
-                        "name" to displayName,
+                        "name" to name,
                         "rssi" to device.rssi,
                     )
                     channel.invokeMethod("onDeviceScanned", map)

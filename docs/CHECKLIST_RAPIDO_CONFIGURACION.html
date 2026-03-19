@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Checklist Rápido - Configuración Amaia</title>
+    <style>
+        @media print {
+            body { margin: 0; }
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: Arial, sans-serif;
+            padding: 30px;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%);
+            color: white;
+            padding: 20px;
+            text-align: center;
+            margin-bottom: 25px;
+            border-radius: 8px;
+        }
+        
+        .header h1 {
+            font-size: 24px;
+            margin-bottom: 5px;
+        }
+        
+        .header p {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+        
+        .critical-box {
+            background: #fef3c7;
+            border: 3px solid #f59e0b;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 6px;
+        }
+        
+        .critical-box strong {
+            color: #92400e;
+            font-size: 16px;
+        }
+        
+        .section {
+            margin: 25px 0;
+        }
+        
+        .section-title {
+            background: #e0e7ff;
+            padding: 12px;
+            font-weight: bold;
+            color: #1e40af;
+            border-left: 5px solid #3b82f6;
+            margin-bottom: 15px;
+        }
+        
+        .checklist-item {
+            display: flex;
+            align-items: flex-start;
+            padding: 12px 10px;
+            border-bottom: 1px solid #e5e7eb;
+        }
+        
+        .checkbox {
+            width: 24px;
+            height: 24px;
+            border: 2px solid #3b82f6;
+            border-radius: 4px;
+            margin-right: 15px;
+            flex-shrink: 0;
+            margin-top: 2px;
+        }
+        
+        .item-content {
+            flex: 1;
+        }
+        
+        .item-title {
+            font-weight: 600;
+            color: #1f2937;
+            margin-bottom: 5px;
+        }
+        
+        .item-detail {
+            font-size: 13px;
+            color: #6b7280;
+            margin-left: 0;
+        }
+        
+        .critical {
+            background: #fef2f2;
+            padding: 15px;
+            margin: 8px 0;
+            border-left: 4px solid #ef4444;
+        }
+        
+        .critical .item-title {
+            color: #991b1b;
+            font-size: 15px;
+        }
+        
+        .test-section {
+            background: #ecfdf5;
+            border: 2px solid #10b981;
+            padding: 20px;
+            margin: 25px 0;
+            border-radius: 6px;
+        }
+        
+        .test-section h3 {
+            color: #065f46;
+            margin-bottom: 15px;
+        }
+        
+        .footer {
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 2px solid #e5e7eb;
+            text-align: center;
+            font-size: 12px;
+            color: #6b7280;
+        }
+        
+        .device-info {
+            background: #f3f4f6;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 6px;
+        }
+        
+        .device-info table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        .device-info td {
+            padding: 8px;
+            border-bottom: 1px solid #d1d5db;
+        }
+        
+        .device-info td:first-child {
+            font-weight: 600;
+            width: 150px;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>📋 CHECKLIST RÁPIDO - Configuración Amaia</h1>
+        <p>Botón de Emergencia BLE | Guía para personal de Mistatas</p>
+    </div>
+    
+    <!-- Información del dispositivo -->
+    <div class="device-info">
+        <table>
+            <tr>
+                <td>Beneficiario:</td>
+                <td>_______________________________________________________</td>
+            </tr>
+            <tr>
+                <td>Marca/Modelo:</td>
+                <td>_______________________________________________________</td>
+            </tr>
+            <tr>
+                <td>Versión Android:</td>
+                <td>_______________________________________________________</td>
+            </tr>
+            <tr>
+                <td>Versión One UI:</td>
+                <td>_______________ (Solo Samsung - Debe ser 8.0 o superior)</td>
+            </tr>
+            <tr>
+                <td>Fecha instalación:</td>
+                <td>_______________________________________________________</td>
+            </tr>
+            <tr>
+                <td>Técnico instalador:</td>
+                <td>_______________________________________________________</td>
+            </tr>
+        </table>
+    </div>
+    
+    <!-- Requisito crítico -->
+    <div class="critical-box">
+        <strong>⚠️ DISPOSITIVOS SAMSUNG:</strong> Verificar que tengan <strong>One UI 8.0 o superior</strong>. 
+        Sin esta versión, el botón NO hará llamadas automáticas. Actualizar desde: 
+        Configuración → Actualización de software.
+    </div>
+    
+    <!-- Sección 1: Instalación -->
+    <div class="section">
+        <div class="section-title">1️⃣ INSTALACIÓN DE LA APP</div>
+        
+        <div class="checklist-item">
+            <div class="checkbox"></div>
+            <div class="item-content">
+                <div class="item-title">Instalar APK de Amaia</div>
+                <div class="item-detail">Abrir archivo APK → Permitir instalación de origen desconocido → Instalar → Abrir</div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Sección 2: Permisos básicos -->
+    <div class="section">
+        <div class="section-title">2️⃣ OTORGAR PERMISOS BÁSICOS</div>
+        
+        <div class="checklist-item">
+            <div class="checkbox"></div>
+            <div class="item-content">
+                <div class="item-title">Ubicación: "Permitir siempre" o "Permitir todo el tiempo"</div>
+                <div class="item-detail">⚠️ NO seleccionar "Solo mientras se usa la app"</div>
+            </div>
+        </div>
+        
+        <div class="checklist-item">
+            <div class="checkbox"></div>
+            <div class="item-content">
+                <div class="item-title">SMS: Permitir</div>
+            </div>
+        </div>
+        
+        <div class="checklist-item">
+            <div class="checkbox"></div>
+            <div class="item-content">
+                <div class="item-title">Llamadas: Permitir</div>
+            </div>
+        </div>
+        
+        <div class="checklist-item">
+            <div class="checkbox"></div>
+            <div class="item-content">
+                <div class="item-title">Notificaciones: Permitir</div>
+            </div>
+        </div>
+        
+        <div class="checklist-item">
+            <div class="checkbox"></div>
+            <div class="item-content">
+                <div class="item-title">Bluetooth: Permitir</div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Sección 3: Permisos avanzados -->
+    <div class="section">
+        <div class="section-title">3️⃣ CONFIGURACIÓN AVANZADA (CRÍTICO)</div>
+        
+        <div class="critical">
+            <div class="checklist-item" style="border: none; padding: 0;">
+                <div class="checkbox"></div>
+                <div class="item-content">
+                    <div class="item-title">🔴 MOSTRAR SOBRE OTRAS APPS (OBLIGATORIO para Samsung)</div>
+                    <div class="item-detail">
+                        Configuración → Aplicaciones → Amaia → Menú ⋮ → Aplicaciones especiales → 
+                        "Mostrar sobre otras apps" → Buscar Amaia → ACTIVAR<br>
+                        <strong>Sin esto, NO hará llamadas automáticas en Samsung</strong>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="checklist-item">
+            <div class="checkbox"></div>
+            <div class="item-content">
+                <div class="item-title">Optimización de batería: "Sin restricciones"</div>
+                <div class="item-detail">Configuración → Aplicaciones → Amaia → Batería → Sin restricciones</div>
+            </div>
+        </div>
+        
+        <div class="checklist-item">
+            <div class="checkbox"></div>
+            <div class="item-content">
+                <div class="item-title">Notificaciones: Verificar canales activos</div>
+                <div class="item-detail">Configuración → Aplicaciones → Amaia → Notificaciones → Todo activado (NO en silencio)</div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Sección 4: Configuración del botón -->
+    <div class="section">
+        <div class="section-title">4️⃣ CONECTAR BOTÓN BLE</div>
+        
+        <div class="checklist-item">
+            <div class="checkbox"></div>
+            <div class="item-content">
+                <div class="item-title">Encender botón MK Button (presionar 3 segundos)</div>
+            </div>
+        </div>
+        
+        <div class="checklist-item">
+            <div class="checkbox"></div>
+            <div class="item-content">
+                <div class="item-title">Conectar en la app → Buscar → Seleccionar botón</div>
+                <div class="item-detail">Contraseña por defecto: Moko4321</div>
+            </div>
+        </div>
+        
+        <div class="checklist-item">
+            <div class="checkbox"></div>
+            <div class="item-content">
+                <div class="item-title">Configurar número de emergencia: +56994633411</div>
+            </div>
+        </div>
+        
+        <div class="checklist-item">
+            <div class="checkbox"></div>
+            <div class="item-content">
+                <div class="item-title">Seleccionar tipo de clic: ___________________</div>
+                <div class="item-detail">(simple / doble / largo)</div>
+            </div>
+        </div>
+        
+        <div class="checklist-item">
+            <div class="checkbox"></div>
+            <div class="item-content">
+                <div class="item-title">Seleccionar acción: "Enviar SMS y llamar"</div>
+            </div>
+        </div>
+        
+        <div class="checklist-item">
+            <div class="checkbox"></div>
+            <div class="item-content">
+                <div class="item-title">Verificar notificación: "MK Button Activo - Conectado"</div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Sección 5: Pruebas -->
+    <div class="test-section">
+        <h3>5️⃣ PRUEBAS OBLIGATORIAS</h3>
+        
+        <div class="checklist-item">
+            <div class="checkbox"></div>
+            <div class="item-content">
+                <div class="item-title">PRUEBA 1: Con app abierta</div>
+                <div class="item-detail">
+                    Presionar botón BLE → Verificar: ✓ Vibración ✓ SMS enviado ✓ Llamada iniciada
+                </div>
+            </div>
+        </div>
+        
+        <div class="checklist-item" style="background: #fef2f2; padding: 15px; margin: 10px 0; border-left: 4px solid #ef4444;">
+            <div class="checkbox"></div>
+            <div class="item-content">
+                <div class="item-title" style="color: #991b1b; font-size: 15px;">
+                    🔴 PRUEBA 2: Con app COMPLETAMENTE CERRADA (MÁS IMPORTANTE)
+                </div>
+                <div class="item-detail">
+                    1. Cerrar app (deslizar hacia arriba desde apps recientes)<br>
+                    2. Verificar que notificación "MK Button Activo" siga visible<br>
+                    3. Presionar botón BLE<br>
+                    4. Verificar: ✓ Vibración ✓ SMS con GPS ✓ <strong>Llamada automática</strong><br>
+                    <strong>Si la llamada NO se inicia, verificar Paso 3: "Mostrar sobre otras apps"</strong>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Firma -->
+    <div style="margin-top: 30px; border-top: 2px solid #3b82f6; padding-top: 20px;">
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+            <div>
+                <strong>Técnico instalador:</strong><br>
+                Nombre: ______________________________<br>
+                Firma: ________________________________<br>
+                Fecha: ________________________________
+            </div>
+            <div>
+                <strong>Beneficiario/Responsable:</strong><br>
+                Nombre: ______________________________<br>
+                Firma: ________________________________<br>
+                Fecha: ________________________________
+            </div>
+        </div>
+    </div>
+    
+    <!-- Footer -->
+    <div class="footer">
+        <p><strong>Checklist de Configuración - Amaia App</strong></p>
+        <p>Versión 1.0 | Mistatas | Marzo 2026</p>
+        <p style="margin-top: 10px; color: #10b981; font-weight: 600;">
+            ✅ Solución probada en Samsung A06 (Android 15 / One UI 8.0)
+        </p>
+    </div>
+</body>
+</html>

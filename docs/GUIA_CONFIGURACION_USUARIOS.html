@@ -1,0 +1,821 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Guía de Configuración - Amaia App</title>
+    <style>
+        @media print {
+            body { margin: 0; }
+            .page-break { page-break-before: always; }
+            .no-print { display: none; }
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: #f5f5f5;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: white;
+            padding: 50px;
+            box-shadow: 0 0 20px rgba(0,0,0,0.1);
+        }
+        
+        .header {
+            text-align: center;
+            border-bottom: 4px solid #10b981;
+            padding-bottom: 30px;
+            margin-bottom: 40px;
+        }
+        
+        .header h1 {
+            color: #1e40af;
+            font-size: 36px;
+            margin-bottom: 10px;
+        }
+        
+        .header .subtitle {
+            color: #64748b;
+            font-size: 20px;
+            font-weight: 500;
+        }
+        
+        .header .app-name {
+            color: #10b981;
+            font-size: 24px;
+            font-weight: 700;
+            margin-top: 10px;
+        }
+        
+        .important-box {
+            background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+            border-left: 6px solid #f59e0b;
+            padding: 25px;
+            margin: 30px 0;
+            border-radius: 6px;
+        }
+        
+        .important-box h3 {
+            color: #92400e;
+            margin-bottom: 15px;
+            font-size: 20px;
+        }
+        
+        .important-box p {
+            color: #78350f;
+            font-size: 16px;
+            line-height: 1.8;
+        }
+        
+        .step {
+            background: #f8fafc;
+            border-left: 6px solid #3b82f6;
+            padding: 25px;
+            margin: 30px 0;
+            border-radius: 6px;
+        }
+        
+        .step-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        
+        .step-number {
+            background: #3b82f6;
+            color: white;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            font-weight: bold;
+            margin-right: 20px;
+            flex-shrink: 0;
+        }
+        
+        .step-title {
+            color: #1e40af;
+            font-size: 22px;
+            font-weight: 700;
+        }
+        
+        .step-content {
+            padding-left: 70px;
+        }
+        
+        .step-content p {
+            margin-bottom: 15px;
+            font-size: 16px;
+        }
+        
+        .substep {
+            background: white;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 4px;
+            border-left: 3px solid #10b981;
+        }
+        
+        .substep-title {
+            font-weight: 600;
+            color: #059669;
+            margin-bottom: 8px;
+        }
+        
+        .instruction-list {
+            list-style: none;
+            padding-left: 0;
+        }
+        
+        .instruction-list li {
+            padding: 12px 0 12px 35px;
+            position: relative;
+            font-size: 16px;
+        }
+        
+        .instruction-list li:before {
+            content: "➤";
+            position: absolute;
+            left: 10px;
+            color: #3b82f6;
+            font-weight: bold;
+        }
+        
+        .success-box {
+            background: #ecfdf5;
+            border: 2px solid #10b981;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 6px;
+        }
+        
+        .success-box h4 {
+            color: #065f46;
+            margin-bottom: 10px;
+            font-size: 18px;
+        }
+        
+        .success-box p {
+            color: #047857;
+            font-size: 15px;
+        }
+        
+        .warning-box {
+            background: #fef2f2;
+            border: 2px solid #ef4444;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 6px;
+        }
+        
+        .warning-box h4 {
+            color: #991b1b;
+            margin-bottom: 10px;
+            font-size: 18px;
+        }
+        
+        .warning-box p {
+            color: #b91c1c;
+            font-size: 15px;
+        }
+        
+        .checklist {
+            background: #f0f9ff;
+            padding: 25px;
+            border-radius: 6px;
+            margin: 30px 0;
+        }
+        
+        .checklist h3 {
+            color: #0c4a6e;
+            margin-bottom: 20px;
+            font-size: 22px;
+        }
+        
+        .checklist-item {
+            padding: 12px 0;
+            border-bottom: 1px solid #bae6fd;
+            display: flex;
+            align-items: center;
+        }
+        
+        .checklist-item:last-child {
+            border-bottom: none;
+        }
+        
+        .checkbox {
+            width: 25px;
+            height: 25px;
+            border: 2px solid #0284c7;
+            border-radius: 4px;
+            margin-right: 15px;
+            flex-shrink: 0;
+        }
+        
+        .device-requirement {
+            background: #fef3c7;
+            padding: 20px;
+            border-radius: 6px;
+            margin: 25px 0;
+        }
+        
+        .device-requirement h3 {
+            color: #92400e;
+            margin-bottom: 15px;
+        }
+        
+        .device-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-top: 15px;
+        }
+        
+        .device-item {
+            background: white;
+            padding: 15px;
+            border-radius: 4px;
+            border-left: 4px solid #f59e0b;
+        }
+        
+        .device-item strong {
+            color: #78350f;
+            display: block;
+            margin-bottom: 5px;
+        }
+        
+        .footer {
+            margin-top: 60px;
+            padding-top: 30px;
+            border-top: 2px solid #e5e7eb;
+            text-align: center;
+            color: #6b7280;
+        }
+        
+        .support-box {
+            background: #ede9fe;
+            padding: 25px;
+            border-radius: 8px;
+            margin: 30px 0;
+            text-align: center;
+        }
+        
+        .support-box h3 {
+            color: #5b21b6;
+            margin-bottom: 15px;
+        }
+        
+        .support-box p {
+            color: #6d28d9;
+            font-size: 16px;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+        
+        table th {
+            background: #1e40af;
+            color: white;
+            padding: 15px;
+            text-align: left;
+            font-weight: 600;
+        }
+        
+        table td {
+            padding: 15px;
+            border-bottom: 1px solid #e5e7eb;
+        }
+        
+        table tr:hover {
+            background: #f8fafc;
+        }
+        
+        .version-badge {
+            display: inline-block;
+            background: #10b981;
+            color: white;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 600;
+            margin: 0 5px;
+        }
+        
+        .version-badge.old {
+            background: #ef4444;
+        }
+        
+        .screenshot-placeholder {
+            background: #e5e7eb;
+            border: 2px dashed #9ca3af;
+            padding: 40px;
+            text-align: center;
+            color: #6b7280;
+            margin: 20px 0;
+            border-radius: 8px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <h1>📱 Guía de Configuración</h1>
+            <div class="app-name">AMAIA - Botón de Emergencia BLE</div>
+            <div class="subtitle">Configuración de dispositivos de usuario</div>
+        </div>
+        
+        <!-- Información importante -->
+        <div class="important-box">
+            <h3>⚠️ IMPORTANTE: Lee antes de configurar</h3>
+            <p>
+                Esta guía es para el personal de Mistatas que instalará la app Amaia en los dispositivos 
+                de los beneficiarios. Sigue cada paso cuidadosamente para garantizar que el botón de 
+                emergencia BLE funcione correctamente, especialmente en dispositivos Samsung.
+            </p>
+        </div>
+        
+        <!-- Requisitos del dispositivo -->
+        <div class="device-requirement">
+            <h3>📋 Requisitos del Dispositivo</h3>
+            
+            <table>
+                <thead>
+                    <tr>
+                        <th>Marca</th>
+                        <th>Versión Android</th>
+                        <th>Requisitos Especiales</th>
+                        <th>Estado</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Samsung A06</strong></td>
+                        <td>Android 15</td>
+                        <td>One UI 8.0 o superior</td>
+                        <td><span class="version-badge">✅ Compatible</span></td>
+                    </tr>
+                    <tr>
+                        <td><strong>Samsung (otros modelos)</strong></td>
+                        <td>Android 14+</td>
+                        <td>One UI 8.0 o superior</td>
+                        <td><span class="version-badge">✅ Compatible</span></td>
+                    </tr>
+                    <tr>
+                        <td><strong>Samsung (modelos antiguos)</strong></td>
+                        <td>Android 14</td>
+                        <td>One UI 7.x o inferior</td>
+                        <td><span class="version-badge old">⚠️ Requiere actualización</span></td>
+                    </tr>
+                    <tr>
+                        <td><strong>Huawei / Otros</strong></td>
+                        <td>Android 9+</td>
+                        <td>Sin requisitos especiales</td>
+                        <td><span class="version-badge">✅ Compatible</span></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        
+        <!-- Página 2: Pasos de configuración -->
+        <div class="page-break"></div>
+        
+        <h2 style="color: #1e40af; margin: 40px 0 30px 0; font-size: 32px;">Pasos de Configuración</h2>
+        
+        <!-- Paso 1 -->
+        <div class="step">
+            <div class="step-header">
+                <div class="step-number">1</div>
+                <div class="step-title">Verificar Versión del Sistema (Solo Samsung)</div>
+            </div>
+            <div class="step-content">
+                <p><strong>¿Por qué?</strong> Los dispositivos Samsung requieren One UI 8.0 para que el botón de emergencia funcione completamente.</p>
+                
+                <ul class="instruction-list">
+                    <li>Abre <strong>Configuración</strong> en el dispositivo</li>
+                    <li>Ve a <strong>Acerca del teléfono</strong></li>
+                    <li>Busca <strong>Información de software</strong></li>
+                    <li>Verifica la <strong>Versión de One UI</strong></li>
+                </ul>
+                
+                <div class="success-box">
+                    <h4>✅ Si dice "One UI 8.0" o superior:</h4>
+                    <p>Continúa con el Paso 2</p>
+                </div>
+                
+                <div class="warning-box">
+                    <h4>❌ Si dice "One UI 7.x" o inferior:</h4>
+                    <p><strong>Debes actualizar el dispositivo:</strong></p>
+                    <ul class="instruction-list">
+                        <li>Ve a <strong>Configuración → Actualización de software</strong></li>
+                        <li>Toca <strong>Descargar e instalar</strong></li>
+                        <li>Espera a que se descargue e instale</li>
+                        <li>Reinicia el dispositivo</li>
+                        <li>Verifica nuevamente la versión</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Paso 2 -->
+        <div class="step">
+            <div class="step-header">
+                <div class="step-number">2</div>
+                <div class="step-title">Instalar App Amaia</div>
+            </div>
+            <div class="step-content">
+                <ul class="instruction-list">
+                    <li>Descarga el archivo APK de Amaia</li>
+                    <li>Abre el archivo APK en el dispositivo</li>
+                    <li>Si aparece advertencia de "Origen desconocido", permite la instalación</li>
+                    <li>Toca <strong>Instalar</strong></li>
+                    <li>Espera a que termine la instalación</li>
+                    <li>Toca <strong>Abrir</strong> cuando finalice</li>
+                </ul>
+            </div>
+        </div>
+        
+        <!-- Paso 3 -->
+        <div class="step">
+            <div class="step-header">
+                <div class="step-number">3</div>
+                <div class="step-title">Configurar Permisos Básicos</div>
+            </div>
+            <div class="step-content">
+                <p>Al abrir la app por primera vez, solicitará varios permisos. <strong>Otorga TODOS</strong>:</p>
+                
+                <div class="substep">
+                    <div class="substep-title">📍 Ubicación</div>
+                    <ul class="instruction-list">
+                        <li>Selecciona <strong>"Permitir todo el tiempo"</strong> o <strong>"Permitir siempre"</strong></li>
+                        <li><strong>NO selecciones</strong> "Solo mientras se usa la app"</li>
+                    </ul>
+                </div>
+                
+                <div class="substep">
+                    <div class="substep-title">📱 SMS y Llamadas</div>
+                    <ul class="instruction-list">
+                        <li>Toca <strong>"Permitir"</strong> cuando pida permiso de SMS</li>
+                        <li>Toca <strong>"Permitir"</strong> cuando pida permiso de Llamadas</li>
+                    </ul>
+                </div>
+                
+                <div class="substep">
+                    <div class="substep-title">🔔 Notificaciones</div>
+                    <ul class="instruction-list">
+                        <li>Toca <strong>"Permitir"</strong> cuando pida permiso de Notificaciones</li>
+                    </ul>
+                </div>
+                
+                <div class="substep">
+                    <div class="substep-title">📡 Bluetooth</div>
+                    <ul class="instruction-list">
+                        <li>Toca <strong>"Permitir"</strong> cuando pida permiso de Bluetooth</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Página 3: Configuraciones avanzadas -->
+        <div class="page-break"></div>
+        
+        <!-- Paso 4 -->
+        <div class="step">
+            <div class="step-header">
+                <div class="step-number">4</div>
+                <div class="step-title">Activar "Mostrar sobre otras apps" (CRÍTICO para Samsung)</div>
+            </div>
+            <div class="step-content">
+                <p><strong>¿Por qué?</strong> Este permiso es OBLIGATORIO para que el botón de emergencia pueda hacer llamadas automáticas cuando la app está cerrada en dispositivos Samsung.</p>
+                
+                <div class="warning-box">
+                    <h4>⚠️ MUY IMPORTANTE</h4>
+                    <p>Sin este permiso, el botón NO hará llamadas automáticas en Samsung. Solo enviará SMS.</p>
+                </div>
+                
+                <ul class="instruction-list">
+                    <li>Ve a <strong>Configuración → Aplicaciones</strong></li>
+                    <li>Busca y selecciona <strong>Amaia</strong></li>
+                    <li>Toca el menú <strong>⋮</strong> (tres puntos verticales) en la esquina superior derecha</li>
+                    <li>Selecciona <strong>"Aplicaciones especiales"</strong> o <strong>"Acceso especial"</strong></li>
+                    <li>Busca la opción <strong>"Mostrar sobre otras apps"</strong> o <strong>"Aparecer encima"</strong></li>
+                    <li>Busca <strong>Amaia</strong> en la lista</li>
+                    <li>Activa el <strong>interruptor</strong> para permitir</li>
+                </ul>
+                
+                <div class="success-box">
+                    <h4>✅ Verificación exitosa:</h4>
+                    <p>Debe aparecer como: <strong>Amaia: Permitido</strong> ✅</p>
+                </div>
+                
+                <div class="screenshot-placeholder">
+                    📸 Captura de pantalla: Configuración → Aplicaciones → Amaia → ⋮ → Aplicaciones especiales → Mostrar sobre otras apps → Amaia: PERMITIDO
+                </div>
+            </div>
+        </div>
+        
+        <!-- Paso 5 -->
+        <div class="step">
+            <div class="step-header">
+                <div class="step-number">5</div>
+                <div class="step-title">Desactivar Optimización de Batería (RECOMENDADO)</div>
+            </div>
+            <div class="step-content">
+                <p><strong>¿Por qué?</strong> Garantiza que el servicio BLE se mantenga activo 24/7 sin interrupciones.</p>
+                
+                <p><strong>Método 1 (Recomendado):</strong></p>
+                <ul class="instruction-list">
+                    <li>Ve a <strong>Configuración → Aplicaciones</strong></li>
+                    <li>Selecciona <strong>Amaia</strong></li>
+                    <li>Toca <strong>Batería</strong></li>
+                    <li>Selecciona <strong>"Sin restricciones"</strong></li>
+                </ul>
+                
+                <p><strong>Método 2 (Alternativo):</strong></p>
+                <ul class="instruction-list">
+                    <li>Ve a <strong>Configuración → Batería y cuidado del dispositivo</strong></li>
+                    <li>Toca <strong>Batería</strong></li>
+                    <li>Toca el menú <strong>⋮</strong> → <strong>Ajustes</strong></li>
+                    <li>Busca <strong>"Aplicaciones no monitoreadas"</strong></li>
+                    <li>Toca el <strong>+</strong> (más) y agrega <strong>Amaia</strong></li>
+                </ul>
+                
+                <div class="success-box">
+                    <h4>✅ Verificación exitosa:</h4>
+                    <p>En <strong>Configuración → Aplicaciones → Amaia → Batería</strong> debe decir: <strong>"Sin restricciones"</strong></p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Paso 6 -->
+        <div class="step">
+            <div class="step-header">
+                <div class="step-number">6</div>
+                <div class="step-title">Verificar Notificaciones</div>
+            </div>
+            <div class="step-content">
+                <p><strong>¿Por qué?</strong> Para que el usuario reciba confirmación visual cuando se envía el SMS de emergencia.</p>
+                
+                <ul class="instruction-list">
+                    <li>Ve a <strong>Configuración → Aplicaciones → Amaia</strong></li>
+                    <li>Toca <strong>Notificaciones</strong></li>
+                    <li>Verifica que <strong>"Mostrar notificaciones"</strong> esté <strong>ACTIVADO</strong> ✅</li>
+                    <li>Busca el canal <strong>"MK Button Emergencias"</strong> o <strong>"MK Button Service"</strong></li>
+                    <li>Toca sobre el canal</li>
+                    <li>Verifica que esté configurado como <strong>"Alertas"</strong> o <strong>"Hacer sonido y mostrar"</strong></li>
+                    <li><strong>NO debe estar en "Silencio"</strong></li>
+                </ul>
+            </div>
+        </div>
+        
+        <!-- Página 4: Configuración del botón y pruebas -->
+        <div class="page-break"></div>
+        
+        <!-- Paso 7 -->
+        <div class="step">
+            <div class="step-header">
+                <div class="step-number">7</div>
+                <div class="step-title">Configurar Botón BLE en la App</div>
+            </div>
+            <div class="step-content">
+                <p>Ahora configura el botón MK Button dentro de la app Amaia:</p>
+                
+                <ul class="instruction-list">
+                    <li>Abre la app <strong>Amaia</strong></li>
+                    <li>Ve a la sección de <strong>configuración del botón BLE</strong></li>
+                    <li>Enciende el <strong>botón MK Button físico</strong> (presiona 3 segundos)</li>
+                    <li>Toca <strong>"Buscar dispositivos"</strong> o <strong>"Conectar"</strong></li>
+                    <li>Selecciona el botón de la lista (debe aparecer como "MK Button" o similar)</li>
+                    <li>Ingresa la <strong>contraseña</strong> si se solicita (por defecto: <strong>Moko4321</strong>)</li>
+                    <li>Configura el <strong>número de emergencia</strong> (+56994633411 o el número asignado)</li>
+                    <li>Selecciona el <strong>tipo de clic</strong> (simple, doble o largo)</li>
+                    <li>Selecciona la <strong>acción</strong>: <strong>"Enviar SMS y llamar"</strong></li>
+                </ul>
+                
+                <div class="success-box">
+                    <h4>✅ Conexión exitosa:</h4>
+                    <p>Debe aparecer una notificación permanente que diga: <strong>"MK Button Activo - Conectado"</strong></p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Paso 8 -->
+        <div class="step">
+            <div class="step-header">
+                <div class="step-number">8</div>
+                <div class="step-title">Probar el Botón de Emergencia</div>
+            </div>
+            <div class="step-content">
+                <p><strong>Prueba 1: Con app abierta</strong></p>
+                <ul class="instruction-list">
+                    <li>Con la app abierta, presiona el botón físico BLE</li>
+                    <li>Verifica que:
+                        <ul style="margin-left: 30px; margin-top: 10px;">
+                            <li>✅ El teléfono vibra (3 pulsos)</li>
+                            <li>✅ Se envía un SMS al número configurado</li>
+                            <li>✅ Se inicia una llamada automática</li>
+                        </ul>
+                    </li>
+                </ul>
+                
+                <div class="warning-box">
+                    <h4>⚠️ IMPORTANTE: Prueba crítica</h4>
+                    <p><strong>Prueba 2: Con app cerrada (LA MÁS IMPORTANTE)</strong></p>
+                </div>
+                
+                <ul class="instruction-list">
+                    <li>Cierra <strong>completamente</strong> la app Amaia:
+                        <ul style="margin-left: 30px; margin-top: 10px;">
+                            <li>Desliza desde abajo (botón de apps recientes)</li>
+                            <li>Desliza Amaia hacia arriba para cerrarla</li>
+                        </ul>
+                    </li>
+                    <li>Verifica que la notificación <strong>"MK Button Activo"</strong> siga visible</li>
+                    <li><strong>Presiona el botón físico BLE</strong></li>
+                    <li>Verifica que:
+                        <ul style="margin-left: 30px; margin-top: 10px;">
+                            <li>✅ El teléfono vibra inmediatamente (3 pulsos)</li>
+                            <li>✅ Se envía SMS con ubicación GPS al número configurado</li>
+                            <li>✅ <strong>Se inicia llamada automática</strong> ⭐ (crítico en Samsung)</li>
+                        </ul>
+                    </li>
+                </ul>
+                
+                <div class="success-box">
+                    <h4>✅ Prueba exitosa:</h4>
+                    <p>Si todas las acciones funcionan con la app cerrada, el botón está configurado correctamente.</p>
+                </div>
+                
+                <div class="warning-box">
+                    <h4>❌ Si la llamada NO se inicia con app cerrada:</h4>
+                    <p><strong>Verifica:</strong></p>
+                    <ul class="instruction-list">
+                        <li>Paso 4: Permiso "Mostrar sobre otras apps" debe estar activado</li>
+                        <li>Paso 1: Dispositivo Samsung debe tener One UI 8.0 o superior</li>
+                        <li>Reinicia la app y vuelve a probar</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Página 5: Checklist final y soporte -->
+        <div class="page-break"></div>
+        
+        <!-- Checklist final -->
+        <div class="checklist">
+            <h3>✅ Checklist de Configuración Completa</h3>
+            <p style="margin-bottom: 20px; color: #0c4a6e;">Marca cada item al completarlo:</p>
+            
+            <div class="checklist-item">
+                <div class="checkbox"></div>
+                <div>Verificar versión One UI 8.0 o superior (solo Samsung)</div>
+            </div>
+            
+            <div class="checklist-item">
+                <div class="checkbox"></div>
+                <div>Instalar app Amaia desde APK</div>
+            </div>
+            
+            <div class="checklist-item">
+                <div class="checkbox"></div>
+                <div>Otorgar permiso de Ubicación (Permitir siempre)</div>
+            </div>
+            
+            <div class="checklist-item">
+                <div class="checkbox"></div>
+                <div>Otorgar permiso de SMS</div>
+            </div>
+            
+            <div class="checklist-item">
+                <div class="checkbox"></div>
+                <div>Otorgar permiso de Llamadas</div>
+            </div>
+            
+            <div class="checklist-item">
+                <div class="checkbox"></div>
+                <div>Otorgar permiso de Notificaciones</div>
+            </div>
+            
+            <div class="checklist-item">
+                <div class="checkbox"></div>
+                <div>Otorgar permiso de Bluetooth</div>
+            </div>
+            
+            <div class="checklist-item">
+                <div class="checkbox"></div>
+                <div><strong>Activar "Mostrar sobre otras apps" (CRÍTICO)</strong></div>
+            </div>
+            
+            <div class="checklist-item">
+                <div class="checkbox"></div>
+                <div>Configurar "Sin restricciones" en Batería</div>
+            </div>
+            
+            <div class="checklist-item">
+                <div class="checkbox"></div>
+                <div>Verificar canales de notificación activados</div>
+            </div>
+            
+            <div class="checklist-item">
+                <div class="checkbox"></div>
+                <div>Conectar botón MK Button en la app</div>
+            </div>
+            
+            <div class="checklist-item">
+                <div class="checkbox"></div>
+                <div>Configurar número de emergencia</div>
+            </div>
+            
+            <div class="checklist-item">
+                <div class="checkbox"></div>
+                <div>Probar botón con app abierta (SMS + Llamada + Vibración)</div>
+            </div>
+            
+            <div class="checklist-item">
+                <div class="checkbox"></div>
+                <div><strong>Probar botón con app CERRADA (SMS + Llamada + Vibración)</strong></div>
+            </div>
+        </div>
+        
+        <!-- Solución de problemas -->
+        <h2 style="color: #dc2626; margin: 40px 0 30px 0; font-size: 28px;">🔧 Solución de Problemas Comunes</h2>
+        
+        <div class="step" style="border-left-color: #ef4444;">
+            <h3 style="color: #dc2626; margin-bottom: 15px;">Problema 1: La llamada NO se inicia con app cerrada</h3>
+            <p><strong>Síntomas:</strong> El SMS sí se envía, vibra correctamente, pero NO se abre el marcador telefónico.</p>
+            <p><strong>Solución:</strong></p>
+            <ul class="instruction-list">
+                <li>Verifica que el permiso <strong>"Mostrar sobre otras apps"</strong> esté activado (Paso 4)</li>
+                <li>Verifica que el dispositivo Samsung tenga <strong>One UI 8.0</strong> o superior (Paso 1)</li>
+                <li>Reinicia completamente la app y vuelve a conectar el botón</li>
+                <li>Si el problema persiste, reinicia el dispositivo</li>
+            </ul>
+        </div>
+        
+        <div class="step" style="border-left-color: #ef4444;">
+            <h3 style="color: #dc2626; margin-bottom: 15px;">Problema 2: El botón deja de funcionar después de horas</h3>
+            <p><strong>Síntomas:</strong> El botón funciona al principio, pero después de horas deja de responder.</p>
+            <p><strong>Solución:</strong></p>
+            <ul class="instruction-list">
+                <li>Verifica que la batería esté configurada como <strong>"Sin restricciones"</strong> (Paso 5)</li>
+                <li>Ve a <strong>Configuración → Batería → Aplicaciones no utilizadas</strong></li>
+                <li>Asegúrate de que Amaia <strong>NO esté en la lista</strong> de apps pausadas</li>
+                <li>Si está pausada, elimínala de esa lista</li>
+            </ul>
+        </div>
+        
+        <div class="step" style="border-left-color: #ef4444;">
+            <h3 style="color: #dc2626; margin-bottom: 15px;">Problema 3: No aparece la opción "Mostrar sobre otras apps"</h3>
+            <p><strong>Síntomas:</strong> No encuentras esta opción en el menú de Amaia.</p>
+            <p><strong>Solución:</strong></p>
+            <ul class="instruction-list">
+                <li>Verifica que el dispositivo tenga <strong>One UI 8.0</strong> (Paso 1)</li>
+                <li>Si tiene versión anterior, <strong>actualiza el sistema</strong></li>
+                <li>Reinicia el dispositivo después de actualizar</li>
+                <li>Intenta nuevamente acceder al permiso</li>
+            </ul>
+        </div>
+        
+        <!-- Soporte -->
+        <div class="support-box">
+            <h3>🆘 ¿Necesitas Ayuda?</h3>
+            <p>Si después de seguir todos los pasos el botón NO funciona correctamente:</p>
+            <p style="margin-top: 15px;"><strong>Contacta a soporte técnico de Mistatas con:</strong></p>
+            <ul class="instruction-list" style="text-align: left; max-width: 600px; margin: 15px auto 0;">
+                <li>Captura de pantalla de: Configuración → Aplicaciones → Amaia → Permisos</li>
+                <li>Captura de pantalla de: Configuración → Aplicaciones → Amaia → Batería</li>
+                <li>Marca y modelo del dispositivo</li>
+                <li>Versión de Android y One UI (si es Samsung)</li>
+            </ul>
+        </div>
+        
+        <!-- Footer -->
+        <div class="footer">
+            <p><strong>Guía de Configuración - Amaia App</strong></p>
+            <p>Documento para personal de Mistatas</p>
+            <p>Versión 1.0 | Última actualización: 12 de marzo de 2026</p>
+            <p style="margin-top: 20px; color: #10b981; font-weight: 600;">
+                Solución confirmada y probada en Samsung A06 (Android 15 / One UI 8.0) ✅
+            </p>
+        </div>
+    </div>
+</body>
+</html>

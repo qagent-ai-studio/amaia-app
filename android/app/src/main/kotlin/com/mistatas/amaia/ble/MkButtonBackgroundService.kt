@@ -426,11 +426,16 @@ class MkButtonBackgroundService : Service() {
     }
     
     private fun showSMSSentNotification(location: Location?) {
+        android.util.Log.d("MkButtonBgService", "===== showSMSSentNotification called =====")
+        
         val locationInfo = if (location != null) {
             "📍 Ubicación: Lat ${location.latitude}, Lon ${location.longitude}"
         } else {
             "⚠️ Sin ubicación GPS disponible"
         }
+        
+        android.util.Log.d("MkButtonBgService", "Location info: $locationInfo")
+        android.util.Log.d("MkButtonBgService", "Emergency phone: $emergencyPhone")
         
         // Intent para abrir la app al tocar la notificación
         val launchIntent = packageManager.getLaunchIntentForPackage(packageName)?.apply {
@@ -447,6 +452,8 @@ class MkButtonBackgroundService : Service() {
         
         // Sonido de notificación de emergencia
         val alarmSound = android.provider.Settings.System.DEFAULT_NOTIFICATION_URI
+        
+        android.util.Log.d("MkButtonBgService", "Building notification with channel: $ALERT_CHANNEL_ID")
         
         // ACTUALIZAR la notificación del servicio foreground con la información del SMS
         val notification = NotificationCompat.Builder(this, ALERT_CHANNEL_ID)
@@ -468,12 +475,29 @@ class MkButtonBackgroundService : Service() {
             .setContentIntent(pendingIntent)
             .build()
         
+        android.util.Log.d("MkButtonBgService", "Notification built successfully")
+        
         val notificationManager = getSystemService(NotificationManager::class.java)
+        
+        // Verificar si el canal está habilitado
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val channel = notificationManager.getNotificationChannel(ALERT_CHANNEL_ID)
+            android.util.Log.d("MkButtonBgService", "Alert channel exists: ${channel != null}")
+            android.util.Log.d("MkButtonBgService", "Alert channel importance: ${channel?.importance}")
+            
+            if (channel == null) {
+                android.util.Log.e("MkButtonBgService", "ALERT_CHANNEL_ID not found! Creating it now...")
+                createAlertNotificationChannel()
+            }
+        }
+        
         // Usar NOTIFICATION_ID (1001) del servicio foreground en lugar de crear una nueva (3001)
         notificationManager.notify(NOTIFICATION_ID, notification)
+        android.util.Log.d("MkButtonBgService", "Notification posted with ID: $NOTIFICATION_ID")
         
         // Después de 10 segundos, restaurar la notificación normal del servicio
         android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
+            android.util.Log.d("MkButtonBgService", "Restoring normal notification after 10 seconds")
             updateNotification("Conectado - Esperando eventos")
         }, 10000)
     }
@@ -596,6 +620,8 @@ class MkButtonBackgroundService : Service() {
     
     private fun createAlertNotificationChannel() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            android.util.Log.d("MkButtonBgService", "Creating ALERT notification channel: $ALERT_CHANNEL_ID")
+            
             val alarmSound = android.provider.Settings.System.DEFAULT_ALARM_ALERT_URI
             val audioAttributes = android.media.AudioAttributes.Builder()
                 .setContentType(android.media.AudioAttributes.CONTENT_TYPE_SONIFICATION)
@@ -620,6 +646,8 @@ class MkButtonBackgroundService : Service() {
             
             val notificationManager = getSystemService(NotificationManager::class.java)
             notificationManager.createNotificationChannel(channel)
+            
+            android.util.Log.d("MkButtonBgService", "ALERT channel created with importance: ${channel.importance}")
         }
     }
 
