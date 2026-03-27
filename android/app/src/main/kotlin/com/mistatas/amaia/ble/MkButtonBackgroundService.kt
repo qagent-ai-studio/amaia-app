@@ -24,26 +24,34 @@ import org.greenrobot.eventbus.EventBus
 import org.greenrobot.eventbus.Subscribe
 import org.greenrobot.eventbus.ThreadMode
 
-/**
- * Servicio en foreground que mantiene la conexión BLE activa en segundo plano
- * para poder abrir la app cuando se presione el botón MK Button
- */
 class MkButtonBackgroundService : Service() {
 
     companion object {
         private const val CHANNEL_ID = "mk_button_service"
-        private const val ALERT_CHANNEL_ID = "mk_button_alerts" // Canal separado para alertas
+        private const val ALERT_CHANNEL_ID = "mk_button_alerts"
         private const val NOTIFICATION_ID = 1001
         const val ACTION_START_SERVICE = "com.mistatas.amaia.START_BLE_SERVICE"
         const val ACTION_STOP_SERVICE = "com.mistatas.amaia.STOP_BLE_SERVICE"
+        const val ACTION_REMOVE_DEVICE = "com.mistatas.amaia.REMOVE_BLE_DEVICE"
+        const val ACTION_EXECUTE_EMERGENCY = "com.mistatas.amaia.EXECUTE_EMERGENCY"
         const val EXTRA_MAC = "mac"
         const val EXTRA_PASSWORD = "password"
         const val EXTRA_CLICK_TYPE = "clickType"
-        const val EXTRA_BUTTON_ACTION = "buttonAction" // 'open_app', 'call', 'sms'
+        const val EXTRA_BUTTON_ACTION = "buttonAction"
         const val EXTRA_EMERGENCY_PHONE = "emergencyPhone"
+        const val EXTRA_DEVICE_TYPE = "deviceType"
+        const val EXTRA_DEVICE_NAME = "deviceName"
 
-        fun startService(context: Context, mac: String, password: String, clickType: String, 
-                        buttonAction: String = "open_app", emergencyPhone: String? = null) {
+        fun startService(
+            context: Context,
+            mac: String,
+            password: String,
+            clickType: String,
+            buttonAction: String = "open_app",
+            emergencyPhone: String? = null,
+            deviceType: String = "button",
+            deviceName: String = "Dispositivo MK"
+        ) {
             val intent = Intent(context, MkButtonBackgroundService::class.java).apply {
                 action = ACTION_START_SERVICE
                 putExtra(EXTRA_MAC, mac)
@@ -51,6 +59,8 @@ class MkButtonBackgroundService : Service() {
                 putExtra(EXTRA_CLICK_TYPE, clickType)
                 putExtra(EXTRA_BUTTON_ACTION, buttonAction)
                 putExtra(EXTRA_EMERGENCY_PHONE, emergencyPhone)
+                putExtra(EXTRA_DEVICE_TYPE, deviceType)
+                putExtra(EXTRA_DEVICE_NAME, deviceName)
             }
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                 context.startForegroundService(intent)
@@ -65,48 +75,133 @@ class MkButtonBackgroundService : Service() {
             }
             context.stopService(intent)
         }
+
+        fun removeDevice(context: Context, mac: String) {
+            val intent = Intent(context, MkButtonBackgroundService::class.java).apply {
+                action = ACTION_REMOVE_DEVICE
+                putExtra(EXTRA_MAC, mac)
+            }
+            context.startService(intent)
+        }
+
+        fun executeEmergencyAction(
+            context: Context,
+            mac: String,
+            buttonAction: String,
+            emergencyPhone: String?,
+            deviceName: String
+        ) {
+            val intent = Intent(context, MkButtonBackgroundService::class.java).apply {
+                action = ACTION_EXECUTE_EMERGENCY
+                putExtra(EXTRA_MAC, mac)
+                putExtra(EXTRA_BUTTON_ACTION, buttonAction)
+                putExtra(EXTRA_EMERGENCY_PHONE, emergencyPhone)
+                putExtra(EXTRA_DEVICE_NAME, deviceName)
+            }
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                context.startForegroundService(intent)
+            } else {
+                context.startService(intent)
+            }
+        }
     }
 
-    private var deviceMac: String? = null
-    private var devicePassword: String? = null
-    private var clickTypeToOpen: String = "single" // 'single', 'double', 'disabled'
-    private var buttonAction: String = "open_app" // 'open_app', 'call', 'sms'
-    private var emergencyPhone: String? = null
-    private var isConnected = false
+    private data class DeviceConfig(
+        val mac: String,
+        val password: String,
+        val clickTypeToOpen: String,
+        val buttonAction: String,
+        val emergencyPhone: String?,
+        val deviceName: String
+    )
+
+    private data class DeviceState(
+        val config: DeviceConfig,
+        val support: DMokoSupport,
+        var isConnected: Boolean = false,
+        var isInitialized: Boolean = false,
+        var reconnectAttempts: Int = 0
+    )
+
+    private val deviceStates = mutableMapOf<String, DeviceState>()
 
     override fun onCreate() {
         super.onCreate()
         createNotificationChannel()
-        createAlertNotificationChannel() // Canal para alertas heads-up
+        createAlertNotificationChannel()
         EventBus.getDefault().register(this)
-        createNotificationChannel()
+        android.util.Log.d("MkButtonBgService", "Service created")
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         android.util.Log.d("MkButtonBgService", "onStartCommand: action=${intent?.action}")
-        
+
         when (intent?.action) {
             ACTION_START_SERVICE -> {
-                deviceMac = intent.getStringExtra(EXTRA_MAC)
-                devicePassword = intent.getStringExtra(EXTRA_PASSWORD) ?: "Moko4321"
-                clickTypeToOpen = intent.getStringExtra(EXTRA_CLICK_TYPE) ?: "single"
-                buttonAction = intent.getStringExtra(EXTRA_BUTTON_ACTION) ?: "open_app"
-                emergencyPhone = intent.getStringExtra(EXTRA_EMERGENCY_PHONE)
-
-                android.util.Log.d("MkButtonBgService", "Starting service: mac=$deviceMac, clickType=$clickTypeToOpen")
-                
-                startForeground(NOTIFICATION_ID, createNotification("Conectando..."))
-
-                deviceMac?.let { mac ->
-                    connectToDevice(mac, devicePassword!!)
-                } ?: run {
+                val mac = intent.getStringExtra(EXTRA_MAC) ?: run {
                     android.util.Log.e("MkButtonBgService", "No MAC address provided")
-                    stopSelf()
+                    if (deviceStates.isEmpty()) stopSelf()
+                    return START_STICKY
                 }
+
+                if (deviceStates.isEmpty()) {
+                    startForeground(NOTIFICATION_ID, createNotification("Conectando..."))
+                }
+
+                if (deviceStates.containsKey(mac)) {
+                    android.util.Log.d("MkButtonBgService", "Device already tracked: $mac")
+                    return START_STICKY
+                }
+
+                val config = DeviceConfig(
+                    mac = mac,
+                    password = intent.getStringExtra(EXTRA_PASSWORD) ?: "Moko4321",
+                    clickTypeToOpen = intent.getStringExtra(EXTRA_CLICK_TYPE) ?: "single",
+                    buttonAction = intent.getStringExtra(EXTRA_BUTTON_ACTION) ?: "open_app",
+                    emergencyPhone = intent.getStringExtra(EXTRA_EMERGENCY_PHONE),
+                    deviceName = intent.getStringExtra(EXTRA_DEVICE_NAME) ?: "Dispositivo MK"
+                )
+
+                val support = DMokoSupport(applicationContext, mac)
+                support.setPassword(config.password)
+                deviceStates[mac] = DeviceState(config = config, support = support)
+                support.connDevice(mac)
+
+                android.util.Log.d("MkButtonBgService", "Device added: $mac (${config.deviceName}). Total: ${deviceStates.size}")
             }
             ACTION_STOP_SERVICE -> {
                 android.util.Log.d("MkButtonBgService", "Stopping service")
                 disconnectAndStop()
+            }
+            ACTION_REMOVE_DEVICE -> {
+                val mac = intent.getStringExtra(EXTRA_MAC) ?: return START_STICKY
+                android.util.Log.d("MkButtonBgService", "Removing device: $mac")
+                deviceStates.remove(mac)?.support?.disConnectBle()
+                android.util.Log.d("MkButtonBgService", "Device removed. Remaining: ${deviceStates.size}")
+                if (deviceStates.isEmpty()) disconnectAndStop()
+            }
+            ACTION_EXECUTE_EMERGENCY -> {
+                val mac = intent.getStringExtra(EXTRA_MAC) ?: return START_STICKY
+                val buttonAction = intent.getStringExtra(EXTRA_BUTTON_ACTION) ?: return START_STICKY
+                val emergencyPhone = intent.getStringExtra(EXTRA_EMERGENCY_PHONE)
+                val deviceName = intent.getStringExtra(EXTRA_DEVICE_NAME) ?: "Dispositivo"
+                if (deviceStates.isEmpty()) {
+                    startForeground(NOTIFICATION_ID, createNotification("Activo"))
+                }
+                val config = DeviceConfig(
+                    mac = mac,
+                    password = "",
+                    clickTypeToOpen = "single",
+                    buttonAction = buttonAction,
+                    emergencyPhone = emergencyPhone,
+                    deviceName = deviceName
+                )
+                executeButtonAction(config)
+            }
+            else -> {
+                if (deviceStates.isEmpty()) {
+                    startForeground(NOTIFICATION_ID, createNotification("Activo"))
+                }
             }
         }
         return START_STICKY
@@ -117,19 +212,14 @@ class MkButtonBackgroundService : Service() {
     override fun onDestroy() {
         super.onDestroy()
         EventBus.getDefault().unregister(this)
-        DMokoSupport.getInstance().disConnectBle()
-    }
-
-    private fun connectToDevice(mac: String, password: String) {
-        android.util.Log.d("MkButtonBgService", "Connecting to device: $mac")
-        
-        // Configurar password antes de conectar
-        DMokoSupport.getInstance().setPassword(password)
-        DMokoSupport.getInstance().connDevice(mac)
+        deviceStates.values.forEach { it.support.disConnectBle() }
+        deviceStates.clear()
+        android.util.Log.d("MkButtonBgService", "Service destroyed")
     }
 
     private fun disconnectAndStop() {
-        DMokoSupport.getInstance().disConnectBle()
+        deviceStates.values.forEach { it.support.disConnectBle() }
+        deviceStates.clear()
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
             stopForeground(STOP_FOREGROUND_REMOVE)
         } else {
@@ -141,459 +231,287 @@ class MkButtonBackgroundService : Service() {
 
     @Subscribe(threadMode = ThreadMode.MAIN)
     fun onConnectStatusEvent(event: ConnectStatusEvent) {
+        val mac = event.macAddress ?: return
+        val state = deviceStates[mac] ?: return
+
         when (event.action) {
             MokoConstants.ACTION_DISCOVER_SUCCESS -> {
-                isConnected = true
-                android.util.Log.d("MkButtonBgService", "Device connected in background")
-                updateNotification("Conectado - Esperando eventos")
+                state.isConnected = true
+                state.reconnectAttempts = 0
+                android.util.Log.d("MkButtonBgService", "Connected: ${state.config.deviceName} ($mac)")
+
+                val handler = android.os.Handler(android.os.Looper.getMainLooper())
+                handler.postDelayed({
+                    if (!deviceStates.containsKey(mac)) return@postDelayed
+                    state.support.enableClickEventNotify()
+                    state.support.enableSingleTriggerNotify()
+                    state.support.enableDoubleTriggerNotify()
+                    state.support.enableLongTriggerNotify()
+                    android.util.Log.d("MkButtonBgService", "Notifications enabled: ${state.config.deviceName}")
+
+                    handler.postDelayed({
+                        if (!deviceStates.containsKey(mac)) return@postDelayed
+                        state.isInitialized = true
+                        android.util.Log.d("MkButtonBgService", "Device ready: ${state.config.deviceName}")
+                        handler.postDelayed({
+                            if (deviceStates.containsKey(mac) && state.isConnected) {
+                                state.support.startKeepAlive()
+                            }
+                        }, 15000)
+                    }, 500)
+                }, 3000)
+
+                val connectedCount = deviceStates.count { it.value.isConnected }
+                updateNotification("$connectedCount dispositivo(s) conectado(s)")
             }
             MokoConstants.ACTION_DISCONNECTED -> {
-                isConnected = false
-                android.util.Log.d("MkButtonBgService", "Device disconnected, reconnecting...")
-                updateNotification("Desconectado - Reconectando...")
-                
-                // Intentar reconectar después de 5 segundos
-                android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
-                    deviceMac?.let { mac ->
-                        devicePassword?.let { password ->
-                            connectToDevice(mac, password)
+                state.isConnected = false
+                state.isInitialized = false
+                android.util.Log.d("MkButtonBgService", "Disconnected: ${state.config.deviceName} ($mac)")
+
+                val connectedCount = deviceStates.count { it.value.isConnected }
+                updateNotification(if (connectedCount > 0) "$connectedCount dispositivo(s) conectado(s)" else "Reconectando...")
+
+                if (state.reconnectAttempts < 10) {
+                    state.reconnectAttempts++
+                    val delay = minOf(5000L * (1L shl (state.reconnectAttempts - 1)), 300_000L)
+                    android.util.Log.d("MkButtonBgService", "Reconnecting ${state.config.deviceName} in ${delay}ms (attempt ${state.reconnectAttempts})")
+                    android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
+                        if (deviceStates.containsKey(mac) && !state.isConnected) {
+                            state.support.connDevice(mac)
                         }
-                    }
-                }, 5000)
+                    }, delay)
+                } else {
+                    android.util.Log.w("MkButtonBgService", "Max reconnect attempts for ${state.config.deviceName}")
+                }
             }
         }
     }
 
     @Subscribe(threadMode = ThreadMode.MAIN)
     fun onOrderTaskResponseEvent(event: OrderTaskResponseEvent) {
-        if (event.action == MokoConstants.ACTION_CURRENT_DATA) {
-            val response = event.response ?: return
-            
-            // Verificar si es un evento de click
-            if (response.orderCHAR == OrderCHAR.CHAR_CLICK_EVENT) {
-                val value = response.responseValue ?: return
-                
-                // Parsear tipo de click: EB 02 06 01 XX
-                if (value.size >= 5) {
-                    val clickType = when (value[4].toInt() and 0xFF) {
-                        0x01 -> "single"
-                        0x02 -> "double"
-                        0x03 -> "long"
-                        else -> "single"
-                    }
-                    
-                    android.util.Log.d("MkButtonBgService", "Click received: $clickType, configured: $clickTypeToOpen")
-                    
-                    // Verificar si este tipo de click debe ejecutar la acción
-                    if (clickType == clickTypeToOpen && clickTypeToOpen != "disabled") {
-                        executeButtonAction()
-                    }
-                }
-            }
+        if (event.action != MokoConstants.ACTION_CURRENT_DATA) return
+        val mac = event.macAddress ?: return
+        val state = deviceStates[mac] ?: return
+        val response = event.response ?: return
+
+        if (response.orderCHAR != OrderCHAR.CHAR_CLICK_EVENT) return
+
+        val value = response.responseValue ?: return
+        if (value.size < 5) return
+
+        val clickType = when (value[4].toInt() and 0xFF) {
+            0x01 -> "single"
+            0x02 -> "double"
+            0x03 -> "long"
+            else -> "single"
+        }
+
+        if (!state.isInitialized) {
+            android.util.Log.w("MkButtonBgService", "Ignoring click from ${state.config.deviceName} - not initialized yet")
+            return
+        }
+
+        android.util.Log.d("MkButtonBgService", "Click from ${state.config.deviceName} ($mac): $clickType")
+
+        if (clickType == state.config.clickTypeToOpen && state.config.clickTypeToOpen != "disabled") {
+            executeButtonAction(state.config)
         }
     }
 
-    private fun executeButtonAction() {
-        android.util.Log.d("MkButtonBgService", "Executing button action: $buttonAction")
-        
-        when (buttonAction) {
-            "call" -> attemptAutomaticCall()
-            "sms" -> sendEmergencySMS()
+    private fun executeButtonAction(config: DeviceConfig) {
+        android.util.Log.d("MkButtonBgService", "Executing ${config.buttonAction} for ${config.deviceName}")
+        when (config.buttonAction) {
+            "call" -> attemptImmediateCall(config)
+            "sms" -> sendEmergencySMS(config)
             "sms_and_call" -> {
-                // Ejecutar AMBAS acciones: primero SMS geolocalizado, luego intento de llamada
-                sendEmergencySMS()
-                
-                // Intentar hacer llamada automática (funciona en Huawei, falla silenciosamente en Samsung)
+                attemptImmediateCall(config)
                 android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
-                    attemptAutomaticCall()
-                }, 500) // Delay corto para que el SMS se envíe primero
+                    sendEmergencySMS(config)
+                }, 500)
             }
-            else -> openApp() // 'open_app' por defecto
+            else -> openApp()
         }
     }
-    
-    private fun attemptAutomaticCall() {
-        if (emergencyPhone.isNullOrEmpty()) return
-        
-        android.util.Log.d("MkButtonBgService", "Attempting automatic emergency call to: $emergencyPhone")
-        
+
+    private fun attemptImmediateCall(config: DeviceConfig) {
+        if (config.emergencyPhone.isNullOrEmpty()) return
+        android.util.Log.d("MkButtonBgService", "Calling ${config.emergencyPhone} for ${config.deviceName}")
         try {
-            // INTENTO 1: Llamada directa (funciona en Huawei Android 9, falla en Samsung Android 15)
             val callIntent = Intent(Intent.ACTION_CALL).apply {
-                data = android.net.Uri.parse("tel:$emergencyPhone")
+                data = android.net.Uri.parse("tel:${config.emergencyPhone}")
                 flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
             }
-            
             startActivity(callIntent)
-            android.util.Log.d("MkButtonBgService", "Automatic call initiated successfully (Huawei-compatible)")
-            
         } catch (e: Exception) {
-            // Si falla (Samsung Android 15), no hacer nada - solo enviar SMS es suficiente
-            android.util.Log.i("MkButtonBgService", "Automatic call blocked by system (Samsung-like restrictions). SMS already sent, emergency contact notified.")
+            android.util.Log.i("MkButtonBgService", "Call blocked by system: ${e.message}")
         }
     }
-    
-    private fun sendEmergencySMS() {
-        if (emergencyPhone.isNullOrEmpty()) {
-            android.util.Log.w("MkButtonBgService", "No emergency phone configured")
+
+    private fun sendEmergencySMS(config: DeviceConfig) {
+        if (config.emergencyPhone.isNullOrEmpty()) {
+            android.util.Log.w("MkButtonBgService", "No emergency phone for ${config.deviceName}")
             return
         }
-        
-        android.util.Log.d("MkButtonBgService", "Sending emergency SMS to: $emergencyPhone")
-        
+        android.util.Log.d("MkButtonBgService", "Sending SMS for ${config.deviceName} to ${config.emergencyPhone}")
         try {
-            // Intentar primero obtener ubicación de SharedPreferences (guardada por Flutter)
-            var location = getLocationFromSharedPreferences()
-            
-            // Si no hay ubicación guardada, intentar obtener del sistema
-            if (location == null) {
-                android.util.Log.d("MkButtonBgService", "No location in SharedPreferences, trying system location")
-                location = getCurrentLocation()
-            } else {
-                android.util.Log.d("MkButtonBgService", "Using location from SharedPreferences")
-            }
-            
-            // Construir mensaje con coordenadas GPS
+            val location = getLocationFromSharedPreferences() ?: getCurrentLocation()
             val message = if (location != null) {
-                "🚨 ALERTA: Botón de emergencia presionado\n" +
+                "🚨 ALERTA: ${config.deviceName} presionado\n" +
                 "Lat: ${location.latitude}\n" +
                 "Lon: ${location.longitude}"
             } else {
-                "🚨 ALERTA: Botón de emergencia presionado\n" +
-                "(Ubicación no disponible)"
+                "🚨 ALERTA: ${config.deviceName} presionado\n(Ubicación no disponible)"
             }
-            
-            // Enviar SMS directamente usando SmsManager (SILENT, sin abrir la app de SMS)
+
             val smsManager = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
                 getSystemService(SmsManager::class.java)
             } else {
                 @Suppress("DEPRECATION")
                 SmsManager.getDefault()
             }
-            
-            // Si el mensaje es largo, dividirlo en partes
             val parts = smsManager.divideMessage(message)
-            
             if (parts.size == 1) {
-                smsManager.sendTextMessage(emergencyPhone, null, message, null, null)
+                smsManager.sendTextMessage(config.emergencyPhone, null, message, null, null)
             } else {
-                smsManager.sendMultipartTextMessage(emergencyPhone, null, parts, null, null)
+                smsManager.sendMultipartTextMessage(config.emergencyPhone, null, parts, null, null)
             }
-            
-            android.util.Log.d("MkButtonBgService", "Emergency SMS sent successfully with location: ${location?.latitude}, ${location?.longitude}")
-            
-            // VIBRAR INMEDIATAMENTE al enviar el SMS
+            android.util.Log.d("MkButtonBgService", "SMS sent for ${config.deviceName}")
             triggerImmediateVibration()
-            
-            // Mostrar notificación de confirmación con sonido
-            showSMSSentNotification(location)
-            
+            showSMSSentNotification(config, location)
         } catch (e: Exception) {
-            android.util.Log.e("MkButtonBgService", "Failed to send emergency SMS", e)
-            showSMSErrorNotification(e.message ?: "Error desconocido")
+            android.util.Log.e("MkButtonBgService", "SMS failed for ${config.deviceName}", e)
+            showSMSErrorNotification(config, e.message ?: "Error desconocido")
         }
     }
-    
+
     private fun getLocationFromSharedPreferences(): Location? {
-        try {
-            val sharedPreferences = getSharedPreferences("FlutterSharedPreferences", Context.MODE_PRIVATE)
-            val geoString = sharedPreferences.getString("flutter.geo", null)
-            
-            if (geoString.isNullOrEmpty()) {
-                android.util.Log.d("MkButtonBgService", "No geo data in SharedPreferences")
-                return null
-            }
-            
-            // El formato guardado es "latitude, longitude" (con espacio después de la coma)
+        return try {
+            val prefs = getSharedPreferences("FlutterSharedPreferences", Context.MODE_PRIVATE)
+            val geoString = prefs.getString("flutter.geo", null) ?: return null
             val parts = geoString.split(",").map { it.trim() }
-            if (parts.size != 2) {
-                android.util.Log.w("MkButtonBgService", "Invalid geo format in SharedPreferences: $geoString")
-                return null
-            }
-            
-            val latitude = parts[0].toDoubleOrNull()
-            val longitude = parts[1].toDoubleOrNull()
-            
-            if (latitude == null || longitude == null) {
-                android.util.Log.w("MkButtonBgService", "Could not parse coordinates: $geoString")
-                return null
-            }
-            
-            // Crear un objeto Location con las coordenadas de SharedPreferences
-            val location = Location("SharedPreferences").apply {
-                this.latitude = latitude
-                this.longitude = longitude
+            if (parts.size != 2) return null
+            val lat = parts[0].toDoubleOrNull() ?: return null
+            val lon = parts[1].toDoubleOrNull() ?: return null
+            Location("SharedPreferences").apply {
+                latitude = lat
+                longitude = lon
                 time = System.currentTimeMillis()
             }
-            
-            android.util.Log.d("MkButtonBgService", "Location from SharedPreferences: lat=$latitude, lon=$longitude")
-            return location
-            
-        } catch (e: Exception) {
-            android.util.Log.e("MkButtonBgService", "Error reading location from SharedPreferences", e)
-            return null
-        }
+        } catch (e: Exception) { null }
     }
-    
+
     private fun getCurrentLocation(): Location? {
-        try {
-            // Verificar permisos de ubicación
+        return try {
             if (ActivityCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED &&
-                ActivityCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-                android.util.Log.w("MkButtonBgService", "Location permissions not granted")
-                return null
-            }
-            
-            val locationManager = getSystemService(Context.LOCATION_SERVICE) as LocationManager
-            
-            // Verificar qué proveedores están habilitados
-            val gpsEnabled = locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)
-            val networkEnabled = locationManager.isProviderEnabled(LocationManager.NETWORK_PROVIDER)
-            android.util.Log.d("MkButtonBgService", "GPS enabled: $gpsEnabled, Network enabled: $networkEnabled")
-            
-            // Intentar obtener la última ubicación conocida de todos los proveedores
-            var bestLocation: Location? = null
-            var bestTime: Long = 0
-            
-            val providers = listOf(
-                LocationManager.GPS_PROVIDER,
-                LocationManager.NETWORK_PROVIDER,
-                LocationManager.PASSIVE_PROVIDER
-            )
-            
-            for (provider in providers) {
+                ActivityCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) return null
+            val lm = getSystemService(Context.LOCATION_SERVICE) as LocationManager
+            val providers = listOf(LocationManager.GPS_PROVIDER, LocationManager.NETWORK_PROVIDER, LocationManager.PASSIVE_PROVIDER)
+            var best: Location? = null
+            for (p in providers) {
                 try {
-                    if (locationManager.isProviderEnabled(provider)) {
-                        val location = locationManager.getLastKnownLocation(provider)
-                        if (location != null) {
-                            android.util.Log.d("MkButtonBgService", "Location from $provider: lat=${location.latitude}, lon=${location.longitude}, time=${location.time}, accuracy=${location.accuracy}m")
-                            
-                            // Elegir la ubicación más reciente
-                            if (location.time > bestTime) {
-                                bestLocation = location
-                                bestTime = location.time
-                            }
-                        } else {
-                            android.util.Log.d("MkButtonBgService", "No last known location from $provider")
-                        }
-                    } else {
-                        android.util.Log.d("MkButtonBgService", "Provider $provider is disabled")
+                    if (lm.isProviderEnabled(p)) {
+                        val loc = lm.getLastKnownLocation(p)
+                        if (loc != null && (best == null || loc.time > best.time)) best = loc
                     }
-                } catch (e: Exception) {
-                    android.util.Log.w("MkButtonBgService", "Error getting location from $provider: ${e.message}")
-                }
+                } catch (_: Exception) {}
             }
-            
-            if (bestLocation != null) {
-                val age = (System.currentTimeMillis() - bestLocation.time) / 1000 // segundos
-                android.util.Log.d("MkButtonBgService", "Using best location: lat=${bestLocation.latitude}, lon=${bestLocation.longitude}, age=${age}s")
-                return bestLocation
-            }
-            
-            android.util.Log.w("MkButtonBgService", "No location available from any provider. Make sure GPS/Network location is enabled and the app has been granted location permissions.")
-            return null
-            
-        } catch (e: Exception) {
-            android.util.Log.e("MkButtonBgService", "Error getting location", e)
-            return null
-        }
+            best
+        } catch (e: Exception) { null }
     }
-    
+
     private fun triggerImmediateVibration() {
         try {
             val vibrator = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                val vibratorManager = getSystemService(Context.VIBRATOR_MANAGER_SERVICE) as android.os.VibratorManager
-                vibratorManager.defaultVibrator
+                (getSystemService(Context.VIBRATOR_MANAGER_SERVICE) as android.os.VibratorManager).defaultVibrator
             } else {
                 @Suppress("DEPRECATION")
                 getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
             }
-            
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                // Patrón de vibración: vibrar-pausa-vibrar-pausa-vibrar
-                val pattern = longArrayOf(0, 500, 200, 500, 200, 500)
-                val amplitudes = intArrayOf(0, 255, 0, 255, 0, 255)
-                vibrator.vibrate(VibrationEffect.createWaveform(pattern, amplitudes, -1))
+                vibrator.vibrate(VibrationEffect.createWaveform(longArrayOf(0, 500, 200, 500, 200, 500), intArrayOf(0, 255, 0, 255, 0, 255), -1))
             } else {
                 @Suppress("DEPRECATION")
                 vibrator.vibrate(longArrayOf(0, 500, 200, 500, 200, 500), -1)
             }
-            
-            android.util.Log.d("MkButtonBgService", "Immediate vibration triggered")
-        } catch (e: Exception) {
-            android.util.Log.e("MkButtonBgService", "Failed to trigger vibration", e)
-        }
+        } catch (_: Exception) {}
     }
-    
-    private fun showSMSSentNotification(location: Location?) {
-        android.util.Log.d("MkButtonBgService", "===== showSMSSentNotification called =====")
-        
-        val locationInfo = if (location != null) {
-            "📍 Ubicación: Lat ${location.latitude}, Lon ${location.longitude}"
-        } else {
-            "⚠️ Sin ubicación GPS disponible"
-        }
-        
-        android.util.Log.d("MkButtonBgService", "Location info: $locationInfo")
-        android.util.Log.d("MkButtonBgService", "Emergency phone: $emergencyPhone")
-        
-        // Intent para abrir la app al tocar la notificación
+
+    private fun showSMSSentNotification(config: DeviceConfig, location: Location?) {
+        val locationInfo = if (location != null) "📍 Lat ${location.latitude}, Lon ${location.longitude}" else "⚠️ Sin ubicación GPS"
         val launchIntent = packageManager.getLaunchIntentForPackage(packageName)?.apply {
-            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-            addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP)
+            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
         }
-        
-        val pendingIntent = PendingIntent.getActivity(
-            this,
-            0,
-            launchIntent ?: Intent(this, MainActivity::class.java),
-            PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
-        )
-        
-        // Sonido de notificación de emergencia
-        val alarmSound = android.provider.Settings.System.DEFAULT_NOTIFICATION_URI
-        
-        android.util.Log.d("MkButtonBgService", "Building notification with channel: $ALERT_CHANNEL_ID")
-        
-        // ACTUALIZAR la notificación del servicio foreground con la información del SMS
+        val pendingIntent = PendingIntent.getActivity(this, 0, launchIntent ?: Intent(this, MainActivity::class.java), PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT)
         val notification = NotificationCompat.Builder(this, ALERT_CHANNEL_ID)
             .setSmallIcon(android.R.drawable.stat_sys_upload_done)
             .setContentTitle("✅ SMS de Emergencia Enviado")
-            .setContentText("Mensaje enviado a $emergencyPhone")
+            .setContentText("${config.deviceName} → ${config.emergencyPhone}")
             .setStyle(NotificationCompat.BigTextStyle()
-                .setBigContentTitle("✅ SMS de Emergencia Enviado")
-                .bigText("📱 Destinatario: $emergencyPhone\n$locationInfo\n\n🔘 Servicio MK Button activo\nToca para abrir Amaia"))
-            .setPriority(NotificationCompat.PRIORITY_MAX) // MAX para asegurar heads-up
-            .setCategory(NotificationCompat.CATEGORY_ALARM) // Categoría de alarma
-            .setOngoing(true) // Mantener la notificación (es el servicio foreground)
-            .setVibrate(longArrayOf(0, 500, 200, 500, 200, 500)) // Vibración más fuerte y larga
-            .setSound(alarmSound) // Sonido de notificación explícito
-            .setDefaults(NotificationCompat.DEFAULT_ALL) // Todos los defaults (sonido + vibración + luces)
-            .setColor(0xFF00AA00.toInt()) // Verde
+                .bigText("📱 Destinatario: ${config.emergencyPhone}\n$locationInfo\n\nDispositivo: ${config.deviceName}"))
+            .setPriority(NotificationCompat.PRIORITY_MAX)
+            .setCategory(NotificationCompat.CATEGORY_ALARM)
+            .setOngoing(true)
+            .setVibrate(longArrayOf(0, 500, 200, 500, 200, 500))
+            .setSound(android.provider.Settings.System.DEFAULT_NOTIFICATION_URI)
+            .setDefaults(NotificationCompat.DEFAULT_ALL)
+            .setColor(0xFF00AA00.toInt())
             .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
-            .setOnlyAlertOnce(false) // Permitir alertas múltiples
+            .setOnlyAlertOnce(false)
             .setContentIntent(pendingIntent)
             .build()
-        
-        android.util.Log.d("MkButtonBgService", "Notification built successfully")
-        
-        val notificationManager = getSystemService(NotificationManager::class.java)
-        
-        // Verificar si el canal está habilitado
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val channel = notificationManager.getNotificationChannel(ALERT_CHANNEL_ID)
-            android.util.Log.d("MkButtonBgService", "Alert channel exists: ${channel != null}")
-            android.util.Log.d("MkButtonBgService", "Alert channel importance: ${channel?.importance}")
-            
-            if (channel == null) {
-                android.util.Log.e("MkButtonBgService", "ALERT_CHANNEL_ID not found! Creating it now...")
-                createAlertNotificationChannel()
-            }
-        }
-        
-        // Usar NOTIFICATION_ID (1001) del servicio foreground en lugar de crear una nueva (3001)
-        notificationManager.notify(NOTIFICATION_ID, notification)
-        android.util.Log.d("MkButtonBgService", "Notification posted with ID: $NOTIFICATION_ID")
-        
-        // Después de 10 segundos, restaurar la notificación normal del servicio
+        getSystemService(NotificationManager::class.java).notify(NOTIFICATION_ID, notification)
         android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
-            android.util.Log.d("MkButtonBgService", "Restoring normal notification after 10 seconds")
-            updateNotification("Conectado - Esperando eventos")
+            val connectedCount = deviceStates.count { it.value.isConnected }
+            updateNotification("$connectedCount dispositivo(s) conectado(s)")
         }, 10000)
     }
-    
-    private fun showSMSErrorNotification(error: String) {
-        // Intent para abrir la app al tocar la notificación
+
+    private fun showSMSErrorNotification(config: DeviceConfig, error: String) {
         val launchIntent = packageManager.getLaunchIntentForPackage(packageName)?.apply {
-            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-            addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP)
+            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
         }
-        
-        val pendingIntent = PendingIntent.getActivity(
-            this,
-            0,
-            launchIntent ?: Intent(this, MainActivity::class.java),
-            PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
-        )
-        
-        // ACTUALIZAR la notificación del servicio foreground con el error
+        val pendingIntent = PendingIntent.getActivity(this, 0, launchIntent ?: Intent(this, MainActivity::class.java), PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT)
         val notification = NotificationCompat.Builder(this, ALERT_CHANNEL_ID)
             .setSmallIcon(android.R.drawable.stat_notify_error)
-            .setContentTitle("❌ Error al Enviar SMS de Emergencia")
-            .setContentText("No se pudo enviar el mensaje a $emergencyPhone")
-            .setStyle(NotificationCompat.BigTextStyle()
-                .setBigContentTitle("❌ Error al Enviar SMS de Emergencia")
-                .bigText("📱 Destinatario: $emergencyPhone\n⚠️ Error: $error\n\nVerifique permisos y cobertura de red.\n\n🔘 Servicio MK Button activo\nToca para abrir Amaia"))
+            .setContentTitle("❌ Error SMS de Emergencia")
+            .setContentText("${config.deviceName}: $error")
             .setPriority(NotificationCompat.PRIORITY_MAX)
-            .setOngoing(true) // Mantener la notificación (es el servicio foreground)
-            .setVibrate(longArrayOf(0, 300, 200, 300, 200, 300)) // Vibración de alerta
-            .setColor(0xFFFF0000.toInt()) // Rojo
+            .setOngoing(true)
+            .setVibrate(longArrayOf(0, 300, 200, 300))
+            .setColor(0xFFFF0000.toInt())
             .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
             .setContentIntent(pendingIntent)
             .build()
-        
-        val notificationManager = getSystemService(NotificationManager::class.java)
-        // Usar NOTIFICATION_ID (1001) del servicio foreground
-        notificationManager.notify(NOTIFICATION_ID, notification)
-        
-        // Después de 10 segundos, restaurar la notificación normal del servicio
+        getSystemService(NotificationManager::class.java).notify(NOTIFICATION_ID, notification)
         android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
-            updateNotification("Conectado - Esperando eventos")
+            val connectedCount = deviceStates.count { it.value.isConnected }
+            updateNotification("$connectedCount dispositivo(s) conectado(s)")
         }, 10000)
     }
-    
+
     private fun openApp() {
-        android.util.Log.d("MkButtonBgService", "Opening app from background")
-        
         try {
-            // Enviar broadcast para abrir la app (Samsung lo bloqueará, pero intentamos)
-            val broadcastIntent = Intent(OpenAppReceiver.ACTION_OPEN_APP).apply {
-                setPackage(packageName)
-            }
-            sendBroadcast(broadcastIntent)
-            android.util.Log.d("MkButtonBgService", "Broadcast sent to open app")
-            
-            // Mostrar notificación INMEDIATAMENTE sobre la pantalla
             val activityIntent = Intent(this, MainActivity::class.java).apply {
-                flags = Intent.FLAG_ACTIVITY_NEW_TASK or
-                        Intent.FLAG_ACTIVITY_CLEAR_TOP or
-                        Intent.FLAG_ACTIVITY_SINGLE_TOP
+                flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
                 putExtra("opened_from_button", true)
             }
-            
-            val pendingIntent = PendingIntent.getActivity(
-                this,
-                1001,
-                activityIntent,
-                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-            )
-            
-            val notificationManager = getSystemService(NotificationManager::class.java)
-            
-            // Notificación HEADS-UP usando el canal de alertas
+            val pendingIntent = PendingIntent.getActivity(this, 1001, activityIntent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
             val notification = NotificationCompat.Builder(this, ALERT_CHANNEL_ID)
                 .setSmallIcon(R.mipmap.ic_launcher)
                 .setContentTitle("🔘 BOTÓN PRESIONADO")
-                .setContentText("⚡ TOCA PARA ABRIR AMAIA ⚡")
-                .setStyle(NotificationCompat.BigTextStyle()
-                    .setBigContentTitle("🔘 BOTÓN MK PRESIONADO")
-                    .bigText("Toca esta notificación para abrir Amaia"))
+                .setContentText("Toca para abrir Amaia")
                 .setPriority(NotificationCompat.PRIORITY_MAX)
                 .setCategory(NotificationCompat.CATEGORY_ALARM)
                 .setAutoCancel(true)
                 .setContentIntent(pendingIntent)
                 .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
                 .setVibrate(longArrayOf(0, 500, 200, 500))
-                .setDefaults(NotificationCompat.DEFAULT_ALL) // Sonido + vibración + luces
+                .setDefaults(NotificationCompat.DEFAULT_ALL)
                 .setOngoing(false)
-                .setOnlyAlertOnce(false) // Permitir múltiples alertas
-                // NO usar timeoutAfter para que permanezca hasta tocarla
                 .setFullScreenIntent(pendingIntent, true)
                 .build()
-            
-            notificationManager.notify(2001, notification)
-            android.util.Log.d("MkButtonBgService", "Heads-up notification shown")
-            
+            getSystemService(NotificationManager::class.java).notify(2001, notification)
         } catch (e: Exception) {
             android.util.Log.e("MkButtonBgService", "Failed to open app", e)
         }
@@ -601,70 +519,41 @@ class MkButtonBackgroundService : Service() {
 
     private fun createNotificationChannel() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val channel = NotificationChannel(
-                CHANNEL_ID,
-                "MK Button Service",
-                NotificationManager.IMPORTANCE_HIGH
-            ).apply {
-                description = "Mantiene la conexión con el botón MK Button"
-                setShowBadge(true)
-                enableVibration(true)
-                vibrationPattern = longArrayOf(0, 500, 200, 500)
-                setSound(null, null) // Sin sonido para el canal del servicio
+            val channel = NotificationChannel(CHANNEL_ID, "MK Button Service", NotificationManager.IMPORTANCE_LOW).apply {
+                description = "Mantiene la conexión BLE activa"
+                enableVibration(false)
+                setSound(null, null)
             }
-            
-            val notificationManager = getSystemService(NotificationManager::class.java)
-            notificationManager.createNotificationChannel(channel)
+            getSystemService(NotificationManager::class.java).createNotificationChannel(channel)
         }
     }
-    
+
     private fun createAlertNotificationChannel() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            android.util.Log.d("MkButtonBgService", "Creating ALERT notification channel: $ALERT_CHANNEL_ID")
-            
             val alarmSound = android.provider.Settings.System.DEFAULT_ALARM_ALERT_URI
             val audioAttributes = android.media.AudioAttributes.Builder()
                 .setContentType(android.media.AudioAttributes.CONTENT_TYPE_SONIFICATION)
                 .setUsage(android.media.AudioAttributes.USAGE_ALARM)
                 .build()
-            
-            val channel = NotificationChannel(
-                ALERT_CHANNEL_ID,
-                "MK Button Emergencias",
-                NotificationManager.IMPORTANCE_HIGH // HIGH permite sonido y vibración
-            ).apply {
-                description = "Alertas de emergencia cuando se presiona el botón MK Button"
-                setShowBadge(true)
+            val channel = NotificationChannel(ALERT_CHANNEL_ID, "MK Button Emergencias", NotificationManager.IMPORTANCE_HIGH).apply {
+                description = "Alertas de emergencia"
                 enableVibration(true)
                 vibrationPattern = longArrayOf(0, 1000, 500, 1000)
                 enableLights(true)
                 lightColor = android.graphics.Color.RED
-                lockscreenVisibility = android.app.Notification.VISIBILITY_PUBLIC
-                setBypassDnd(true) // Bypass Do Not Disturb para emergencias
-                setSound(alarmSound, audioAttributes) // Sonido de alarma
+                lockscreenVisibility = Notification.VISIBILITY_PUBLIC
+                setBypassDnd(true)
+                setSound(alarmSound, audioAttributes)
             }
-            
-            val notificationManager = getSystemService(NotificationManager::class.java)
-            notificationManager.createNotificationChannel(channel)
-            
-            android.util.Log.d("MkButtonBgService", "ALERT channel created with importance: ${channel.importance}")
+            getSystemService(NotificationManager::class.java).createNotificationChannel(channel)
         }
     }
 
     private fun createNotification(contentText: String): Notification {
-        // Intent para abrir la app al tocar la notificación
         val launchIntent = packageManager.getLaunchIntentForPackage(packageName)?.apply {
-            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-            addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP)
+            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
         }
-        
-        val pendingIntent = PendingIntent.getActivity(
-            this,
-            0,
-            launchIntent ?: Intent(this, MainActivity::class.java),
-            PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
-        )
-
+        val pendingIntent = PendingIntent.getActivity(this, 0, launchIntent ?: Intent(this, MainActivity::class.java), PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT)
         return NotificationCompat.Builder(this, CHANNEL_ID)
             .setContentTitle("MK Button Activo")
             .setContentText(contentText)
@@ -673,11 +562,12 @@ class MkButtonBackgroundService : Service() {
             .setOngoing(true)
             .setPriority(NotificationCompat.PRIORITY_LOW)
             .setCategory(NotificationCompat.CATEGORY_SERVICE)
+            .setOnlyAlertOnce(true)
             .build()
     }
 
     private fun updateNotification(contentText: String) {
-        val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-        notificationManager.notify(NOTIFICATION_ID, createNotification(contentText))
+        val nm = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        nm.notify(NOTIFICATION_ID, createNotification(contentText))
     }
 }

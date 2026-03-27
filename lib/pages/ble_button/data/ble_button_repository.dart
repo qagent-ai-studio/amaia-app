@@ -26,8 +26,14 @@ abstract class BleButtonRepository {
   Future<void> resetDevice();
   Future<void> startBackgroundService(
       String mac, String password, String clickType,
-      {String buttonAction = 'open_app', String? emergencyPhone});
+      {String buttonAction = 'open_app',
+      String? emergencyPhone,
+      String deviceType = 'button',
+      String deviceName = 'Dispositivo MK'});
   Future<void> stopBackgroundService();
+  Future<void> removeDeviceFromBackgroundService(String mac);
+  Future<void> executeEmergencyAction(
+      String mac, String buttonAction, String? emergencyPhone, String deviceName);
 }
 
 /// Implementation using Flutter MethodChannel to communicate with
@@ -125,13 +131,14 @@ class BleButtonRepositoryImpl implements BleButtonRepository {
   Future<void> resetDevice() => _invoke('resetDevice');
 
   @override
-  @override
   Future<void> startBackgroundService(
     String mac,
     String password,
     String clickType, {
     String buttonAction = 'open_app',
     String? emergencyPhone,
+    String deviceType = 'button',
+    String deviceName = 'Dispositivo MK',
   }) =>
       _invoke('startBackgroundService', {
         'mac': mac,
@@ -139,10 +146,26 @@ class BleButtonRepositoryImpl implements BleButtonRepository {
         'clickType': clickType,
         'buttonAction': buttonAction,
         'emergencyPhone': emergencyPhone,
+        'deviceType': deviceType,
+        'deviceName': deviceName,
       });
 
   @override
   Future<void> stopBackgroundService() => _invoke('stopBackgroundService');
+
+  @override
+  Future<void> removeDeviceFromBackgroundService(String mac) =>
+      _invoke('removeDeviceFromBackgroundService', {'mac': mac});
+
+  @override
+  Future<void> executeEmergencyAction(
+          String mac, String buttonAction, String? emergencyPhone, String deviceName) =>
+      _invoke('executeEmergencyAction', {
+        'mac': mac,
+        'buttonAction': buttonAction,
+        'emergencyPhone': emergencyPhone,
+        'deviceName': deviceName,
+      });
 
   Future<void> _invoke(String method, [Map<String, dynamic>? args]) async {
     try {

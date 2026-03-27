@@ -101,6 +101,7 @@ class BleButtonBloc extends Bloc<BleButtonEvent, BleButtonState> {
       await _repo.startScan();
       print('[BLE] Scan started successfully');
       emit(BleButtonScanning(savedDevices: savedDevices));
+      await _ensureAllDevicesInBackground(savedDevices);
     } on BleButtonException catch (e) {
       print('[BLE] Scan error: ${e.message}');
       emit(BleButtonError(message: e.message));
@@ -122,10 +123,13 @@ class BleButtonBloc extends Bloc<BleButtonEvent, BleButtonState> {
     await _repo.stopScan();
     emit(BleButtonConnecting(mac: event.mac));
     try {
+      try {
+        await _repo.removeDeviceFromBackgroundService(event.mac);
+        await Future.delayed(const Duration(milliseconds: 1500));
+      } catch (_) {}
+
       await _repo.connect(event.mac, password: event.password ?? '123456');
 
-      // Guardar dispositivo en la BD (o actualizar si ya existe)
-      // Buscar el nombre del dispositivo en la lista de escaneo
       String deviceName = 'MK Button';
       if (state is BleButtonScanning) {
         final scannedDevice = (state as BleButtonScanning).devices.firstWhere(
@@ -153,12 +157,6 @@ class BleButtonBloc extends Bloc<BleButtonEvent, BleButtonState> {
     Emitter<BleButtonState> emit,
   ) async {
     await _repo.disconnect();
-    // Detener servicio en segundo plano
-    try {
-      await _repo.stopBackgroundService();
-    } catch (e) {
-      print('Failed to stop background service: $e');
-    }
   }
 
   Future<void> _onBatteryReadRequested(
@@ -256,45 +254,24 @@ class BleButtonBloc extends Bloc<BleButtonEvent, BleButtonState> {
           ? (state as BleButtonConnecting).mac
           : '';
 
-      // Actualizar timestamp de última conexión en la BD
       await DeviceStorage.instance.updateLastConnected(mac);
+      emit(BleButtonConnected(mac: mac, isLoading: false));
+    } else {
+      final mac = state is BleButtonConnected
+          ? (state as BleButtonConnected).mac
+          : null;
 
-      // Iniciar servicio en segundo plano si está configurado
-      final device = await DeviceStorage.instance.getDeviceByMac(mac);
-      if (device != null && device.clickToOpenApp != 'disabled') {
-        try {
-          // Leer número de emergencia del .env
-          String? emergencyPhone;
-          String buttonAction = device.buttonAction;
-
-          if (buttonAction == 'call' ||
-              buttonAction == 'sms' ||
-              buttonAction == 'sms_and_call') {
-            // Para 'call' y 'sms_and_call' usar el número de llamadas
-            // Para 'sms' usar el número de SMS
-            emergencyPhone =
-                (buttonAction == 'call' || buttonAction == 'sms_and_call')
-                    ? dotenv.env['RECIPIENTS_CALL_EMERGENCY']
-                    : dotenv.env['LIST_RECIPIENTS_SMS_EMERGENCY'];
+      if (mac != null && mac.isNotEmpty) {
+        final device = await DeviceStorage.instance.getDeviceByMac(mac);
+        if (device != null && device.clickToOpenApp != 'disabled') {
+          try {
+            await _startDeviceInBackground(device);
+          } catch (e) {
+            print('Failed to re-add device to background service: $e');
           }
-
-          await _repo.startBackgroundService(
-            device.mac,
-            device.password,
-            device.clickToOpenApp,
-            buttonAction: buttonAction,
-            emergencyPhone: emergencyPhone,
-          );
-        } catch (e) {
-          // Log error pero no bloquear la conexión
-          print('Failed to start background service: $e');
         }
       }
 
-      // Emitir estado conectado SIN isLoading ya que no esperamos device info
-      // El MK Button NO tolera comandos adicionales después de la inicialización
-      emit(BleButtonConnected(mac: mac, isLoading: false));
-    } else {
       emit(const BleButtonDisconnected());
     }
   }
@@ -306,7 +283,6 @@ class BleButtonBloc extends Bloc<BleButtonEvent, BleButtonState> {
     if (state is BleButtonConnected) {
       final current = state as BleButtonConnected;
 
-      // Incrementar contador de clicks en la BD
       await DeviceStorage.instance.incrementClickCount(
         current.mac,
         event.pressType,
@@ -318,6 +294,28 @@ class BleButtonBloc extends Bloc<BleButtonEvent, BleButtonState> {
           timestamp: DateTime.now(),
         ),
       ));
+
+      final device = await DeviceStorage.instance.getDeviceByMac(current.mac);
+      if (device != null &&
+          event.pressType == device.clickToOpenApp &&
+          (device.buttonAction == 'call' ||
+              device.buttonAction == 'sms' ||
+              device.buttonAction == 'sms_and_call')) {
+        final emergencyPhone =
+            (device.buttonAction == 'call' || device.buttonAction == 'sms_and_call')
+                ? dotenv.env['RECIPIENTS_CALL_EMERGENCY']
+                : dotenv.env['LIST_RECIPIENTS_SMS_EMERGENCY'];
+        try {
+          await _repo.executeEmergencyAction(
+            device.mac,
+            device.buttonAction,
+            emergencyPhone,
+            device.name,
+          );
+        } catch (e) {
+          print('Failed to execute emergency action in foreground: $e');
+        }
+      }
     }
   }
 
@@ -390,14 +388,12 @@ class BleButtonBloc extends Bloc<BleButtonEvent, BleButtonState> {
   ) async {
     await DeviceStorage.instance.deleteDevice(event.mac);
 
-    // Detener servicio en segundo plano si estaba activo
     try {
-      await _repo.stopBackgroundService();
+      await _repo.removeDeviceFromBackgroundService(event.mac);
     } catch (e) {
-      print('Failed to stop background service: $e');
+      print('Failed to remove device from background service: $e');
     }
 
-    // Recargar la lista de dispositivos guardados
     final savedDevices = await DeviceStorage.instance.getAllDevices();
 
     if (state is BleButtonScanning) {
@@ -409,16 +405,41 @@ class BleButtonBloc extends Bloc<BleButtonEvent, BleButtonState> {
     AutoReconnectRequested event,
     Emitter<BleButtonState> emit,
   ) async {
-    final lastDevice = await DeviceStorage.instance.getLastConnectedDevice();
+    final allDevices = await DeviceStorage.instance.getAllDevices();
+    emit(BleButtonScanning(savedDevices: allDevices));
+    await _ensureAllDevicesInBackground(allDevices);
+  }
 
-    if (lastDevice != null) {
-      emit(BleButtonConnecting(mac: lastDevice.mac));
+  Future<void> _ensureAllDevicesInBackground(
+      List<SavedDevice> devices) async {
+    for (final device in devices) {
+      if (device.clickToOpenApp == 'disabled') continue;
       try {
-        await _repo.connect(lastDevice.mac, password: lastDevice.password);
-      } on BleButtonException catch (e) {
-        emit(BleButtonError(message: e.message));
+        await _startDeviceInBackground(device);
+      } catch (e) {
+        print('Failed to add ${device.mac} to background: $e');
       }
     }
+  }
+
+  Future<void> _startDeviceInBackground(SavedDevice device) async {
+    String? emergencyPhone;
+    if (device.buttonAction == 'call' ||
+        device.buttonAction == 'sms' ||
+        device.buttonAction == 'sms_and_call') {
+      emergencyPhone =
+          (device.buttonAction == 'call' || device.buttonAction == 'sms_and_call')
+              ? dotenv.env['RECIPIENTS_CALL_EMERGENCY']
+              : dotenv.env['LIST_RECIPIENTS_SMS_EMERGENCY'];
+    }
+    await _repo.startBackgroundService(
+      device.mac,
+      device.password,
+      device.clickToOpenApp,
+      buttonAction: device.buttonAction,
+      emergencyPhone: emergencyPhone,
+      deviceName: device.name,
+    );
   }
 
   @override

@@ -40,6 +40,7 @@ class MkButtonChannel(
     private var isRegistered = false
     private var isDeviceConnected = false
     private var pendingPassword: String = "123456"
+    private var foregroundMac: String? = null
 
     // ---------------------------------------------------------------------------
     // Lifecycle
@@ -78,8 +79,10 @@ class MkButtonChannel(
             "changePassword"                -> handleChangePassword(call, result)
             "enableButtonNotify"            -> handleEnableButtonNotify(call, result)
             "resetDevice"                   -> handleResetDevice(result)
-            "startBackgroundService"        -> handleStartBackgroundService(call, result)
-            "stopBackgroundService"         -> handleStopBackgroundService(result)
+            "startBackgroundService"            -> handleStartBackgroundService(call, result)
+            "stopBackgroundService"             -> handleStopBackgroundService(result)
+            "removeDeviceFromBackgroundService" -> handleRemoveDeviceFromBackgroundService(call, result)
+            "executeEmergencyAction"            -> handleExecuteEmergencyAction(call, result)
             "checkPermissions"              -> handleCheckPermissions(result)
             "requestBatteryOptimization"    -> handleRequestBatteryOptimization(result)
             "requestNotificationPermission" -> handleRequestNotificationPermission(result)
@@ -105,17 +108,9 @@ class MkButtonChannel(
                 override fun onScanDevice(device: DeviceInfo) {
                     val name = device.name ?: ""
                     val mac = device.mac ?: ""
-                    
-                    // Log TODOS los dispositivos detectados para debug
-                    android.util.Log.d("MkButtonSDK", "BLE device found: name='$name' mac=$mac rssi=${device.rssi}")
-                    
-                    // FILTRAR: Solo mostrar dispositivos cuyo nombre empiece con "MK"
-                    if (!name.startsWith("MK", ignoreCase = true)) {
-                        android.util.Log.d("MkButtonSDK", "Device filtered out (name doesn't start with 'MK'): $name")
-                        return
-                    }
-                    
-                    android.util.Log.d("MkButtonSDK", "Sending MK device to Flutter: $name ($mac)")
+
+                    if (!name.startsWith("MK", ignoreCase = true)) return
+
                     val map = mapOf(
                         "mac"  to mac,
                         "name" to name,
@@ -147,16 +142,14 @@ class MkButtonChannel(
         }
         pendingPassword = call.argument<String>("password") ?: "123456"
 
-        android.util.Log.d("MkButtonSDK", "Password received from Flutter: '$pendingPassword' length=${pendingPassword.length}")
-        
-        // Registrar la contraseña en el SDK ANTES de conectar
+        foregroundMac = mac
         DMokoSupport.getInstance().setPassword(pendingPassword)
-        
         DMokoSupport.getInstance().connDevice(mac)
         result.success(null)
     }
 
     private fun handleDisconnect(result: MethodChannel.Result) {
+        foregroundMac = null
         DMokoSupport.getInstance().disConnectBle()
         result.success(null)
     }
@@ -183,18 +176,12 @@ class MkButtonChannel(
     }
 
     private fun handleReadBattery(result: MethodChannel.Result) {
-        // ADVERTENCIA: Leer batería después de la inicialización puede causar desconexión
-        // Este comando solo debe usarse cuando el usuario lo solicita manualmente
-        android.util.Log.w("MkButton", "readBattery requested - may cause disconnection!")
-        
         try {
-            // Comando 0x62 = leer batería
             DMokoSupport.getInstance().sendOrder(
                 OrderTaskAssembler.getBatteryPercent()
             )
             result.success(null)
         } catch (e: Exception) {
-            android.util.Log.e("MkButton", "Failed to read battery", e)
             result.error("BATTERY_READ_FAILED", e.message, null)
         }
     }
@@ -297,6 +284,8 @@ class MkButtonChannel(
         val clickType = call.argument<String>("clickType") ?: "single"
         val buttonAction = call.argument<String>("buttonAction") ?: "open_app"
         val emergencyPhone = call.argument<String>("emergencyPhone")
+        val deviceType = call.argument<String>("deviceType") ?: "button"
+        val deviceName = call.argument<String>("deviceName") ?: "Dispositivo MK"
 
         try {
             MkButtonBackgroundService.startService(
@@ -305,7 +294,9 @@ class MkButtonChannel(
                 password = password,
                 clickType = clickType,
                 buttonAction = buttonAction,
-                emergencyPhone = emergencyPhone
+                emergencyPhone = emergencyPhone,
+                deviceType = deviceType,
+                deviceName = deviceName
             )
             result.success(null)
         } catch (e: Exception) {
@@ -321,6 +312,35 @@ class MkButtonChannel(
         } catch (e: Exception) {
             android.util.Log.e("MkButton", "Failed to stop background service", e)
             result.error("SERVICE_STOP_FAILED", e.message, null)
+        }
+    }
+
+    private fun handleExecuteEmergencyAction(call: MethodCall, result: MethodChannel.Result) {
+        val mac = call.argument<String>("mac") ?: run {
+            result.error("INVALID_ARG", "mac is required", null)
+            return
+        }
+        val buttonAction = call.argument<String>("buttonAction") ?: run {
+            result.error("INVALID_ARG", "buttonAction is required", null)
+            return
+        }
+        val emergencyPhone = call.argument<String>("emergencyPhone")
+        val deviceName = call.argument<String>("deviceName") ?: "Dispositivo MK"
+        MkButtonBackgroundService.executeEmergencyAction(context, mac, buttonAction, emergencyPhone, deviceName)
+        result.success(null)
+    }
+
+    private fun handleRemoveDeviceFromBackgroundService(call: MethodCall, result: MethodChannel.Result) {
+        val mac = call.argument<String>("mac") ?: run {
+            result.error("INVALID_ARG", "mac is required", null)
+            return
+        }
+        try {
+            MkButtonBackgroundService.removeDevice(context, mac)
+            result.success(null)
+        } catch (e: Exception) {
+            android.util.Log.e("MkButton", "Failed to remove device from background service", e)
+            result.error("SERVICE_REMOVE_FAILED", e.message, null)
         }
     }
 
@@ -419,20 +439,19 @@ class MkButtonChannel(
 
     @Subscribe(threadMode = ThreadMode.MAIN)
     fun onConnectStatusEvent(event: ConnectStatusEvent) {
+        val eventMac = event.macAddress
+        if (eventMac != null && eventMac != foregroundMac) return
+
         val connected = event.action == MokoConstants.ACTION_DISCOVER_SUCCESS
         isDeviceConnected = connected
-        
+
         if (connected) {
             android.util.Log.d("MkButton", "Device connected, checking password requirement...")
-            
-            // El SDK ahora maneja automáticamente la secuencia de autenticación e inicialización
-            // Solo necesitamos enviar el comando inicial para verificar si se requiere contraseña
             DMokoSupport.getInstance().writePasswordDirectly(
                 byteArrayOf(0xEA.toByte(), 0x00, 0x23, 0x00)
             )
-            
-            // Enviar contraseña después de un delay (permite que el dispositivo responda)
-            android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
+            val handler = android.os.Handler(android.os.Looper.getMainLooper())
+            handler.postDelayed({
                 android.util.Log.d("MkButton", "Sending password: '$pendingPassword'")
                 val passwordBytes = pendingPassword.toByteArray()
                 val data = ByteArray(4 + passwordBytes.size)
@@ -442,12 +461,17 @@ class MkButtonChannel(
                 data[3] = passwordBytes.size.toByte()
                 passwordBytes.copyInto(data, 4)
                 DMokoSupport.getInstance().writePasswordDirectly(data)
-                
-                // La secuencia de inicialización completa ahora se maneja automáticamente
-                // en MokoBleConfig.enablePasswordNotify() cuando recibe la respuesta EB 01 55
+
+                handler.postDelayed({
+                    try {
+                        DMokoSupport.getInstance().sendOrder(
+                            OrderTaskAssembler.getBatteryPercent()
+                        )
+                    } catch (_: Exception) {}
+                }, 1500)
             }, 2500)
         }
-        
+
         channel.invokeMethod("onConnectionStatus", mapOf("connected" to connected))
     }
 
@@ -457,6 +481,9 @@ class MkButtonChannel(
 
     @Subscribe(threadMode = ThreadMode.MAIN)
     fun onOrderTaskResponseEvent(event: OrderTaskResponseEvent) {
+        val eventMac = event.macAddress
+        if (eventMac != null && eventMac != foregroundMac) return
+
         when (event.action) {
             com.moko.ble.lib.MokoConstants.ACTION_ORDER_RESULT  -> handleOrderResult(event)
             com.moko.ble.lib.MokoConstants.ACTION_CURRENT_DATA  -> handleNotifyData(event)

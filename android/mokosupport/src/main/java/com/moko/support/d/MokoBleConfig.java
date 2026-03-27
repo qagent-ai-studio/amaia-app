@@ -343,7 +343,7 @@ final class MokoBleConfig extends MokoBleManager {
         disableNotifications(longConnectionCharacteristic).enqueue();
     }
 
-    private void startKeepAlive() {
+    public void startKeepAlive() {
         if (keepAliveHandler == null) {
             keepAliveHandler = new android.os.Handler(android.os.Looper.getMainLooper());
         }

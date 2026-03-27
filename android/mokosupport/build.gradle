@@ -23,7 +23,7 @@ android {
 }
 
 dependencies {
-    api 'com.github.MOKO-Android-Base-Library:MKBleLib:1.0.0-beacon'
+    api project(':mokoBleLib')
     implementation 'androidx.appcompat:appcompat:1.6.1'
 }
 

@@ -1,24 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:intl/intl.dart';
 
 import '../bloc/ble_button_bloc.dart';
-import '../data/ble_button_repository.dart';
-import '../data/device_storage.dart';
 import '../domain/models.dart';
 import 'permissions_page.dart';
-import 'widgets/adv_interval_dialog.dart';
 import 'widgets/battery_card.dart';
-import 'widgets/button_press_card.dart';
 import 'widgets/device_info_card.dart';
 import 'widgets/password_dialog.dart';
 import 'widgets/reset_confirm_dialog.dart';
 import 'widgets/section_header.dart';
 import 'widgets/settings_card.dart';
-import 'widgets/tx_power_dialog.dart';
 
-/// Main page shown when connected to an MK Button device.
-/// Displays device info, battery, button events, and all configurable settings.
 class DevicePage extends StatefulWidget {
   const DevicePage({super.key, required this.mac});
 
@@ -29,15 +21,9 @@ class DevicePage extends StatefulWidget {
 }
 
 class _DevicePageState extends State<DevicePage> {
-  bool _notifyEnabled = false;
-
   @override
   void initState() {
     super.initState();
-    // NOTE: NO llamamos a DeviceInfoReadRequested automáticamente porque
-    // el MK Button NO tolera comandos adicionales después de la inicialización.
-    // La información del dispositivo se lee durante la secuencia de init (0x2C).
-    // El usuario puede hacer refresh manualmente si necesita actualizar datos.
   }
 
   @override
@@ -60,7 +46,6 @@ class _DevicePageState extends State<DevicePage> {
               backgroundColor: Colors.red.shade700,
             ),
           );
-          // NO llamar DeviceInfoReadRequested - el dispositivo no acepta comandos
         }
       },
       builder: (context, state) {
@@ -85,25 +70,8 @@ class _DevicePageState extends State<DevicePage> {
                   valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF38BDF8)),
                 ),
 
-              // Button press events
-              const SizedBox(height: 16),
-              const SectionHeader(
-                icon: Icons.touch_app_rounded,
-                title: 'Estado del Botón',
-              ),
-              ButtonPressCard(
-                lastPress: state.lastButtonPress,
-                notifyEnabled: _notifyEnabled,
-                onToggleNotify: (val) {
-                  setState(() => _notifyEnabled = val);
-                  context
-                      .read<BleButtonBloc>()
-                      .add(ButtonNotifyToggled(enable: val));
-                },
-              ),
-
               // Battery
-              const SizedBox(height: 8),
+              const SizedBox(height: 16),
               const SectionHeader(
                 icon: Icons.battery_charging_full_rounded,
                 title: 'Batería',
@@ -134,19 +102,9 @@ class _DevicePageState extends State<DevicePage> {
               SettingsCard(
                 info: info,
                 onEditDeviceName: () => _showDeviceNameDialog(context, info),
-                onEditAdvInterval: () => _showAdvIntervalDialog(context, info),
-                onEditTxPower: () => _showTxPowerDialog(context, info),
                 onChangePassword: () => _showPasswordDialog(context),
                 onResetDevice: () => _showResetDialog(context),
               ),
-
-              // Configuración de apertura automática
-              const SizedBox(height: 8),
-              const SectionHeader(
-                icon: Icons.launch_rounded,
-                title: 'Apertura Automática',
-              ),
-              _AutoOpenConfigCard(mac: state.mac),
 
               // Botón de permisos
               const SizedBox(height: 8),
@@ -236,34 +194,6 @@ class _DevicePageState extends State<DevicePage> {
         context
             .read<BleButtonBloc>()
             .add(DeviceNameUpdateRequested(name: value));
-      }
-    });
-  }
-
-  void _showAdvIntervalDialog(BuildContext context, DeviceInfo? info) {
-    showDialog<int>(
-      context: context,
-      builder: (_) => AdvIntervalDialog(
-        currentIntervalMs: info?.advIntervalMs ?? 1000,
-      ),
-    ).then((value) {
-      if (value != null && context.mounted) {
-        context
-            .read<BleButtonBloc>()
-            .add(AdvIntervalUpdateRequested(intervalMs: value));
-      }
-    });
-  }
-
-  void _showTxPowerDialog(BuildContext context, DeviceInfo? info) {
-    showDialog<int>(
-      context: context,
-      builder: (_) => TxPowerDialog(currentTxPower: info?.txPower ?? 0),
-    ).then((value) {
-      if (value != null && context.mounted) {
-        context
-            .read<BleButtonBloc>()
-            .add(TxPowerUpdateRequested(txPower: value));
       }
     });
   }
@@ -369,237 +299,6 @@ class _TextInputDialogState extends State<_TextInputDialog> {
           child: const Text('Guardar'),
         ),
       ],
-    );
-  }
-}
-
-/// Widget para configurar la apertura automática de la app
-class _AutoOpenConfigCard extends StatefulWidget {
-  const _AutoOpenConfigCard({required this.mac});
-
-  final String mac;
-
-  @override
-  State<_AutoOpenConfigCard> createState() => _AutoOpenConfigCardState();
-}
-
-class _AutoOpenConfigCardState extends State<_AutoOpenConfigCard> {
-  String _selectedType = 'single';
-  bool _isLoading = true;
-
-  @override
-  void initState() {
-    super.initState();
-    _loadConfiguration();
-  }
-
-  Future<void> _loadConfiguration() async {
-    final device = await DeviceStorage.instance.getDeviceByMac(widget.mac);
-    print('[AutoOpenConfig] Loading config for MAC: ${widget.mac}');
-    print('[AutoOpenConfig] Device found: ${device != null}');
-    if (device != null) {
-      print('[AutoOpenConfig] clickToOpenApp: ${device.clickToOpenApp}');
-    }
-    if (device != null && mounted) {
-      setState(() {
-        _selectedType = device.clickToOpenApp;
-        _isLoading = false;
-      });
-    } else if (mounted) {
-      // Si no hay dispositivo, usar valor por defecto
-      setState(() {
-        _selectedType = 'single';
-        _isLoading = false;
-      });
-    }
-  }
-
-  Future<void> _updateConfiguration(String clickType) async {
-    setState(() => _isLoading = true);
-
-    try {
-      await DeviceStorage.instance.updateClickToOpenApp(widget.mac, clickType);
-
-      // Actualizar el servicio en segundo plano usando el repositorio del contexto
-      final device = await DeviceStorage.instance.getDeviceByMac(widget.mac);
-      if (device != null && mounted) {
-        final repo = BleButtonRepositoryImpl();
-
-        if (clickType == 'disabled') {
-          // Detener servicio
-          await repo.stopBackgroundService();
-        } else {
-          // Reiniciar servicio con nueva configuración
-          await repo.stopBackgroundService();
-          await Future.delayed(const Duration(
-              milliseconds: 500)); // Delay para asegurar que se detuvo
-          await repo.startBackgroundService(
-            device.mac,
-            device.password,
-            clickType,
-          );
-        }
-      }
-
-      if (mounted) {
-        setState(() {
-          _selectedType = clickType;
-          _isLoading = false;
-        });
-
-        // Mostrar confirmación
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              clickType == 'disabled'
-                  ? 'Apertura automática desactivada'
-                  : 'Configurado para abrir con ${clickType == "single" ? "1 click" : "2 clicks"}',
-            ),
-            backgroundColor: const Color(0xFF0EA5E9),
-            duration: const Duration(seconds: 2),
-          ),
-        );
-      }
-    } catch (e) {
-      if (mounted) {
-        setState(() => _isLoading = false);
-
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error al actualizar configuración: $e'),
-            backgroundColor: Colors.red.shade700,
-          ),
-        );
-      }
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-      child: Container(
-        padding: const EdgeInsets.all(20),
-        decoration: BoxDecoration(
-          color: const Color(0xFF1E293B),
-          borderRadius: BorderRadius.circular(16),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'Abrir app con botón BLE',
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-            const SizedBox(height: 8),
-            const Text(
-              'Configura qué tipo de presión del botón abrirá la app cuando esté cerrada',
-              style: TextStyle(
-                color: Colors.white54,
-                fontSize: 13,
-              ),
-            ),
-            const SizedBox(height: 16),
-            if (_isLoading)
-              const Center(child: CircularProgressIndicator())
-            else
-              Column(
-                children: [
-                  _buildOptionTile(
-                    'single',
-                    '1 Click',
-                    'Abrir con una presión simple',
-                    Icons.touch_app_rounded,
-                  ),
-                  const SizedBox(height: 8),
-                  _buildOptionTile(
-                    'double',
-                    '2 Clicks',
-                    'Abrir con doble presión',
-                    Icons.touch_app_outlined,
-                  ),
-                  const SizedBox(height: 8),
-                  _buildOptionTile(
-                    'disabled',
-                    'Desactivado',
-                    'No abrir automáticamente',
-                    Icons.block_rounded,
-                  ),
-                ],
-              ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildOptionTile(
-      String type, String title, String subtitle, IconData icon) {
-    final isSelected = _selectedType == type;
-
-    return Material(
-      color: isSelected
-          ? const Color(0xFF0EA5E9).withOpacity(0.1)
-          : const Color(0xFF0F172A),
-      borderRadius: BorderRadius.circular(12),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(12),
-        onTap: () => _updateConfiguration(type),
-        child: Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            border: Border.all(
-              color: isSelected ? const Color(0xFF0EA5E9) : Colors.transparent,
-              width: 2,
-            ),
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: Row(
-            children: [
-              Icon(
-                icon,
-                color: isSelected ? const Color(0xFF0EA5E9) : Colors.white54,
-                size: 24,
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      title,
-                      style: TextStyle(
-                        color:
-                            isSelected ? const Color(0xFF0EA5E9) : Colors.white,
-                        fontSize: 15,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      subtitle,
-                      style: const TextStyle(
-                        color: Colors.white38,
-                        fontSize: 12,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              if (isSelected)
-                const Icon(
-                  Icons.check_circle_rounded,
-                  color: Color(0xFF0EA5E9),
-                  size: 24,
-                ),
-            ],
-          ),
-        ),
-      ),
     );
   }
 }

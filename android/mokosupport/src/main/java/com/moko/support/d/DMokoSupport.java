@@ -37,8 +37,16 @@ public class DMokoSupport extends MokoBleLib {
 
     private String mPassword = "";
 
+    private String currentDeviceMac;
+
     private DMokoSupport() {
         //no instance
+    }
+
+    public DMokoSupport(Context context, String deviceMac) {
+        this.mContext = context;
+        this.currentDeviceMac = deviceMac;
+        super.init(context);
     }
 
     public void setPassword(String password) {
@@ -74,6 +82,11 @@ public class DMokoSupport extends MokoBleLib {
         }
     }
 
+    public void startKeepAlive() {
+        if (mBleConfig != null) {
+            mBleConfig.startKeepAlive();
+        }
+    }
 
     @Override
     public MokoBleManager getMokoBleManager() {
@@ -90,16 +103,20 @@ public class DMokoSupport extends MokoBleLib {
 
     @Override
     public void onDeviceConnected(BluetoothGatt gatt) {
+        currentDeviceMac = gatt.getDevice().getAddress();
         mCharacteristicMap = new MokoCharacteristicHandler().getCharacteristics(gatt);
         ConnectStatusEvent connectStatusEvent = new ConnectStatusEvent();
         connectStatusEvent.setAction(MokoConstants.ACTION_DISCOVER_SUCCESS);
+        connectStatusEvent.setMacAddress(currentDeviceMac);
         EventBus.getDefault().post(connectStatusEvent);
     }
 
     @Override
     public void onDeviceDisconnected(BluetoothDevice device) {
+        String mac = device.getAddress();
         ConnectStatusEvent connectStatusEvent = new ConnectStatusEvent();
         connectStatusEvent.setAction(MokoConstants.ACTION_DISCONNECTED);
+        connectStatusEvent.setMacAddress(mac);
         EventBus.getDefault().post(connectStatusEvent);
     }
 
@@ -125,19 +142,17 @@ public class DMokoSupport extends MokoBleLib {
     public void orderFinish() {
         OrderTaskResponseEvent event = new OrderTaskResponseEvent();
         event.setAction(MokoConstants.ACTION_ORDER_FINISH);
+        event.setMacAddress(currentDeviceMac);
         EventBus.getDefault().post(event);
     }
 
     @Override
     public void orderTimeout(OrderTaskResponse response) {
-        android.util.Log.e("MkButtonSDK", "!!! ORDER TIMEOUT !!! This may cause disconnection");
-        android.util.Log.e("MkButtonSDK", "Response: " + response);
-        if (response != null && response.responseValue != null) {
-            android.util.Log.e("MkButtonSDK", "Response value: " + com.moko.ble.lib.utils.MokoUtils.bytesToHexString(response.responseValue));
-        }
+        android.util.Log.e("MkButtonSDK", "ORDER TIMEOUT mac=" + currentDeviceMac);
         OrderTaskResponseEvent event = new OrderTaskResponseEvent();
         event.setAction(MokoConstants.ACTION_ORDER_TIMEOUT);
         event.setResponse(response);
+        event.setMacAddress(currentDeviceMac);
         EventBus.getDefault().post(event);
     }
 
@@ -146,6 +161,7 @@ public class DMokoSupport extends MokoBleLib {
         OrderTaskResponseEvent event = new OrderTaskResponseEvent();
         event.setAction(MokoConstants.ACTION_ORDER_RESULT);
         event.setResponse(response);
+        event.setMacAddress(currentDeviceMac);
         EventBus.getDefault().post(event);
     }
 
@@ -160,39 +176,14 @@ public class DMokoSupport extends MokoBleLib {
     @Override
     public boolean orderNotify(BluetoothGattCharacteristic characteristic, byte[] value) {
         final UUID responseUUID = characteristic.getUuid();
-        android.util.Log.d("MkButtonSDK", "orderNotify uuid=" + responseUUID.toString() + 
+        android.util.Log.d("MkButtonSDK", "orderNotify mac=" + currentDeviceMac + " uuid=" + responseUUID.toString() +
             " value=" + com.moko.ble.lib.utils.MokoUtils.bytesToHexString(value));
 
-        // Procesar respuestas de inicialización desde CHAR_PARAMS
         if (responseUUID.equals(OrderCHAR.CHAR_PARAMS.getUuid()) && value != null && value.length >= 3 &&
             (value[0] & 0xFF) == 0xEB && (value[1] & 0xFF) == 0x00) {
             int key = value[2] & 0xFF;
-            android.util.Log.d("MkButtonSDK", "PARAMS init response key=0x" + String.format("%02X", key));
-            
-            // Respuestas esperadas durante inicialización:
-            // 0x57 = Confirmación de autenticación
-            // 0x2C = Respuesta de configuración (nombre modelo: "BXP-B-D")
-            // 0x51 = Respuesta de estado con nombre del dispositivo (puede llegar después de 0x2C)
-            
-            // Estas son respuestas válidas de inicialización, no errores
-            // Retornar true para indicar que fueron procesadas correctamente
             if (key == 0x57 || key == 0x2C || key == 0x51) {
-                android.util.Log.d("MkButtonSDK", "Init response received: 0x" + String.format("%02X", key));
-                
-                // Si es 0x51, extraer el nombre del dispositivo
-                if (key == 0x51 && value.length > 3) {
-                    int nameLength = value[3] & 0xFF;
-                    if (value.length >= 4 + nameLength) {
-                        try {
-                            String deviceName = new String(value, 4, nameLength, "UTF-8");
-                            android.util.Log.d("MkButtonSDK", "Device name: " + deviceName + " (0x51 response, may arrive delayed)");
-                            android.util.Log.d("MkButtonSDK", "0x51 response handled successfully, returning true");
-                        } catch (Exception e) {
-                            android.util.Log.w("MkButtonSDK", "Failed to parse device name", e);
-                        }
-                    }
-                }
-                android.util.Log.d("MkButtonSDK", "Returning true for init response 0x" + String.format("%02X", key));
+                android.util.Log.d("MkButtonSDK", "Init response 0x" + String.format("%02X", key) + " mac=" + currentDeviceMac);
                 return true;
             }
         }
@@ -214,7 +205,6 @@ public class DMokoSupport extends MokoBleLib {
             orderCHAR = OrderCHAR.CHAR_LONG_TRIGGER;
         }
         if (responseUUID.equals(OrderCHAR.CHAR_CLICK_EVENT.getUuid())) {
-            android.util.Log.d("MkButtonSDK", "CHAR_CLICK_EVENT notification received, processing...");
             orderCHAR = OrderCHAR.CHAR_CLICK_EVENT;
         }
         if (responseUUID.equals(OrderCHAR.CHAR_LONG_CONNECTION.getUuid())) {
@@ -222,16 +212,17 @@ public class DMokoSupport extends MokoBleLib {
         }
         if (orderCHAR == null)
             return false;
+
         XLog.i(orderCHAR.name());
-        android.util.Log.d("MkButtonSDK", "Creating event for " + orderCHAR.name() + " with value: " + com.moko.ble.lib.utils.MokoUtils.bytesToHexString(value));
         OrderTaskResponse response = new OrderTaskResponse();
         response.orderCHAR = orderCHAR;
         response.responseValue = value;
         OrderTaskResponseEvent event = new OrderTaskResponseEvent();
         event.setAction(MokoConstants.ACTION_CURRENT_DATA);
         event.setResponse(response);
+        event.setMacAddress(currentDeviceMac);
         EventBus.getDefault().post(event);
-        android.util.Log.d("MkButtonSDK", "Event posted successfully for " + orderCHAR.name() + ", returning true");
+        android.util.Log.d("MkButtonSDK", "Click event posted: " + orderCHAR.name() + " mac=" + currentDeviceMac);
         return true;
     }
 

@@ -8,16 +8,12 @@ class SettingsCard extends StatelessWidget {
     super.key,
     required this.info,
     required this.onEditDeviceName,
-    required this.onEditAdvInterval,
-    required this.onEditTxPower,
     required this.onChangePassword,
     required this.onResetDevice,
   });
 
   final DeviceInfo? info;
   final VoidCallback onEditDeviceName;
-  final VoidCallback onEditAdvInterval;
-  final VoidCallback onEditTxPower;
   final VoidCallback onChangePassword;
   final VoidCallback onResetDevice;
 
@@ -37,20 +33,6 @@ class SettingsCard extends StatelessWidget {
               label: 'Nombre del dispositivo',
               value: info?.deviceName,
               onTap: onEditDeviceName,
-            ),
-            _divider(),
-            _SettingsTile(
-              icon: Icons.timer_rounded,
-              label: 'Intervalo de publicidad',
-              value: info != null ? '${info!.advIntervalMs} ms' : null,
-              onTap: onEditAdvInterval,
-            ),
-            _divider(),
-            _SettingsTile(
-              icon: Icons.cell_tower_rounded,
-              label: 'Potencia TX',
-              value: info != null ? '${info!.txPower} dBm' : null,
-              onTap: onEditTxPower,
             ),
             _divider(),
             _SettingsTile(
