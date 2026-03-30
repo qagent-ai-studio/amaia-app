@@ -294,28 +294,6 @@ class BleButtonBloc extends Bloc<BleButtonEvent, BleButtonState> {
           timestamp: DateTime.now(),
         ),
       ));
-
-      final device = await DeviceStorage.instance.getDeviceByMac(current.mac);
-      if (device != null &&
-          event.pressType == device.clickToOpenApp &&
-          (device.buttonAction == 'call' ||
-              device.buttonAction == 'sms' ||
-              device.buttonAction == 'sms_and_call')) {
-        final emergencyPhone =
-            (device.buttonAction == 'call' || device.buttonAction == 'sms_and_call')
-                ? dotenv.env['RECIPIENTS_CALL_EMERGENCY']
-                : dotenv.env['LIST_RECIPIENTS_SMS_EMERGENCY'];
-        try {
-          await _repo.executeEmergencyAction(
-            device.mac,
-            device.buttonAction,
-            emergencyPhone,
-            device.name,
-          );
-        } catch (e) {
-          print('Failed to execute emergency action in foreground: $e');
-        }
-      }
     }
   }
 

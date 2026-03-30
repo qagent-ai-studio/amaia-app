@@ -41,6 +41,15 @@ class MkButtonChannel(
     private var isDeviceConnected = false
     private var pendingPassword: String = "123456"
     private var foregroundMac: String? = null
+    private var connectedAt: Long = 0
+
+    private data class ForegroundActionConfig(
+        val clickType: String,
+        val buttonAction: String,
+        val emergencyPhone: String?,
+        val deviceName: String
+    )
+    private val deviceActionConfigs = mutableMapOf<String, ForegroundActionConfig>()
 
     // ---------------------------------------------------------------------------
     // Lifecycle
@@ -178,7 +187,7 @@ class MkButtonChannel(
     private fun handleReadBattery(result: MethodChannel.Result) {
         try {
             DMokoSupport.getInstance().sendOrder(
-                OrderTaskAssembler.getBatteryPercent()
+                OrderTaskAssembler.getBattery()
             )
             result.success(null)
         } catch (e: Exception) {
@@ -287,6 +296,18 @@ class MkButtonChannel(
         val deviceType = call.argument<String>("deviceType") ?: "button"
         val deviceName = call.argument<String>("deviceName") ?: "Dispositivo MK"
 
+        deviceActionConfigs[mac] = ForegroundActionConfig(
+            clickType = clickType,
+            buttonAction = buttonAction,
+            emergencyPhone = emergencyPhone,
+            deviceName = deviceName
+        )
+        context.getSharedPreferences("mk_button_config", Context.MODE_PRIVATE).edit()
+            .putString("${mac}_clickType", clickType)
+            .putString("${mac}_buttonAction", buttonAction)
+            .putString("${mac}_emergencyPhone", emergencyPhone ?: "")
+            .putString("${mac}_deviceName", deviceName)
+            .apply()
         try {
             MkButtonBackgroundService.startService(
                 context = context,
@@ -446,6 +467,7 @@ class MkButtonChannel(
         isDeviceConnected = connected
 
         if (connected) {
+            connectedAt = System.currentTimeMillis()
             android.util.Log.d("MkButton", "Device connected, checking password requirement...")
             DMokoSupport.getInstance().writePasswordDirectly(
                 byteArrayOf(0xEA.toByte(), 0x00, 0x23, 0x00)
@@ -465,7 +487,7 @@ class MkButtonChannel(
                 handler.postDelayed({
                     try {
                         DMokoSupport.getInstance().sendOrder(
-                            OrderTaskAssembler.getBatteryPercent()
+                            OrderTaskAssembler.getBattery()
                         )
                     } catch (_: Exception) {}
                 }, 1500)
@@ -499,13 +521,24 @@ class MkButtonChannel(
 
         when (response.orderCHAR as? OrderCHAR) {
             OrderCHAR.CHAR_PARAMS -> {
-                // Formato de respuesta: EB 00 [KEY] [LEN] [DATA...]
-                // Para batería (0x62): EB 00 62 01 XX donde XX es el porcentaje
-                if (value.size >= 5 && (value[0].toInt() and 0xFF) == 0xEB && 
-                    (value[1].toInt() and 0xFF) == 0x00 && (value[2].toInt() and 0xFF) == 0x62) {
-                    // Batería está en el byte 4
-                    map["batteryPercent"] = value[4].toInt() and 0xFF
-                    android.util.Log.d("MkButton", "Battery parsed: ${value[4].toInt() and 0xFF}%")
+                if (value.size >= 3 && (value[0].toInt() and 0xFF) == 0xEB && (value[1].toInt() and 0xFF) == 0x00) {
+                    val key = value[2].toInt() and 0xFF
+                    when (key) {
+                        0x4A -> {
+                            if (value.size >= 6) {
+                                val mV = ((value[4].toInt() and 0xFF) shl 8) or (value[5].toInt() and 0xFF)
+                                val percent = ((mV - 3000).toFloat() / 1200f * 100f).toInt().coerceIn(0, 100)
+                                map["batteryPercent"] = percent
+                                android.util.Log.d("MkButton", "Battery voltage: ${mV}mV → $percent%")
+                            }
+                        }
+                        0x62 -> {
+                            if (value.size >= 5) {
+                                map["batteryPercent"] = value[4].toInt() and 0xFF
+                                android.util.Log.d("MkButton", "Battery percent: ${value[4].toInt() and 0xFF}%")
+                            }
+                        }
+                    }
                 }
             }
             OrderCHAR.CHAR_MODEL_NUMBER -> {
@@ -541,6 +574,23 @@ class MkButtonChannel(
             OrderCHAR.CHAR_LONG_TRIGGER   -> "long"
             OrderCHAR.CHAR_CLICK_EVENT    -> parseCHARClickEvent(value)
             else -> return
+        }
+
+        val elapsed = System.currentTimeMillis() - connectedAt
+        if (elapsed < 5000) {
+            android.util.Log.d("MkButton", "Click ignored — within 5s cooldown after connect ($elapsed ms)")
+            return
+        }
+
+        val mac = foregroundMac
+        val config = if (mac != null) deviceActionConfigs[mac] else null
+        if (config != null &&
+            pressType == config.clickType &&
+            config.buttonAction in listOf("call", "sms", "sms_and_call")) {
+            android.util.Log.d("MkButton", "Executing emergency action directly: ${config.buttonAction}")
+            MkButtonBackgroundService.executeEmergencyAction(
+                context, mac!!, config.buttonAction, config.emergencyPhone, config.deviceName
+            )
         }
 
         channel.invokeMethod("onButtonPress", mapOf("type" to pressType))

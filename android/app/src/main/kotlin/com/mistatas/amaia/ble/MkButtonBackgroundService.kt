@@ -292,7 +292,6 @@ class MkButtonBackgroundService : Service() {
     fun onOrderTaskResponseEvent(event: OrderTaskResponseEvent) {
         if (event.action != MokoConstants.ACTION_CURRENT_DATA) return
         val mac = event.macAddress ?: return
-        val state = deviceStates[mac] ?: return
         val response = event.response ?: return
 
         if (response.orderCHAR != OrderCHAR.CHAR_CLICK_EVENT) return
@@ -307,15 +306,25 @@ class MkButtonBackgroundService : Service() {
             else -> "single"
         }
 
-        if (!state.isInitialized) {
-            android.util.Log.w("MkButtonBgService", "Ignoring click from ${state.config.deviceName} - not initialized yet")
-            return
-        }
-
-        android.util.Log.d("MkButtonBgService", "Click from ${state.config.deviceName} ($mac): $clickType")
-
-        if (clickType == state.config.clickTypeToOpen && state.config.clickTypeToOpen != "disabled") {
-            executeButtonAction(state.config)
+        val state = deviceStates[mac]
+        if (state != null) {
+            if (!state.isInitialized) {
+                android.util.Log.w("MkButtonBgService", "Ignoring click from ${state.config.deviceName} - not initialized yet")
+                return
+            }
+            android.util.Log.d("MkButtonBgService", "Click from ${state.config.deviceName} ($mac): $clickType")
+            if (clickType == state.config.clickTypeToOpen && state.config.clickTypeToOpen != "disabled") {
+                executeButtonAction(state.config)
+            }
+        } else {
+            val prefs = applicationContext.getSharedPreferences("mk_button_config", Context.MODE_PRIVATE)
+            val storedClickType = prefs.getString("${mac}_clickType", null) ?: return
+            if (storedClickType == "disabled" || clickType != storedClickType) return
+            val buttonAction = prefs.getString("${mac}_buttonAction", "open_app") ?: return
+            val emergencyPhone = prefs.getString("${mac}_emergencyPhone", "")?.takeIf { it.isNotEmpty() }
+            val deviceName = prefs.getString("${mac}_deviceName", "Dispositivo MK") ?: "Dispositivo MK"
+            android.util.Log.d("MkButtonBgService", "Click (SharedPrefs fallback) from $mac: $clickType → $buttonAction")
+            executeButtonAction(DeviceConfig(mac, "", storedClickType, buttonAction, emergencyPhone, deviceName))
         }
     }
 
