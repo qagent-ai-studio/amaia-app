@@ -182,8 +182,8 @@ public class DMokoSupport extends MokoBleLib {
         if (responseUUID.equals(OrderCHAR.CHAR_PARAMS.getUuid()) && value != null && value.length >= 3 &&
             (value[0] & 0xFF) == 0xEB && (value[1] & 0xFF) == 0x00) {
             int key = value[2] & 0xFF;
-            if (key == 0x57 || key == 0x2C || key == 0x51) {
-                android.util.Log.d("MkButtonSDK", "Init response 0x" + String.format("%02X", key) + " mac=" + currentDeviceMac);
+            if (key == 0x57 || key == 0x2C || key == 0x51 || key == 0x01) {
+                android.util.Log.d("MkButtonSDK", "Init/keep-alive response 0x" + String.format("%02X", key) + " mac=" + currentDeviceMac);
                 return true;
             }
         }

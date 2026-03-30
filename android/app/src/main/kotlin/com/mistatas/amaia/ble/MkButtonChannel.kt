@@ -307,6 +307,7 @@ class MkButtonChannel(
             .putString("${mac}_buttonAction", buttonAction)
             .putString("${mac}_emergencyPhone", emergencyPhone ?: "")
             .putString("${mac}_deviceName", deviceName)
+            .putString("${mac}_password", password)
             .apply()
         try {
             MkButtonBackgroundService.startService(
@@ -468,6 +469,20 @@ class MkButtonChannel(
 
         if (connected) {
             connectedAt = System.currentTimeMillis()
+            val connectedMac = eventMac ?: foregroundMac
+            if (connectedMac != null && !deviceActionConfigs.containsKey(connectedMac)) {
+                val prefs = context.getSharedPreferences("mk_button_config", Context.MODE_PRIVATE)
+                val clickType = prefs.getString("${connectedMac}_clickType", null)
+                val buttonAction = prefs.getString("${connectedMac}_buttonAction", null)
+                if (clickType != null && buttonAction != null) {
+                    val ep = prefs.getString("${connectedMac}_emergencyPhone", "")?.takeIf { it.isNotEmpty() }
+                    val dn = prefs.getString("${connectedMac}_deviceName", "Dispositivo MK") ?: "Dispositivo MK"
+                    deviceActionConfigs[connectedMac] = ForegroundActionConfig(clickType, buttonAction, ep, dn)
+                    android.util.Log.d("MkButton", "Config restored from SharedPrefs for $connectedMac: clickType=$clickType buttonAction=$buttonAction")
+                } else {
+                    android.util.Log.w("MkButton", "No SharedPrefs config found for $connectedMac")
+                }
+            }
             android.util.Log.d("MkButton", "Device connected, checking password requirement...")
             DMokoSupport.getInstance().writePasswordDirectly(
                 byteArrayOf(0xEA.toByte(), 0x00, 0x23, 0x00)
@@ -527,7 +542,11 @@ class MkButtonChannel(
                         0x4A -> {
                             if (value.size >= 6) {
                                 val mV = ((value[4].toInt() and 0xFF) shl 8) or (value[5].toInt() and 0xFF)
-                                val percent = ((mV - 3000).toFloat() / 1200f * 100f).toInt().coerceIn(0, 100)
+                                val percent = if (mV >= 3700) {
+                                    ((mV - 3000).toFloat() / 1200f * 100f).toInt().coerceIn(0, 100)
+                                } else {
+                                    ((mV - 2000).toFloat() / 1300f * 100f).toInt().coerceIn(0, 100)
+                                }
                                 map["batteryPercent"] = percent
                                 android.util.Log.d("MkButton", "Battery voltage: ${mV}mV → $percent%")
                             }
@@ -584,10 +603,15 @@ class MkButtonChannel(
 
         val mac = foregroundMac
         val config = if (mac != null) deviceActionConfigs[mac] else null
-        if (config != null &&
-            pressType == config.clickType &&
-            config.buttonAction in listOf("call", "sms", "sms_and_call")) {
-            android.util.Log.d("MkButton", "Executing emergency action directly: ${config.buttonAction}")
+        android.util.Log.d("MkButton", "handleNotifyData: mac=$mac pressType=$pressType config=${config?.buttonAction}/${config?.clickType}")
+        if (config == null) {
+            android.util.Log.w("MkButton", "No config for mac=$mac, deviceActionConfigs keys=${deviceActionConfigs.keys}")
+        } else if (pressType != config.clickType) {
+            android.util.Log.w("MkButton", "pressType=$pressType != config.clickType=${config.clickType}")
+        } else if (config.buttonAction !in listOf("call", "sms", "sms_and_call")) {
+            android.util.Log.w("MkButton", "buttonAction=${config.buttonAction} not in emergency list")
+        } else {
+            android.util.Log.d("MkButton", "Executing emergency action: ${config.buttonAction}")
             MkButtonBackgroundService.executeEmergencyAction(
                 context, mac!!, config.buttonAction, config.emergencyPhone, config.deviceName
             )

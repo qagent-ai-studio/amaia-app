@@ -124,6 +124,8 @@ class MkButtonBackgroundService : Service() {
     )
 
     private val deviceStates = mutableMapOf<String, DeviceState>()
+    private val reconnectHandler = android.os.Handler(android.os.Looper.getMainLooper())
+    private val pendingReconnects = mutableMapOf<String, Runnable>()
 
     override fun onCreate() {
         super.onCreate()
@@ -176,6 +178,7 @@ class MkButtonBackgroundService : Service() {
             ACTION_REMOVE_DEVICE -> {
                 val mac = intent.getStringExtra(EXTRA_MAC) ?: return START_STICKY
                 android.util.Log.d("MkButtonBgService", "Removing device: $mac")
+                pendingReconnects.remove(mac)?.let { reconnectHandler.removeCallbacks(it) }
                 deviceStates.remove(mac)?.support?.disConnectBle()
                 android.util.Log.d("MkButtonBgService", "Device removed. Remaining: ${deviceStates.size}")
                 if (deviceStates.isEmpty()) disconnectAndStop()
@@ -199,8 +202,9 @@ class MkButtonBackgroundService : Service() {
                 executeButtonAction(config)
             }
             else -> {
+                startForeground(NOTIFICATION_ID, createNotification("Activo"))
                 if (deviceStates.isEmpty()) {
-                    startForeground(NOTIFICATION_ID, createNotification("Activo"))
+                    restoreDevicesFromPrefs()
                 }
             }
         }
@@ -212,9 +216,37 @@ class MkButtonBackgroundService : Service() {
     override fun onDestroy() {
         super.onDestroy()
         EventBus.getDefault().unregister(this)
+        reconnectHandler.removeCallbacksAndMessages(null)
+        pendingReconnects.clear()
         deviceStates.values.forEach { it.support.disConnectBle() }
         deviceStates.clear()
         android.util.Log.d("MkButtonBgService", "Service destroyed")
+    }
+
+    private fun restoreDevicesFromPrefs() {
+        val prefs = applicationContext.getSharedPreferences("mk_button_config", Context.MODE_PRIVATE)
+        val allKeys = prefs.all.keys
+        val macs = allKeys.mapNotNull { key ->
+            if (key.endsWith("_clickType")) key.removeSuffix("_clickType") else null
+        }
+        for (mac in macs) {
+            val clickType = prefs.getString("${mac}_clickType", null) ?: continue
+            if (clickType == "disabled") continue
+            val buttonAction = prefs.getString("${mac}_buttonAction", "open_app") ?: continue
+            val emergencyPhone = prefs.getString("${mac}_emergencyPhone", "")?.takeIf { it.isNotEmpty() }
+            val deviceName = prefs.getString("${mac}_deviceName", "Dispositivo MK") ?: "Dispositivo MK"
+            val password = prefs.getString("${mac}_password", "123456") ?: "123456"
+            android.util.Log.d("MkButtonBgService", "Restoring device from prefs: $mac ($deviceName)")
+            val config = DeviceConfig(mac, password, clickType, buttonAction, emergencyPhone, deviceName)
+            val support = DMokoSupport(applicationContext, mac)
+            support.setPassword(config.password)
+            deviceStates[mac] = DeviceState(config = config, support = support)
+            support.connDevice(mac)
+        }
+        if (deviceStates.isEmpty()) {
+            android.util.Log.d("MkButtonBgService", "No devices to restore, stopping service")
+            stopSelf()
+        }
     }
 
     private fun disconnectAndStop() {
@@ -236,6 +268,7 @@ class MkButtonBackgroundService : Service() {
 
         when (event.action) {
             MokoConstants.ACTION_DISCOVER_SUCCESS -> {
+                pendingReconnects.remove(mac)?.let { reconnectHandler.removeCallbacks(it) }
                 state.isConnected = true
                 state.reconnectAttempts = 0
                 android.util.Log.d("MkButtonBgService", "Connected: ${state.config.deviceName} ($mac)")
@@ -276,11 +309,15 @@ class MkButtonBackgroundService : Service() {
                     state.reconnectAttempts++
                     val delay = minOf(5000L * (1L shl (state.reconnectAttempts - 1)), 300_000L)
                     android.util.Log.d("MkButtonBgService", "Reconnecting ${state.config.deviceName} in ${delay}ms (attempt ${state.reconnectAttempts})")
-                    android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
+                    pendingReconnects.remove(mac)?.let { reconnectHandler.removeCallbacks(it) }
+                    val runnable = Runnable {
+                        pendingReconnects.remove(mac)
                         if (deviceStates.containsKey(mac) && !state.isConnected) {
                             state.support.connDevice(mac)
                         }
-                    }, delay)
+                    }
+                    pendingReconnects[mac] = runnable
+                    reconnectHandler.postDelayed(runnable, delay)
                 } else {
                     android.util.Log.w("MkButtonBgService", "Max reconnect attempts for ${state.config.deviceName}")
                 }
