@@ -549,6 +549,10 @@ class MkButtonChannel(
                                 }
                                 map["batteryPercent"] = percent
                                 android.util.Log.d("MkButton", "Battery voltage: ${mV}mV → $percent%")
+                                foregroundMac?.let { mac ->
+                                    context.getSharedPreferences("mk_button_config", Context.MODE_PRIVATE)
+                                        .edit().putInt("${mac}_batteryPercent", percent).apply()
+                                }
                             }
                         }
                         0x62 -> {

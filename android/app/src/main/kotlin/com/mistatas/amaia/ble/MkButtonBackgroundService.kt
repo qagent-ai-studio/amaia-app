@@ -402,12 +402,19 @@ class MkButtonBackgroundService : Service() {
         android.util.Log.d("MkButtonBgService", "Sending SMS for ${config.deviceName} to ${config.emergencyPhone}")
         try {
             val location = getLocationFromSharedPreferences() ?: getCurrentLocation()
+            val batteryPercent = applicationContext
+                .getSharedPreferences("mk_button_config", Context.MODE_PRIVATE)
+                .getInt("${config.mac}_batteryPercent", -1)
+            val batteryInfo = if (batteryPercent >= 0) "🔋 Batería: $batteryPercent%\n" else ""
             val message = if (location != null) {
                 "🚨 ALERTA: ${config.deviceName} presionado\n" +
+                batteryInfo +
                 "Lat: ${location.latitude}\n" +
                 "Lon: ${location.longitude}"
             } else {
-                "🚨 ALERTA: ${config.deviceName} presionado\n(Ubicación no disponible)"
+                "🚨 ALERTA: ${config.deviceName} presionado\n" +
+                batteryInfo +
+                "(Ubicación no disponible)"
             }
 
             val smsManager = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
