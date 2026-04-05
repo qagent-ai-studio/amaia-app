@@ -623,4 +623,10 @@ public class OrderTaskAssembler {
         task.getData(ParamsKeyEnum.KEY_FIRMWARE_TYPE);
         return task;
     }
+
+    public static OrderTask setConnectInterval(int intervalMs) {
+        ParamsTask task = new ParamsTask();
+        task.setConnectInterval(intervalMs);
+        return task;
+    }
 }

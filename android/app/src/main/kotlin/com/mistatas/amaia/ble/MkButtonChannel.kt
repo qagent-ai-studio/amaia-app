@@ -42,6 +42,9 @@ class MkButtonChannel(
     private var pendingPassword: String = "123456"
     private var foregroundMac: String? = null
     private var connectedAt: Long = 0
+    private var expectingConnect = false
+    private var connectRetries = 0
+    private val connectionTimeoutHandler = android.os.Handler(android.os.Looper.getMainLooper())
 
     private data class ForegroundActionConfig(
         val clickType: String,
@@ -78,6 +81,7 @@ class MkButtonChannel(
         when (call.method) {
             "startScan"                     -> handleStartScan(result)
             "stopScan"                      -> handleStopScan(result)
+            "prepareConnect"                -> handlePrepareConnect(call, result)
             "connect"                       -> handleConnect(call, result)
             "disconnect"                    -> handleDisconnect(result)
             "readDeviceInfo"                -> handleReadDeviceInfo(result)
@@ -92,6 +96,8 @@ class MkButtonChannel(
             "stopBackgroundService"             -> handleStopBackgroundService(result)
             "removeDeviceFromBackgroundService" -> handleRemoveDeviceFromBackgroundService(call, result)
             "executeEmergencyAction"            -> handleExecuteEmergencyAction(call, result)
+            "triggerBuzzer"                 -> handleTriggerBuzzer(call, result)
+            "stopBuzzer"                    -> handleStopBuzzer(result)
             "checkPermissions"              -> handleCheckPermissions(result)
             "requestBatteryOptimization"    -> handleRequestBatteryOptimization(result)
             "requestNotificationPermission" -> handleRequestNotificationPermission(result)
@@ -144,16 +150,36 @@ class MkButtonChannel(
     // Connection
     // ---------------------------------------------------------------------------
 
+    private fun handlePrepareConnect(call: MethodCall, result: MethodChannel.Result) {
+        val mac = call.argument<String>("mac") ?: run { result.success(null); return }
+        foregroundMac = mac
+        expectingConnect = true
+        connectRetries = 0
+        connectionTimeoutHandler.removeCallbacksAndMessages(null)
+        connectionTimeoutHandler.postDelayed({
+            if (expectingConnect) {
+                expectingConnect = false
+                isDeviceConnected = false
+                android.util.Log.e("MkButton", "Connection timeout (20s) for $mac — reporting failure to Flutter")
+                channel.invokeMethod("onConnectionStatus", mapOf("connected" to false))
+            }
+        }, 20_000L)
+        android.util.Log.d("MkButton", "prepareConnect($mac) — expectingConnect=true")
+        result.success(null)
+    }
+
     private fun handleConnect(call: MethodCall, result: MethodChannel.Result) {
         val mac = call.argument<String>("mac") ?: run {
             result.error("INVALID_ARG", "mac address is required", null)
             return
         }
         pendingPassword = call.argument<String>("password") ?: "123456"
-
-        foregroundMac = mac
+        if (foregroundMac != mac) {
+            foregroundMac = mac
+        }
         DMokoSupport.getInstance().setPassword(pendingPassword)
-        DMokoSupport.getInstance().connDevice(mac)
+        android.util.Log.d("MkButton", "handleConnect($mac) — calling forceConnDevice (expectingConnect=$expectingConnect retries=$connectRetries)")
+        DMokoSupport.getInstance().forceConnDevice(mac)
         result.success(null)
     }
 
@@ -276,6 +302,24 @@ class MkButtonChannel(
     private fun handleResetDevice(result: MethodChannel.Result) {
         DMokoSupport.getInstance().sendOrder(
             OrderTaskAssembler.setDefault()
+        )
+        result.success(null)
+    }
+
+    private fun handleTriggerBuzzer(call: MethodCall, result: MethodChannel.Result) {
+        val durationMs = call.argument<Int>("durationMs") ?: 3000
+        val intervalMs = call.argument<Int>("intervalMs") ?: 0
+        val clamped = durationMs.coerceIn(1, 6000)
+        val clampedInterval = intervalMs.coerceIn(0, 100)
+        DMokoSupport.getInstance().sendOrder(
+            OrderTaskAssembler.setRemoteBuzzerNotifyAlarmParams(clamped, clampedInterval)
+        )
+        result.success(null)
+    }
+
+    private fun handleStopBuzzer(result: MethodChannel.Result) {
+        DMokoSupport.getInstance().sendOrder(
+            OrderTaskAssembler.setDismissAlarm()
         )
         result.success(null)
     }
@@ -465,9 +509,11 @@ class MkButtonChannel(
         if (eventMac != null && eventMac != foregroundMac) return
 
         val connected = event.action == MokoConstants.ACTION_DISCOVER_SUCCESS
-        isDeviceConnected = connected
 
         if (connected) {
+            connectionTimeoutHandler.removeCallbacksAndMessages(null)
+            expectingConnect = false
+            isDeviceConnected = true
             connectedAt = System.currentTimeMillis()
             val connectedMac = eventMac ?: foregroundMac
             if (connectedMac != null && !deviceActionConfigs.containsKey(connectedMac)) {
@@ -507,6 +553,24 @@ class MkButtonChannel(
                     } catch (_: Exception) {}
                 }, 1500)
             }, 2500)
+        } else {
+            if (expectingConnect) {
+                val retryMac = foregroundMac ?: return
+                if (connectRetries < 3) {
+                    connectRetries++
+                    android.util.Log.d("MkButton", "Disconnect during connect phase, retry $connectRetries/3 for $retryMac in 200ms")
+                    connectionTimeoutHandler.postDelayed({
+                        if (expectingConnect) {
+                            android.util.Log.d("MkButton", "forceConnDevice retry $connectRetries for $retryMac")
+                            DMokoSupport.getInstance().forceConnDevice(retryMac)
+                        }
+                    }, 200L)
+                } else {
+                    android.util.Log.w("MkButton", "Max retries reached for $retryMac")
+                }
+                return
+            }
+            isDeviceConnected = false
         }
 
         channel.invokeMethod("onConnectionStatus", mapOf("connected" to connected))
@@ -542,10 +606,12 @@ class MkButtonChannel(
                         0x4A -> {
                             if (value.size >= 6) {
                                 val mV = ((value[4].toInt() and 0xFF) shl 8) or (value[5].toInt() and 0xFF)
-                                val percent = if (mV >= 3700) {
-                                    ((mV - 3000).toFloat() / 1200f * 100f).toInt().coerceIn(0, 100)
-                                } else {
-                                    ((mV - 2000).toFloat() / 1300f * 100f).toInt().coerceIn(0, 100)
+                                val percent = when {
+                                    mV >= 3700 -> ((mV - 3000).toFloat() / 1200f * 100f).toInt().coerceIn(0, 100)
+                                    mV >= 3216 -> 100
+                                    mV > 2931  -> 99
+                                    mV >= 2645 -> (1 + (mV - 2645) * 98 / (2931 - 2645)).coerceIn(0, 100)
+                                    else -> 0
                                 }
                                 map["batteryPercent"] = percent
                                 android.util.Log.d("MkButton", "Battery voltage: ${mV}mV → $percent%")

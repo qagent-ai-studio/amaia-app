@@ -83,6 +83,14 @@ class _DevicePageState extends State<DevicePage> {
                     .add(const BatteryReadRequested()),
               ),
 
+              // Buzzer / Localizar dispositivo
+              const SizedBox(height: 8),
+              const SectionHeader(
+                icon: Icons.volume_up_rounded,
+                title: 'Localizar dispositivo',
+              ),
+              _BuzzerCard(),
+
               // Device Info
               if (info != null) ...[
                 const SizedBox(height: 8),
@@ -299,6 +307,100 @@ class _TextInputDialogState extends State<_TextInputDialog> {
           child: const Text('Guardar'),
         ),
       ],
+    );
+  }
+}
+
+/// Tarjeta para hacer sonar el dispositivo remotamente
+class _BuzzerCard extends StatefulWidget {
+  @override
+  State<_BuzzerCard> createState() => _BuzzerCardState();
+}
+
+class _BuzzerCardState extends State<_BuzzerCard> {
+  bool _isActive = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+      child: Material(
+        color: const Color(0xFF1E293B),
+        borderRadius: BorderRadius.circular(12),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF97316).withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Icon(
+                  _isActive ? Icons.volume_up_rounded : Icons.volume_off_rounded,
+                  color: const Color(0xFFF97316),
+                  size: 22,
+                ),
+              ),
+              const SizedBox(width: 14),
+              const Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Hacer sonar',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w600,
+                        fontSize: 15,
+                      ),
+                    ),
+                    SizedBox(height: 3),
+                    Text(
+                      'Activa el buzzer del dispositivo para encontrarlo',
+                      style: TextStyle(color: Colors.white38, fontSize: 12),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 8),
+              if (_isActive)
+                TextButton(
+                  onPressed: () {
+                    context.read<BleButtonBloc>().add(const BuzzerStopped());
+                    setState(() => _isActive = false);
+                  },
+                  style: TextButton.styleFrom(
+                    foregroundColor: Colors.white54,
+                  ),
+                  child: const Text('Detener'),
+                )
+              else
+                ElevatedButton(
+                  onPressed: () {
+                    context.read<BleButtonBloc>().add(
+                          const BuzzerTriggered(durationMs: 5000, intervalMs: 0),
+                        );
+                    setState(() => _isActive = true);
+                    Future.delayed(const Duration(seconds: 5), () {
+                      if (mounted) setState(() => _isActive = false);
+                    });
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFFF97316),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 16, vertical: 10),
+                  ),
+                  child: const Text('Activar'),
+                ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }

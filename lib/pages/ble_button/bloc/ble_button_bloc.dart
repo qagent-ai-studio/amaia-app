@@ -36,6 +36,8 @@ class BleButtonBloc extends Bloc<BleButtonEvent, BleButtonState> {
     on<SavedDevicesLoadRequested>(_onSavedDevicesLoadRequested);
     on<SavedDeviceDeleteRequested>(_onSavedDeviceDeleteRequested);
     on<AutoReconnectRequested>(_onAutoReconnectRequested);
+    on<BuzzerTriggered>(_onBuzzerTriggered);
+    on<BuzzerStopped>(_onBuzzerStopped);
     on<_DeviceScanned>(_onDeviceScanned);
     on<_ConnectionStatusChanged>(_onConnectionStatusChanged);
     on<_ButtonPressReceived>(_onButtonPressReceived);
@@ -124,8 +126,9 @@ class BleButtonBloc extends Bloc<BleButtonEvent, BleButtonState> {
     emit(BleButtonConnecting(mac: event.mac));
     try {
       try {
+        await _repo.prepareConnect(event.mac);
         await _repo.removeDeviceFromBackgroundService(event.mac);
-        await Future.delayed(const Duration(milliseconds: 1500));
+        await Future.delayed(const Duration(milliseconds: 800));
       } catch (_) {}
 
       await _repo.connect(event.mac, password: event.password ?? '123456');
@@ -377,6 +380,26 @@ class BleButtonBloc extends Bloc<BleButtonEvent, BleButtonState> {
     if (state is BleButtonScanning) {
       emit((state as BleButtonScanning).copyWith(savedDevices: savedDevices));
     }
+  }
+
+  Future<void> _onBuzzerTriggered(
+    BuzzerTriggered event,
+    Emitter<BleButtonState> emit,
+  ) async {
+    await _sendCommand(
+      emit,
+      () => _repo.triggerBuzzer(
+        durationMs: event.durationMs,
+        intervalMs: event.intervalMs,
+      ),
+    );
+  }
+
+  Future<void> _onBuzzerStopped(
+    BuzzerStopped event,
+    Emitter<BleButtonState> emit,
+  ) async {
+    await _sendCommand(emit, _repo.stopBuzzer);
   }
 
   Future<void> _onAutoReconnectRequested(

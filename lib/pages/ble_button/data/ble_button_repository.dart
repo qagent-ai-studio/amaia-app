@@ -14,6 +14,7 @@ abstract class BleButtonRepository {
 
   Future<void> startScan();
   Future<void> stopScan();
+  Future<void> prepareConnect(String mac);
   Future<void> connect(String mac, {String password = '123456'});
   Future<void> disconnect();
   Future<void> readDeviceInfo();
@@ -34,6 +35,8 @@ abstract class BleButtonRepository {
   Future<void> removeDeviceFromBackgroundService(String mac);
   Future<void> executeEmergencyAction(
       String mac, String buttonAction, String? emergencyPhone, String deviceName);
+  Future<void> triggerBuzzer({int durationMs = 3000, int intervalMs = 0});
+  Future<void> stopBuzzer();
 }
 
 /// Implementation using Flutter MethodChannel to communicate with
@@ -90,6 +93,10 @@ class BleButtonRepositoryImpl implements BleButtonRepository {
 
   @override
   Future<void> stopScan() => _invoke('stopScan');
+
+  @override
+  Future<void> prepareConnect(String mac) =>
+      _invoke('prepareConnect', {'mac': mac});
 
   @override
   Future<void> connect(String mac, {String password = '123456'}) =>
@@ -166,6 +173,13 @@ class BleButtonRepositoryImpl implements BleButtonRepository {
         'emergencyPhone': emergencyPhone,
         'deviceName': deviceName,
       });
+
+  @override
+  Future<void> triggerBuzzer({int durationMs = 3000, int intervalMs = 0}) =>
+      _invoke('triggerBuzzer', {'durationMs': durationMs, 'intervalMs': intervalMs});
+
+  @override
+  Future<void> stopBuzzer() => _invoke('stopBuzzer');
 
   Future<void> _invoke(String method, [Map<String, dynamic>? args]) async {
     try {

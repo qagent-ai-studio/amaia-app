@@ -82,6 +82,18 @@ public class ParamsTask extends OrderTask {
 
     }
 
+    public void setConnectInterval(int intervalMs) {
+        byte[] paramsBytes = MokoUtils.toByteArray(intervalMs, 2);
+        response.responseValue = data = new byte[]{
+                (byte) 0xEA,
+                (byte) 0x01,
+                (byte) ParamsKeyEnum.KEY_CONNECT_INTERVAL.getParamsKey(),
+                (byte) 0x02,
+                paramsBytes[0],
+                paramsBytes[1],
+        };
+    }
+
     public void setScanResponseEnable(@IntRange(from = 0, to = 1) int enable) {
         response.responseValue = data = new byte[]{
                 (byte) 0xEA,

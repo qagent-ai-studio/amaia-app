@@ -269,6 +269,7 @@ class MkButtonBackgroundService : Service() {
         when (event.action) {
             MokoConstants.ACTION_DISCOVER_SUCCESS -> {
                 pendingReconnects.remove(mac)?.let { reconnectHandler.removeCallbacks(it) }
+                cancelDeviceLostNotification(mac)
                 state.isConnected = true
                 state.reconnectAttempts = 0
                 android.util.Log.d("MkButtonBgService", "Connected: ${state.config.deviceName} ($mac)")
@@ -298,9 +299,14 @@ class MkButtonBackgroundService : Service() {
                 updateNotification("$connectedCount dispositivo(s) conectado(s)")
             }
             MokoConstants.ACTION_DISCONNECTED -> {
+                val wasInitialized = state.isInitialized
                 state.isConnected = false
                 state.isInitialized = false
                 android.util.Log.d("MkButtonBgService", "Disconnected: ${state.config.deviceName} ($mac)")
+
+                if (wasInitialized) {
+                    showDeviceLostNotification(state.config)
+                }
 
                 val connectedCount = deviceStates.count { it.value.isConnected }
                 updateNotification(if (connectedCount > 0) "$connectedCount dispositivo(s) conectado(s)" else "Reconectando...")
@@ -330,38 +336,39 @@ class MkButtonBackgroundService : Service() {
         if (event.action != MokoConstants.ACTION_CURRENT_DATA) return
         val mac = event.macAddress ?: return
         val response = event.response ?: return
-
-        if (response.orderCHAR != OrderCHAR.CHAR_CLICK_EVENT) return
-
         val value = response.responseValue ?: return
-        if (value.size < 5) return
 
-        val clickType = when (value[4].toInt() and 0xFF) {
-            0x01 -> "single"
-            0x02 -> "double"
-            0x03 -> "long"
-            else -> "single"
-        }
-
-        val state = deviceStates[mac]
-        if (state != null) {
-            if (!state.isInitialized) {
-                android.util.Log.w("MkButtonBgService", "Ignoring click from ${state.config.deviceName} - not initialized yet")
-                return
+        when (response.orderCHAR as? OrderCHAR) {
+            OrderCHAR.CHAR_CLICK_EVENT -> {
+                if (value.size < 5) return
+                val clickType = when (value[4].toInt() and 0xFF) {
+                    0x01 -> "single"
+                    0x02 -> "double"
+                    0x03 -> "long"
+                    else -> "single"
+                }
+                val state = deviceStates[mac]
+                if (state != null) {
+                    if (!state.isInitialized) {
+                        android.util.Log.w("MkButtonBgService", "Ignoring click from ${state.config.deviceName} - not initialized yet")
+                        return
+                    }
+                    android.util.Log.d("MkButtonBgService", "Click from ${state.config.deviceName} ($mac): $clickType")
+                    if (clickType == state.config.clickTypeToOpen && state.config.clickTypeToOpen != "disabled") {
+                        executeButtonAction(state.config)
+                    }
+                } else {
+                    val prefs = applicationContext.getSharedPreferences("mk_button_config", Context.MODE_PRIVATE)
+                    val storedClickType = prefs.getString("${mac}_clickType", null) ?: return
+                    if (storedClickType == "disabled" || clickType != storedClickType) return
+                    val buttonAction = prefs.getString("${mac}_buttonAction", "open_app") ?: return
+                    val emergencyPhone = prefs.getString("${mac}_emergencyPhone", "")?.takeIf { it.isNotEmpty() }
+                    val deviceName = prefs.getString("${mac}_deviceName", "Dispositivo MK") ?: "Dispositivo MK"
+                    android.util.Log.d("MkButtonBgService", "Click (SharedPrefs fallback) from $mac: $clickType → $buttonAction")
+                    executeButtonAction(DeviceConfig(mac, "", storedClickType, buttonAction, emergencyPhone, deviceName))
+                }
             }
-            android.util.Log.d("MkButtonBgService", "Click from ${state.config.deviceName} ($mac): $clickType")
-            if (clickType == state.config.clickTypeToOpen && state.config.clickTypeToOpen != "disabled") {
-                executeButtonAction(state.config)
-            }
-        } else {
-            val prefs = applicationContext.getSharedPreferences("mk_button_config", Context.MODE_PRIVATE)
-            val storedClickType = prefs.getString("${mac}_clickType", null) ?: return
-            if (storedClickType == "disabled" || clickType != storedClickType) return
-            val buttonAction = prefs.getString("${mac}_buttonAction", "open_app") ?: return
-            val emergencyPhone = prefs.getString("${mac}_emergencyPhone", "")?.takeIf { it.isNotEmpty() }
-            val deviceName = prefs.getString("${mac}_deviceName", "Dispositivo MK") ?: "Dispositivo MK"
-            android.util.Log.d("MkButtonBgService", "Click (SharedPrefs fallback) from $mac: $clickType → $buttonAction")
-            executeButtonAction(DeviceConfig(mac, "", storedClickType, buttonAction, emergencyPhone, deviceName))
+            else -> {}
         }
     }
 
@@ -568,6 +575,40 @@ class MkButtonBackgroundService : Service() {
         } catch (e: Exception) {
             android.util.Log.e("MkButtonBgService", "Failed to open app", e)
         }
+    }
+
+    private fun showDeviceLostNotification(config: DeviceConfig) {
+        val notifId = 4000 + config.mac.hashCode() and 0xFFFF
+        val launchIntent = packageManager.getLaunchIntentForPackage(packageName)?.apply {
+            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
+        }
+        val pendingIntent = PendingIntent.getActivity(
+            this, notifId, launchIntent ?: Intent(this, MainActivity::class.java),
+            PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
+        )
+        val notification = NotificationCompat.Builder(this, ALERT_CHANNEL_ID)
+            .setSmallIcon(android.R.drawable.stat_sys_warning)
+            .setContentTitle("📡 Dispositivo fuera de rango")
+            .setContentText("${config.deviceName} se desconectó")
+            .setStyle(NotificationCompat.BigTextStyle()
+                .bigText("${config.deviceName} salió del rango Bluetooth.\nReconectando automáticamente..."))
+            .setPriority(NotificationCompat.PRIORITY_HIGH)
+            .setCategory(NotificationCompat.CATEGORY_STATUS)
+            .setOngoing(false)
+            .setAutoCancel(true)
+            .setVibrate(longArrayOf(0, 400, 200, 400))
+            .setSound(android.provider.Settings.System.DEFAULT_NOTIFICATION_URI)
+            .setColor(0xFFFF6600.toInt())
+            .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
+            .setContentIntent(pendingIntent)
+            .build()
+        getSystemService(NotificationManager::class.java).notify(notifId, notification)
+        android.util.Log.d("MkButtonBgService", "Device lost notification shown for ${config.deviceName}")
+    }
+
+    private fun cancelDeviceLostNotification(mac: String) {
+        val notifId = 4000 + mac.hashCode() and 0xFFFF
+        getSystemService(NotificationManager::class.java).cancel(notifId)
     }
 
     private fun createNotificationChannel() {

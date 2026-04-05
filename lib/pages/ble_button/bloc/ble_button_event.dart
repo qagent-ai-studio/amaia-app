@@ -162,3 +162,19 @@ class SavedDeviceDeleteRequested extends BleButtonEvent {
 class AutoReconnectRequested extends BleButtonEvent {
   const AutoReconnectRequested();
 }
+
+/// Trigger the device buzzer remotely to find it
+class BuzzerTriggered extends BleButtonEvent {
+  const BuzzerTriggered({this.durationMs = 3000, this.intervalMs = 0});
+
+  final int durationMs;
+  final int intervalMs;
+
+  @override
+  List<Object?> get props => [durationMs, intervalMs];
+}
+
+/// Stop the device buzzer
+class BuzzerStopped extends BleButtonEvent {
+  const BuzzerStopped();
+}

@@ -34,8 +34,6 @@ final class MokoBleConfig extends MokoBleManager {
     private String mPassword = "";
     private final java.util.Queue<byte[]> initQueue = new java.util.LinkedList<>();
     private boolean initRunning = false;
-    private android.os.Handler keepAliveHandler;
-    private Runnable keepAliveRunnable;
 
     public void setPassword(String password) {
         this.mPassword = password != null ? password : "";
@@ -52,6 +50,19 @@ final class MokoBleConfig extends MokoBleManager {
 
     public BluetoothGattCharacteristic getParamsCharacteristic() {
         return paramsCharacteristic;
+    }
+
+    public void closeDirectly() {
+        if (gatt != null) {
+            try {
+                gatt.disconnect();
+                gatt.close();
+                android.util.Log.d("MkButtonSDK", "closeDirectly: stale GATT closed for " + gatt.getDevice().getAddress());
+            } catch (Exception e) {
+                android.util.Log.e("MkButtonSDK", "closeDirectly error: " + e.getMessage());
+            }
+            gatt = null;
+        }
     }
 
     public void writeDescriptorDirectly(BluetoothGattCharacteristic characteristic, byte[] value) {
@@ -135,8 +146,6 @@ final class MokoBleConfig extends MokoBleManager {
         requestMtu(247).with(((device, mtu) -> {
         })).then((device -> {
             enablePasswordNotify();
-            // DISABLED: enableDisconnectNotify() may cause unwanted disconnections
-            // enableDisconnectNotify();
             enableParamsNotify();
         })).enqueue();
     }
@@ -222,8 +231,13 @@ final class MokoBleConfig extends MokoBleManager {
             final byte[] value = data.getValue();
             android.util.Log.d("MkButtonSDK", "PASSWORD notify received: " + MokoUtils.bytesToHexString(value));
 
-            // Respuesta de autenticación exitosa
             if ((value[0] & 0xFF) == 0xEB && (value[1] & 0xFF) == 0x01 && (value[2] & 0xFF) == 0x55) {
+                if (value.length >= 5 && (value[4] & 0xFF) == 0x00) {
+                    android.util.Log.e("MkButtonSDK", "Password REJECTED by device - disconnecting");
+                    disconnect().enqueue();
+                    mMokoResponseCallback.onCharacteristicChanged(passwordCharacteristic, value);
+                    return;
+                }
                 android.util.Log.d("MkButtonSDK", "Password accepted! Starting init sequence...");
                 
                 // Secuencia de inicialización simplificada (como app oficial)
@@ -344,60 +358,10 @@ final class MokoBleConfig extends MokoBleManager {
     }
 
     public void startKeepAlive() {
-        if (keepAliveHandler == null) {
-            keepAliveHandler = new android.os.Handler(android.os.Looper.getMainLooper());
-        }
-        
-        if (keepAliveRunnable == null) {
-            keepAliveRunnable = new Runnable() {
-                private int commandIndex = 0;
-                
-                @Override
-                public void run() {
-                    if (gatt != null && paramsCharacteristic != null) {
-                        // Alternar entre diferentes comandos para mantener la conexión activa
-                        byte[] command;
-                        String commandName;
-                        
-                        switch (commandIndex % 3) {
-                            case 0:
-                                command = new byte[]{(byte)0xEA,(byte)0x00,(byte)0x01,(byte)0x00}; // Batería
-                                commandName = "battery";
-                                break;
-                            case 1:
-                                command = new byte[]{(byte)0xEA,(byte)0x00,(byte)0x51,(byte)0x00}; // Nombre
-                                commandName = "device name";
-                                break;
-                            case 2:
-                                command = new byte[]{(byte)0xEA,(byte)0x00,(byte)0x2C,(byte)0x00}; // Config
-                                commandName = "config";
-                                break;
-                            default:
-                                command = new byte[]{(byte)0xEA,(byte)0x00,(byte)0x01,(byte)0x00};
-                                commandName = "battery";
-                        }
-                        
-                        writeDirectly(paramsCharacteristic, command);
-                        android.util.Log.d("MkButtonSDK", "Keep-alive: " + commandName + " (#" + commandIndex + ")");
-                        
-                        commandIndex++;
-                        
-                        // Programar el próximo keep-alive en 15 segundos
-                        keepAliveHandler.postDelayed(this, 15000);
-                    }
-                }
-            };
-        }
-        
-        // Ejecutar el primer keep-alive inmediatamente
-        android.util.Log.d("MkButtonSDK", "Starting periodic keep-alive system");
-        keepAliveRunnable.run();
+        android.util.Log.d("MkButtonSDK", "startKeepAlive: delegated to DMokoSupport.sendOrder(setConnectInterval)");
     }
-    
+
     private void stopKeepAlive() {
-        if (keepAliveHandler != null && keepAliveRunnable != null) {
-            keepAliveHandler.removeCallbacks(keepAliveRunnable);
-            android.util.Log.d("MkButtonSDK", "Keep-alive system stopped");
-        }
+        // no-op: connection interval is set once, no periodic task to cancel
     }
 }

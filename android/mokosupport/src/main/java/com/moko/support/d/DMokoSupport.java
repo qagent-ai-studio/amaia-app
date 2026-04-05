@@ -82,17 +82,39 @@ public class DMokoSupport extends MokoBleLib {
         }
     }
 
+    public void forceConnDevice(String address) {
+        android.bluetooth.BluetoothAdapter adapter = android.bluetooth.BluetoothAdapter.getDefaultAdapter();
+        if (adapter == null || !adapter.isEnabled()) return;
+        final android.bluetooth.BluetoothDevice device = adapter.getRemoteDevice(address);
+        if (device == null) return;
+        boolean sysConnected = isConnDevice(address);
+        android.util.Log.d("MkButtonSDK", "forceConnDevice: isConnDevice=" + sysConnected + " for " + address);
+        if (sysConnected && mBleConfig != null) {
+            android.util.Log.d("MkButtonSDK", "forceConnDevice: closing stale GATT + resetting BleManager");
+            mBleConfig.closeDirectly();
+            mBleConfig = null;
+        }
+        new android.os.Handler(android.os.Looper.getMainLooper()).post(() ->
+            getMokoBleManager().connect(device).retry(5, 200).timeout(50000).enqueue()
+        );
+    }
+
     public void startKeepAlive() {
-        if (mBleConfig != null) {
-            mBleConfig.startKeepAlive();
+        android.util.Log.d("MkButtonSDK", "Setting connection interval to 200ms for mac=" + currentDeviceMac);
+        try {
+            sendOrder(com.moko.support.d.OrderTaskAssembler.setConnectInterval(200));
+        } catch (Exception e) {
+            android.util.Log.e("MkButtonSDK", "Failed to set connect interval: " + e.getMessage());
         }
     }
 
     @Override
     public MokoBleManager getMokoBleManager() {
-        mBleConfig = new MokoBleConfig(mContext, this);
-        if (mPassword != null && !mPassword.isEmpty()) {
-            mBleConfig.setPassword(mPassword);
+        if (mBleConfig == null) {
+            mBleConfig = new MokoBleConfig(mContext, this);
+            if (mPassword != null && !mPassword.isEmpty()) {
+                mBleConfig.setPassword(mPassword);
+            }
         }
         return mBleConfig;
     }
@@ -182,7 +204,7 @@ public class DMokoSupport extends MokoBleLib {
         if (responseUUID.equals(OrderCHAR.CHAR_PARAMS.getUuid()) && value != null && value.length >= 3 &&
             (value[0] & 0xFF) == 0xEB && (value[1] & 0xFF) == 0x00) {
             int key = value[2] & 0xFF;
-            if (key == 0x57 || key == 0x2C || key == 0x51 || key == 0x01) {
+            if (key == 0x57 || key == 0x2C || key == 0x51 || key == 0x01 || key == 0x5B) {
                 android.util.Log.d("MkButtonSDK", "Init/keep-alive response 0x" + String.format("%02X", key) + " mac=" + currentDeviceMac);
                 return true;
             }

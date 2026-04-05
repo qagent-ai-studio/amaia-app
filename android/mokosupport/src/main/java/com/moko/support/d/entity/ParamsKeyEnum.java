@@ -59,6 +59,7 @@ public enum ParamsKeyEnum implements Serializable {
     KEY_PASSWORD(0x55),
     KEY_FIRMWARE_TYPE(0x57),
     KEY_PRODUCT_DATE(0x5A),
+    KEY_CONNECT_INTERVAL(0x5B),
     KEY_RESET_BATTERY(0x5D),
     KEY_BATTERY_PERCENT(0x62),
     ;
