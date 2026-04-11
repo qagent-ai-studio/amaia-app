@@ -28,11 +28,11 @@ class _PasswordDialogState extends State<PasswordDialog> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      backgroundColor: const Color(0xFF1E293B),
+      backgroundColor: Colors.white,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       title: const Text(
         'Cambiar contraseña',
-        style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700),
+        style: TextStyle(color: Color(0xFF1E293B), fontWeight: FontWeight.w700),
       ),
       content: Form(
         key: _formKey,
@@ -75,7 +75,7 @@ class _PasswordDialogState extends State<PasswordDialog> {
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(context),
-          child: const Text('Cancelar', style: TextStyle(color: Colors.white54)),
+          child: const Text('Cancelar', style: TextStyle(color: Color(0xFF64748B))),
         ),
         ElevatedButton(
           style: ElevatedButton.styleFrom(
@@ -119,12 +119,12 @@ class _PasswordField extends StatelessWidget {
       controller: controller,
       obscureText: !visible,
       validator: validator,
-      style: const TextStyle(color: Colors.white),
+      style: const TextStyle(color: Color(0xFF1E293B)),
       decoration: InputDecoration(
         labelText: label,
-        labelStyle: const TextStyle(color: Colors.white54),
+        labelStyle: const TextStyle(color: Color(0xFF64748B)),
         filled: true,
-        fillColor: const Color(0xFF0F172A),
+        fillColor: const Color(0xFFF0F2FA),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(10),
           borderSide: BorderSide.none,
@@ -133,7 +133,7 @@ class _PasswordField extends StatelessWidget {
         suffixIcon: IconButton(
           icon: Icon(
             visible ? Icons.visibility_off_rounded : Icons.visibility_rounded,
-            color: Colors.white38,
+            color: const Color(0xFF94A3B8),
             size: 18,
           ),
           onPressed: onToggle,

@@ -15,7 +15,7 @@ class DeviceInfoCard extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
       child: Container(
         decoration: BoxDecoration(
-          color: const Color(0xFF1E293B),
+          color: Colors.white,
           borderRadius: BorderRadius.circular(16),
         ),
         child: Column(
@@ -40,7 +40,7 @@ class DeviceInfoCard extends StatelessWidget {
   }
 
   Widget _divider() =>
-      const Divider(height: 1, indent: 16, endIndent: 16, color: Color(0xFF0F172A));
+      const Divider(height: 1, indent: 16, endIndent: 16, color: Color(0xFFE2E8F0));
 }
 
 class _InfoRow extends StatelessWidget {
@@ -65,13 +65,13 @@ class _InfoRow extends StatelessWidget {
           Expanded(
             child: Text(
               label,
-              style: const TextStyle(color: Colors.white54, fontSize: 13),
+              style: const TextStyle(color: Color(0xFF64748B), fontSize: 13),
             ),
           ),
           Text(
             value.isEmpty ? '—' : value,
             style: TextStyle(
-              color: valueColor ?? Colors.white,
+              color: valueColor ?? const Color(0xFF1E293B),
               fontWeight: FontWeight.w600,
               fontSize: 13,
               fontFamily: mono ? 'monospace' : null,

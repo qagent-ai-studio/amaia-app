@@ -51,14 +51,14 @@ class _DevicePageState extends State<DevicePage> {
       builder: (context, state) {
         if (state is! BleButtonConnected) {
           return const Scaffold(
-            backgroundColor: Color(0xFF0F172A),
-            body: Center(child: CircularProgressIndicator()),
+            backgroundColor: Color(0xFFF0F2FA),
+            body: Center(child: CircularProgressIndicator(color: Color(0xFF6951C1))),
           );
         }
 
         final info = state.deviceInfo;
         return Scaffold(
-          backgroundColor: const Color(0xFF0F172A),
+          backgroundColor: const Color(0xFFF0F2FA),
           appBar: _buildAppBar(context, state, info),
           body: ListView(
             padding: const EdgeInsets.only(bottom: 32),
@@ -66,8 +66,8 @@ class _DevicePageState extends State<DevicePage> {
               if (state.isLoading)
                 const LinearProgressIndicator(
                   minHeight: 2,
-                  backgroundColor: Color(0xFF1E293B),
-                  valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF38BDF8)),
+                  backgroundColor: Color(0xFFE2E8F0),
+                  valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF6951C1)),
                 ),
 
               // Battery
@@ -132,10 +132,10 @@ class _DevicePageState extends State<DevicePage> {
     DeviceInfo? info,
   ) {
     return AppBar(
-      backgroundColor: const Color(0xFF1E293B),
+      backgroundColor: Colors.white,
       elevation: 0,
       leading: IconButton(
-        icon: const Icon(Icons.arrow_back_ios_rounded, color: Colors.white),
+        icon: const Icon(Icons.arrow_back_ios_rounded, color: Color(0xFF1E293B)),
         onPressed: () {
           context.read<BleButtonBloc>().add(const DeviceDisconnectRequested());
         },
@@ -146,7 +146,7 @@ class _DevicePageState extends State<DevicePage> {
           Text(
             info?.deviceName ?? 'MK Button',
             style: const TextStyle(
-              color: Colors.white,
+              color: Color(0xFF1E293B),
               fontWeight: FontWeight.w700,
               fontSize: 16,
             ),
@@ -154,7 +154,7 @@ class _DevicePageState extends State<DevicePage> {
           Text(
             widget.mac,
             style: const TextStyle(
-              color: Colors.white38,
+              color: Color(0xFF94A3B8),
               fontSize: 11,
               fontFamily: 'monospace',
             ),
@@ -268,34 +268,34 @@ class _TextInputDialogState extends State<_TextInputDialog> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      backgroundColor: const Color(0xFF1E293B),
+      backgroundColor: Colors.white,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       title: Text(
         widget.title,
         style:
-            const TextStyle(color: Colors.white, fontWeight: FontWeight.w700),
+            const TextStyle(color: Color(0xFF1E293B), fontWeight: FontWeight.w700),
       ),
       content: TextField(
         controller: _controller,
         maxLength: widget.maxLength,
-        style: const TextStyle(color: Colors.white),
+        style: const TextStyle(color: Color(0xFF1E293B)),
         decoration: InputDecoration(
           hintText: widget.hint,
-          hintStyle: const TextStyle(color: Colors.white38),
+          hintStyle: const TextStyle(color: Color(0xFF94A3B8)),
           filled: true,
-          fillColor: const Color(0xFF0F172A),
+          fillColor: const Color(0xFFF0F2FA),
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(10),
             borderSide: BorderSide.none,
           ),
-          counterStyle: const TextStyle(color: Colors.white38),
+          counterStyle: const TextStyle(color: Color(0xFF94A3B8)),
         ),
       ),
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(context),
           child:
-              const Text('Cancelar', style: TextStyle(color: Colors.white54)),
+              const Text('Cancelar', style: TextStyle(color: Color(0xFF64748B))),
         ),
         ElevatedButton(
           style: ElevatedButton.styleFrom(
@@ -325,7 +325,7 @@ class _BuzzerCardState extends State<_BuzzerCard> {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
       child: Material(
-        color: const Color(0xFF1E293B),
+        color: Colors.white,
         borderRadius: BorderRadius.circular(12),
         child: Padding(
           padding: const EdgeInsets.all(16),
@@ -351,7 +351,7 @@ class _BuzzerCardState extends State<_BuzzerCard> {
                     Text(
                       'Hacer sonar',
                       style: TextStyle(
-                        color: Colors.white,
+                        color: Color(0xFF1E293B),
                         fontWeight: FontWeight.w600,
                         fontSize: 15,
                       ),
@@ -359,7 +359,7 @@ class _BuzzerCardState extends State<_BuzzerCard> {
                     SizedBox(height: 3),
                     Text(
                       'Activa el buzzer del dispositivo para encontrarlo',
-                      style: TextStyle(color: Colors.white38, fontSize: 12),
+                      style: TextStyle(color: Color(0xFF94A3B8), fontSize: 12),
                     ),
                   ],
                 ),
@@ -372,7 +372,7 @@ class _BuzzerCardState extends State<_BuzzerCard> {
                     setState(() => _isActive = false);
                   },
                   style: TextButton.styleFrom(
-                    foregroundColor: Colors.white54,
+                    foregroundColor: const Color(0xFF64748B),
                   ),
                   child: const Text('Detener'),
                 )
@@ -412,7 +412,7 @@ class _PermissionsButton extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
       child: Material(
-        color: const Color(0xFF1E293B),
+        color: Colors.white,
         borderRadius: BorderRadius.circular(12),
         child: InkWell(
           borderRadius: BorderRadius.circular(12),
@@ -447,7 +447,7 @@ class _PermissionsButton extends StatelessWidget {
                       Text(
                         'Configurar Permisos',
                         style: TextStyle(
-                          color: Colors.white,
+                          color: Color(0xFF1E293B),
                           fontWeight: FontWeight.w600,
                           fontSize: 15,
                         ),
@@ -456,7 +456,7 @@ class _PermissionsButton extends StatelessWidget {
                       Text(
                         'Necesarios para abrir la app en segundo plano',
                         style: TextStyle(
-                          color: Colors.white38,
+                          color: Color(0xFF94A3B8),
                           fontSize: 12,
                         ),
                       ),
@@ -465,7 +465,7 @@ class _PermissionsButton extends StatelessWidget {
                 ),
                 const Icon(
                   Icons.arrow_forward_ios_rounded,
-                  color: Colors.white24,
+                  color: Color(0xFFB0BEC5),
                   size: 16,
                 ),
               ],

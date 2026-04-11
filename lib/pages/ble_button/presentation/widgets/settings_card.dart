@@ -23,7 +23,7 @@ class SettingsCard extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
       child: Container(
         decoration: BoxDecoration(
-          color: const Color(0xFF1E293B),
+          color: Colors.white,
           borderRadius: BorderRadius.circular(16),
         ),
         child: Column(
@@ -57,7 +57,7 @@ class SettingsCard extends StatelessWidget {
   }
 
   Widget _divider() =>
-      const Divider(height: 1, indent: 16, endIndent: 16, color: Color(0xFF0F172A));
+      const Divider(height: 1, indent: 16, endIndent: 16, color: Color(0xFFE2E8F0));
 }
 
 class _SettingsTile extends StatelessWidget {
@@ -88,21 +88,21 @@ class _SettingsTile extends StatelessWidget {
           children: [
             Icon(
               icon,
-              color: iconColor ?? const Color(0xFF38BDF8),
+              color: iconColor ?? const Color(0xFF6951C1),
               size: 20,
             ),
             const SizedBox(width: 12),
             Expanded(
               child: Text(
                 label,
-                style: const TextStyle(color: Colors.white, fontSize: 14),
+                style: const TextStyle(color: Color(0xFF1E293B), fontSize: 14),
               ),
             ),
             if (value != null) ...[
               Text(
                 value!,
                 style: TextStyle(
-                  color: valueColor ?? Colors.white38,
+                  color: valueColor ?? const Color(0xFF94A3B8),
                   fontSize: 12,
                 ),
               ),
@@ -110,7 +110,7 @@ class _SettingsTile extends StatelessWidget {
             ],
             const Icon(
               Icons.chevron_right_rounded,
-              color: Colors.white24,
+              color: Color(0xFFB0BEC5),
               size: 18,
             ),
           ],

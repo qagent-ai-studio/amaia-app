@@ -33,7 +33,7 @@ class BatteryCard extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
-          color: const Color(0xFF1E293B),
+          color: Colors.white,
           borderRadius: BorderRadius.circular(16),
         ),
         child: Row(
@@ -41,7 +41,7 @@ class BatteryCard extends StatelessWidget {
             if (percent == null)
               const Text(
                 'Sin datos de batería',
-                style: TextStyle(color: Colors.white54),
+                style: TextStyle(color: Color(0xFF94A3B8)),
               )
             else ...[
               Icon(
@@ -68,7 +68,7 @@ class BatteryCard extends StatelessWidget {
                       child: LinearProgressIndicator(
                         value: percent! / 100,
                         minHeight: 8,
-                        backgroundColor: const Color(0xFF0F172A),
+                        backgroundColor: const Color(0xFFE2E8F0),
                         valueColor: AlwaysStoppedAnimation<Color>(
                             _batteryColor(percent!)),
                       ),
@@ -79,7 +79,7 @@ class BatteryCard extends StatelessWidget {
             ],
             IconButton(
               icon: const Icon(Icons.refresh_rounded,
-                  color: Colors.white38, size: 20),
+                  color: Color(0xFF94A3B8), size: 20),
               onPressed: onRefresh,
               tooltip: 'Leer batería (puede causar desconexión)',
             ),

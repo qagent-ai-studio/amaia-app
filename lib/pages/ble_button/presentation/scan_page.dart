@@ -27,14 +27,14 @@ class _ScanPageState extends State<ScanPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF0F172A),
+      backgroundColor: const Color(0xFFF0F2FA),
       appBar: AppBar(
-        backgroundColor: const Color(0xFF1E293B),
+        backgroundColor: Colors.white,
         elevation: 0,
         title: const Text(
           'MK Button BLE',
           style: TextStyle(
-            color: Colors.white,
+            color: Color(0xFF1E293B),
             fontWeight: FontWeight.w700,
             fontSize: 20,
           ),
@@ -53,11 +53,11 @@ class _ScanPageState extends State<ScanPage> {
                           height: 20,
                           child: CircularProgressIndicator(
                             strokeWidth: 2,
-                            color: Color(0xFF38BDF8),
+                            color: Color(0xFF6951C1),
                           ),
                         )
                       : const Icon(Icons.radar_rounded,
-                          color: Color(0xFF38BDF8)),
+                          color: Color(0xFF6951C1)),
                   onPressed: () => isScanning
                       ? context.read<BleButtonBloc>().add(const ScanStopped())
                       : context.read<BleButtonBloc>().add(const ScanStarted()),
@@ -108,11 +108,11 @@ class _ScanPageState extends State<ScanPage> {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const CircularProgressIndicator(color: Color(0xFF38BDF8)),
+                  const CircularProgressIndicator(color: Color(0xFF6951C1)),
                   const SizedBox(height: 16),
                   Text(
                     'Conectando a ${state.mac}...',
-                    style: const TextStyle(color: Colors.white70),
+                    style: const TextStyle(color: Color(0xFF64748B)),
                   ),
                 ],
               ),
@@ -153,20 +153,20 @@ class _EmptyState extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(24),
             decoration: BoxDecoration(
-              color: const Color(0xFF1E293B),
+              color: const Color(0xFFEEEBFA),
               borderRadius: BorderRadius.circular(100),
             ),
             child: const Icon(
               Icons.bluetooth_rounded,
               size: 64,
-              color: Color(0xFF38BDF8),
+              color: Color(0xFF6951C1),
             ),
           ),
           const SizedBox(height: 24),
           const Text(
             'Buscar dispositivos',
             style: TextStyle(
-              color: Colors.white,
+              color: Color(0xFF1E293B),
               fontSize: 22,
               fontWeight: FontWeight.w600,
             ),
@@ -175,7 +175,7 @@ class _EmptyState extends StatelessWidget {
           const Text(
             'Presiona Escanear para encontrar\ndispositivos MK Button cercanos',
             textAlign: TextAlign.center,
-            style: TextStyle(color: Colors.white54, fontSize: 14),
+            style: TextStyle(color: Color(0xFF64748B), fontSize: 14),
           ),
         ],
       ),
@@ -196,14 +196,14 @@ class _SearchingIndicator extends StatelessWidget {
             width: 56,
             height: 56,
             child: CircularProgressIndicator(
-              color: Color(0xFF38BDF8),
+              color: Color(0xFF6951C1),
               strokeWidth: 3,
             ),
           ),
           const SizedBox(height: 20),
           const Text(
             'Buscando dispositivos...',
-            style: TextStyle(color: Colors.white70, fontSize: 16),
+            style: TextStyle(color: Color(0xFF64748B), fontSize: 16),
           ),
         ],
       ),
@@ -265,7 +265,7 @@ class _SectionTitle extends StatelessWidget {
     return Text(
       title,
       style: const TextStyle(
-        color: Color(0xFF38BDF8),
+        color: Color(0xFF6951C1),
         fontSize: 14,
         fontWeight: FontWeight.w700,
         letterSpacing: 0.5,
@@ -291,21 +291,21 @@ class _SavedDeviceTile extends StatelessWidget {
     showDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        backgroundColor: const Color(0xFF1E293B),
+        backgroundColor: Colors.white,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: const Text(
           '¿Eliminar dispositivo?',
-          style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700),
+          style: TextStyle(color: Color(0xFF1E293B), fontWeight: FontWeight.w700),
         ),
         content: Text(
           '¿Deseas eliminar "${device.name}" de tus dispositivos guardados?',
-          style: const TextStyle(color: Colors.white70),
+          style: const TextStyle(color: Color(0xFF64748B)),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(dialogContext).pop(false),
             child:
-                const Text('Cancelar', style: TextStyle(color: Colors.white54)),
+                const Text('Cancelar', style: TextStyle(color: Color(0xFF64748B))),
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
@@ -329,7 +329,7 @@ class _SavedDeviceTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: const Color(0xFF1E293B),
+      color: Colors.white,
       borderRadius: BorderRadius.circular(12),
       child: InkWell(
         borderRadius: BorderRadius.circular(12),
@@ -341,7 +341,7 @@ class _SavedDeviceTile extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF0F172A),
+                  color: const Color(0xFFEEEBFA),
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: const Icon(
@@ -358,7 +358,7 @@ class _SavedDeviceTile extends StatelessWidget {
                     Text(
                       device.name,
                       style: const TextStyle(
-                        color: Colors.white,
+                        color: Color(0xFF1E293B),
                         fontWeight: FontWeight.w600,
                         fontSize: 15,
                       ),
@@ -367,7 +367,7 @@ class _SavedDeviceTile extends StatelessWidget {
                     Text(
                       device.mac,
                       style: const TextStyle(
-                        color: Colors.white38,
+                        color: Color(0xFF94A3B8),
                         fontSize: 12,
                         fontFamily: 'monospace',
                       ),
@@ -377,7 +377,7 @@ class _SavedDeviceTile extends StatelessWidget {
                       Text(
                         'Última conexión: ${_formatDate(device.lastConnectedAt!)}',
                         style: const TextStyle(
-                          color: Colors.white24,
+                          color: Color(0xFFB0BEC5),
                           fontSize: 11,
                         ),
                       ),
@@ -394,7 +394,7 @@ class _SavedDeviceTile extends StatelessWidget {
               const SizedBox(width: 8),
               const Icon(
                 Icons.chevron_right_rounded,
-                color: Colors.white24,
+                color: Color(0xFFB0BEC5),
               ),
             ],
           ),
@@ -451,17 +451,17 @@ class _ScannedDeviceTile extends StatelessWidget {
               }
             },
             child: AlertDialog(
-              backgroundColor: const Color(0xFF1E293B),
+              backgroundColor: Colors.white,
               shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(16)),
               title: const Text(
                 'Contraseña del dispositivo',
                 style:
-                    TextStyle(color: Colors.white, fontWeight: FontWeight.w700),
+                    TextStyle(color: Color(0xFF1E293B), fontWeight: FontWeight.w700),
               ),
               content: TextField(
                 controller: controller,
-                style: const TextStyle(color: Colors.white),
+                style: const TextStyle(color: Color(0xFF1E293B)),
                 //obscureText: true,
                 autofocus: true,
                 // decoration: InputDecoration(
@@ -479,7 +479,7 @@ class _ScannedDeviceTile extends StatelessWidget {
                 TextButton(
                   onPressed: () => Navigator.of(dialogContext).pop(),
                   child: const Text('Cancelar',
-                      style: TextStyle(color: Colors.white54)),
+                      style: TextStyle(color: Color(0xFF64748B))),
                 ),
                 ElevatedButton(
                   style: ElevatedButton.styleFrom(
@@ -510,7 +510,7 @@ class _ScannedDeviceTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: const Color(0xFF1E293B),
+      color: Colors.white,
       borderRadius: BorderRadius.circular(12),
       child: InkWell(
         borderRadius: BorderRadius.circular(12),
@@ -522,12 +522,12 @@ class _ScannedDeviceTile extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF0F172A),
+                  color: const Color(0xFFEEEBFA),
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: const Icon(
                   Icons.devices_rounded,
-                  color: Color(0xFF38BDF8),
+                  color: Color(0xFF6951C1),
                   size: 22,
                 ),
               ),
@@ -539,7 +539,7 @@ class _ScannedDeviceTile extends StatelessWidget {
                     Text(
                       device.name,
                       style: const TextStyle(
-                        color: Colors.white,
+                        color: Color(0xFF1E293B),
                         fontWeight: FontWeight.w600,
                         fontSize: 15,
                       ),
@@ -548,7 +548,7 @@ class _ScannedDeviceTile extends StatelessWidget {
                     Text(
                       device.mac,
                       style: const TextStyle(
-                        color: Colors.white38,
+                        color: Color(0xFF94A3B8),
                         fontSize: 12,
                         fontFamily: 'monospace',
                       ),
@@ -578,7 +578,7 @@ class _ScannedDeviceTile extends StatelessWidget {
               const SizedBox(width: 8),
               const Icon(
                 Icons.chevron_right_rounded,
-                color: Colors.white24,
+                color: Color(0xFFB0BEC5),
               ),
             ],
           ),

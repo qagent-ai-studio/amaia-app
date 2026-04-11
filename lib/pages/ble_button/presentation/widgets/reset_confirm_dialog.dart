@@ -7,7 +7,7 @@ class ResetConfirmDialog extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      backgroundColor: const Color(0xFF1E293B),
+      backgroundColor: Colors.white,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       title: const Row(
         children: [
@@ -25,12 +25,12 @@ class ResetConfirmDialog extends StatelessWidget {
       content: const Text(
         'Esta acción restaurará todos los ajustes del dispositivo a los valores de fábrica. '
         'Esta operación no se puede deshacer.',
-        style: TextStyle(color: Colors.white70, height: 1.5),
+        style: TextStyle(color: Color(0xFF64748B), height: 1.5),
       ),
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(context, false),
-          child: const Text('Cancelar', style: TextStyle(color: Colors.white54)),
+          child: const Text('Cancelar', style: TextStyle(color: Color(0xFF64748B))),
         ),
         ElevatedButton(
           style: ElevatedButton.styleFrom(
