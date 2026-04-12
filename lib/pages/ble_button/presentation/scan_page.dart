@@ -70,10 +70,12 @@ class _ScanPageState extends State<ScanPage> {
       ),
       body: BlocConsumer<BleButtonBloc, BleButtonState>(
         listener: (context, state) {
-          if (state is BleButtonConnected) {
+          if (state is BleButtonConnected && state.mac.isNotEmpty) {
             Navigator.of(context).push(
-              MaterialPageRoute<void>(
-                builder: (_) => BlocProvider.value(
+              PageRouteBuilder<void>(
+                transitionDuration: Duration.zero,
+                reverseTransitionDuration: Duration.zero,
+                pageBuilder: (_, __, ___) => BlocProvider.value(
                   value: context.read<BleButtonBloc>(),
                   child: DevicePage(mac: state.mac),
                 ),
@@ -90,7 +92,10 @@ class _ScanPageState extends State<ScanPage> {
           }
         },
         builder: (context, state) {
-          if (state is BleButtonInitial || state is BleButtonDisconnected) {
+          if (state is BleButtonInitial) {
+            return const SizedBox.shrink();
+          }
+          if (state is BleButtonDisconnected) {
             return _EmptyState(
               onScan: () =>
                   context.read<BleButtonBloc>().add(const ScanStarted()),
@@ -130,8 +135,11 @@ class _ScanPageState extends State<ScanPage> {
                 : context.read<BleButtonBloc>().add(const ScanStarted()),
             backgroundColor:
                 isScanning ? Colors.red.shade700 : const Color(0xFF0EA5E9),
+            foregroundColor: Colors.white,
             icon: Icon(isScanning ? Icons.stop_rounded : Icons.search_rounded),
-            label: Text(isScanning ? 'Detener' : 'Escanear'),
+            label: Text(
+              isScanning ? 'Detener' : 'Escanear',
+            ),
           );
         },
       ),
@@ -295,7 +303,8 @@ class _SavedDeviceTile extends StatelessWidget {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: const Text(
           '¿Eliminar dispositivo?',
-          style: TextStyle(color: Color(0xFF1E293B), fontWeight: FontWeight.w700),
+          style:
+              TextStyle(color: Color(0xFF1E293B), fontWeight: FontWeight.w700),
         ),
         content: Text(
           '¿Deseas eliminar "${device.name}" de tus dispositivos guardados?',
@@ -304,8 +313,8 @@ class _SavedDeviceTile extends StatelessWidget {
         actions: [
           TextButton(
             onPressed: () => Navigator.of(dialogContext).pop(false),
-            child:
-                const Text('Cancelar', style: TextStyle(color: Color(0xFF64748B))),
+            child: const Text('Cancelar',
+                style: TextStyle(color: Color(0xFF64748B))),
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
@@ -319,7 +328,12 @@ class _SavedDeviceTile extends StatelessWidget {
                   .read<BleButtonBloc>()
                   .add(SavedDeviceDeleteRequested(mac: device.mac));
             },
-            child: const Text('Eliminar'),
+            child: const Text(
+              'Eliminar',
+              style: TextStyle(
+                color: Color.fromARGB(255, 255, 255, 255),
+              ),
+            ),
           ),
         ],
       ),
@@ -456,8 +470,8 @@ class _ScannedDeviceTile extends StatelessWidget {
                   borderRadius: BorderRadius.circular(16)),
               title: const Text(
                 'Contraseña del dispositivo',
-                style:
-                    TextStyle(color: Color(0xFF1E293B), fontWeight: FontWeight.w700),
+                style: TextStyle(
+                    color: Color(0xFF1E293B), fontWeight: FontWeight.w700),
               ),
               content: TextField(
                 controller: controller,
@@ -490,14 +504,14 @@ class _ScannedDeviceTile extends StatelessWidget {
                   onPressed: () {
                     final password =
                         controller.text.isEmpty ? '123456' : controller.text;
-                    // Usar el bloc capturado antes del diálogo — seguro
                     bloc.add(DeviceConnectRequested(
                       mac: device.mac,
                       password: password,
                     ));
-                    // El BlocListener cerrará el diálogo cuando el estado cambie
                   },
-                  child: const Text('Conectar'),
+                  child: const Text('Conectar',
+                      style:
+                          TextStyle(color: Color.fromARGB(255, 255, 255, 255))),
                 ),
               ],
             ),

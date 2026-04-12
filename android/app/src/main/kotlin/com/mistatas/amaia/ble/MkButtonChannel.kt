@@ -606,12 +606,10 @@ class MkButtonChannel(
                         0x4A -> {
                             if (value.size >= 6) {
                                 val mV = ((value[4].toInt() and 0xFF) shl 8) or (value[5].toInt() and 0xFF)
-                                val percent = when {
-                                    mV >= 3700 -> ((mV - 3000).toFloat() / 1200f * 100f).toInt().coerceIn(0, 100)
-                                    mV >= 3216 -> 100
-                                    mV > 2931  -> 99
-                                    mV >= 2645 -> (1 + (mV - 2645) * 98 / (2931 - 2645)).coerceIn(0, 100)
-                                    else -> 0
+                                val percent = if (mV >= 3700) {
+                                    ((mV - 3000).toFloat() / 1200f * 100f).toInt().coerceIn(0, 100)
+                                } else {
+                                    ((mV - 2000).toFloat() / 1300f * 100f).toInt().coerceIn(0, 100)
                                 }
                                 map["batteryPercent"] = percent
                                 android.util.Log.d("MkButton", "Battery voltage: ${mV}mV → $percent%")

@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'dart:convert';
 import 'package:amaia/models/information.dart';
+import 'package:amaia/pages/ble_button/data/device_storage.dart';
 import 'package:amaia/services/sms-service.dart';
 import 'package:http/http.dart' as http;
 import 'package:amaia/models/alive.dart';
@@ -62,10 +63,14 @@ Future<void> processPeriodicTask(String task) async {
   if (phone != null &&
       daysToExecuteFunction.contains(DateFormat.EEEE().format(date))) {
     if (isConnected) {
+      final lastDevice = await DeviceStorage.instance.getLastConnectedDevice();
+      final batteryDevice = lastDevice?.batteryPercent ?? 0;
+
       var url = Uri.parse(dotenv.env['URL_CHECK_ALIVE'] as String);
       var headers = {'Content-Type': 'application/json'};
-      var payload = jsonEncode(<String, String>{
+      var payload = jsonEncode(<String, dynamic>{
         'phone': phone,
+        'battery_device': batteryDevice,
       });
 
       try {

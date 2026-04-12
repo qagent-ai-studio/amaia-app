@@ -7,6 +7,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:amaia/services/geolocation-service.dart';
 import 'package:amaia/services/sms-service.dart';
 import 'package:vibration/vibration.dart';
+import 'dart:developer';
 
 class SendSmsPage extends StatelessWidget {
   const SendSmsPage({super.key});
@@ -125,6 +126,11 @@ class _SendSmsState extends State<_SendSms>
     });
 
     String geo = await locationStream.getNameFromStoreLocal();
+
+    log('***************************************************************************************');
+    log(geo);
+    debugPrint('#################################################################################');
+    debugPrint(geo);
 
     Codec<String, String> stringToBase64 = utf8.fuse(base64);
 

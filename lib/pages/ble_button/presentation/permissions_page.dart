@@ -95,121 +95,130 @@ class _PermissionsPageState extends State<PermissionsPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF0F172A),
+      extendBodyBehindAppBar: true,
       appBar: AppBar(
-        backgroundColor: const Color(0xFF1E293B),
+        backgroundColor: Colors.white,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_rounded, color: Colors.white),
+          icon: const Icon(Icons.arrow_back_ios_rounded,
+              color: Color(0xFF1E293B)),
           onPressed: () => Navigator.pop(context),
         ),
         title: const Text(
           'Permisos Requeridos',
           style: TextStyle(
-            color: Colors.white,
+            color: Color.fromARGB(255, 93, 93, 93),
             fontWeight: FontWeight.w700,
-            fontSize: 20,
+            fontSize: 15,
           ),
         ),
       ),
-      body: _isLoading
-          ? const Center(
-              child: CircularProgressIndicator(color: Color(0xFF38BDF8)),
-            )
-          : ListView(
-              padding: const EdgeInsets.all(16),
-              children: [
-                // Explicación
-                _buildInfoCard(),
-                const SizedBox(height: 24),
-
-                // Lista de permisos
-                _buildPermissionTile(
-                  icon: Icons.battery_charging_full_rounded,
-                  title: 'Optimización de Batería',
-                  description:
-                      'Permite que el servicio funcione en segundo plano sin ser detenido',
-                  isGranted: _isBatteryOptimizationDisabled,
-                  onTap: _requestBatteryOptimization,
-                ),
-                const SizedBox(height: 12),
-                _buildPermissionTile(
-                  icon: Icons.notifications_rounded,
-                  title: 'Notificaciones',
-                  description:
-                      'Muestra el estado de conexión del botón en la barra de notificaciones',
-                  isGranted: _hasNotificationPermission,
-                  onTap: _requestNotificationPermission,
-                ),
-
-                const SizedBox(height: 12),
-
-                // Permiso de overlay (mostrar sobre otras apps)
-                _buildPermissionTile(
-                  icon: Icons.web_asset_rounded,
-                  title: 'Mostrar sobre otras apps',
-                  description:
-                      'Permite mostrar una ventana flotante cuando se presiona el botón',
-                  isGranted: _hasOverlayPermission,
-                  onTap: _requestOverlayPermission,
-                ),
-
-                const SizedBox(height: 32),
-
-                // Botón de continuar
-                if (_allPermissionsGranted) ...[
-                  Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF4ADE80).withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(
-                        color: const Color(0xFF4ADE80),
-                        width: 1,
-                      ),
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            colors: [
+              Color.fromRGBO(244, 245, 252, 0.992),
+              Color.fromRGBO(219, 220, 243, 2.0)
+            ],
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+          ),
+        ),
+        child: SafeArea(
+          child: _isLoading
+              ? const Center(
+                  child: CircularProgressIndicator(
+                    color: Color(0xFF38BDF8),
+                  ),
+                )
+              : ListView(
+                  padding: const EdgeInsets.all(16),
+                  children: [
+                    _buildInfoCard(),
+                    const SizedBox(height: 24),
+                    _buildPermissionTile(
+                      icon: Icons.battery_charging_full_rounded,
+                      title: 'Optimización de Batería',
+                      description:
+                          'Permite que el servicio funcione en segundo plano sin ser detenido',
+                      isGranted: _isBatteryOptimizationDisabled,
+                      onTap: _requestBatteryOptimization,
                     ),
-                    child: Row(
-                      children: [
-                        const Icon(
-                          Icons.check_circle_rounded,
-                          color: Color(0xFF4ADE80),
-                          size: 24,
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Text(
-                            '¡Todos los permisos concedidos!\nEl servicio funcionará correctamente.',
-                            style: const TextStyle(
-                              color: Color(0xFF4ADE80),
-                              fontSize: 14,
-                              fontWeight: FontWeight.w600,
-                            ),
+                    const SizedBox(height: 12),
+                    _buildPermissionTile(
+                      icon: Icons.notifications_rounded,
+                      title: 'Notificaciones',
+                      description:
+                          'Muestra el estado de conexión del botón en la barra de notificaciones',
+                      isGranted: _hasNotificationPermission,
+                      onTap: _requestNotificationPermission,
+                    ),
+                    const SizedBox(height: 12),
+                    _buildPermissionTile(
+                      icon: Icons.web_asset_rounded,
+                      title: 'Mostrar sobre otras apps',
+                      description:
+                          'Permite mostrar una ventana flotante cuando se presiona el botón',
+                      isGranted: _hasOverlayPermission,
+                      onTap: _requestOverlayPermission,
+                    ),
+                    const SizedBox(height: 32),
+                    if (_allPermissionsGranted) ...[
+                      Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: const Color.fromRGBO(255, 255, 255, 1),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: const Color(0xFF4ADE80),
+                            width: 1,
                           ),
                         ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF0EA5E9),
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
+                        child: Row(
+                          children: [
+                            const Icon(
+                              Icons.check_circle_rounded,
+                              color: Color(0xFF4ADE80),
+                              size: 24,
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Text(
+                                '¡Todos los permisos concedidos!\nEl servicio funcionará correctamente.',
+                                style: const TextStyle(
+                                  color: Color.fromARGB(255, 43, 168, 89),
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
-                    ),
-                    onPressed: () => Navigator.pop(context),
-                    child: const Text(
-                      'Continuar',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
+                      const SizedBox(height: 16),
+                      ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF0EA5E9),
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                        onPressed: () => Navigator.pop(context),
+                        child: const Text(
+                          'Continuar',
+                          style: TextStyle(
+                            color: const Color.fromRGBO(255, 255, 255, 1),
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
                       ),
-                    ),
-                  ),
-                ],
-              ],
-            ),
+                    ],
+                  ],
+                ),
+        ),
+      ),
     );
   }
 
@@ -217,7 +226,7 @@ class _PermissionsPageState extends State<PermissionsPage> {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: const Color(0xFF1E293B),
+        color: const Color.fromARGB(255, 27, 168, 238),
         borderRadius: BorderRadius.circular(16),
       ),
       child: Column(
@@ -228,12 +237,12 @@ class _PermissionsPageState extends State<PermissionsPage> {
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF0EA5E9).withOpacity(0.1),
+                  color: const Color.fromARGB(255, 4, 92, 136).withOpacity(0.1),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: const Icon(
                   Icons.info_outline_rounded,
-                  color: Color(0xFF0EA5E9),
+                  color: Color.fromARGB(255, 255, 255, 255),
                   size: 24,
                 ),
               ),
@@ -282,9 +291,10 @@ class _PermissionsPageState extends State<PermissionsPage> {
         child: Container(
           padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
+            color: const Color.fromRGBO(255, 255, 255, 1),
             border: Border.all(
               color: isGranted ? const Color(0xFF4ADE80) : Colors.transparent,
-              width: 2,
+              width: 1,
             ),
             borderRadius: BorderRadius.circular(16),
           ),
@@ -295,7 +305,7 @@ class _PermissionsPageState extends State<PermissionsPage> {
                 decoration: BoxDecoration(
                   color: isGranted
                       ? const Color(0xFF4ADE80).withOpacity(0.2)
-                      : const Color(0xFF0F172A),
+                      : const Color.fromARGB(255, 189, 189, 189),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Icon(
@@ -312,8 +322,9 @@ class _PermissionsPageState extends State<PermissionsPage> {
                     Text(
                       title,
                       style: TextStyle(
-                        color:
-                            isGranted ? const Color(0xFF4ADE80) : Colors.white,
+                        color: isGranted
+                            ? const Color.fromARGB(255, 43, 168, 89)
+                            : const Color.fromARGB(255, 48, 48, 48),
                         fontSize: 16,
                         fontWeight: FontWeight.w600,
                       ),
@@ -322,7 +333,7 @@ class _PermissionsPageState extends State<PermissionsPage> {
                     Text(
                       description,
                       style: const TextStyle(
-                        color: Colors.white54,
+                        color: Colors.black54,
                         fontSize: 13,
                       ),
                     ),

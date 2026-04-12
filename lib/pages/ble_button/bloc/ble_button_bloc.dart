@@ -257,8 +257,25 @@ class BleButtonBloc extends Bloc<BleButtonEvent, BleButtonState> {
           ? (state as BleButtonConnecting).mac
           : '';
 
+      if (mac.isEmpty) return;
+
       await DeviceStorage.instance.updateLastConnected(mac);
-      emit(BleButtonConnected(mac: mac, isLoading: false));
+      final savedDevice = await DeviceStorage.instance.getDeviceByMac(mac);
+      emit(BleButtonConnected(
+        mac: mac,
+        isLoading: false,
+        deviceInfo: savedDevice != null
+            ? DeviceInfo(
+                deviceName: savedDevice.name,
+                firmwareVersion: savedDevice.firmwareVersion ?? '',
+                hardwareVersion: savedDevice.hardwareVersion ?? '',
+                batteryPercent: savedDevice.batteryPercent ?? 0,
+                advIntervalMs: savedDevice.advIntervalMs ?? 0,
+                txPower: savedDevice.txPower ?? 0,
+                isPasswordEnabled: savedDevice.isPasswordEnabled ?? false,
+              )
+            : null,
+      ));
     } else {
       final mac = state is BleButtonConnected
           ? (state as BleButtonConnected).mac

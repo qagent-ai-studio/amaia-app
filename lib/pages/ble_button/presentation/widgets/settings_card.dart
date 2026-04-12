@@ -2,18 +2,15 @@ import 'package:flutter/material.dart';
 
 import '../../domain/models.dart';
 
-/// Card with all configurable settings for the connected device.
 class SettingsCard extends StatelessWidget {
   const SettingsCard({
     super.key,
     required this.info,
-    required this.onEditDeviceName,
     required this.onChangePassword,
     required this.onResetDevice,
   });
 
   final DeviceInfo? info;
-  final VoidCallback onEditDeviceName;
   final VoidCallback onChangePassword;
   final VoidCallback onResetDevice;
 
@@ -29,16 +26,11 @@ class SettingsCard extends StatelessWidget {
         child: Column(
           children: [
             _SettingsTile(
-              icon: Icons.badge_rounded,
-              label: 'Nombre del dispositivo',
-              value: info?.deviceName,
-              onTap: onEditDeviceName,
-            ),
-            _divider(),
-            _SettingsTile(
               icon: Icons.lock_rounded,
               label: 'Cambiar contraseña',
-              value: info?.isPasswordEnabled == true ? 'Protegida' : 'Sin protección',
+              value: info?.isPasswordEnabled == true
+                  ? 'Protegida'
+                  : 'Sin protección',
               onTap: onChangePassword,
             ),
             _divider(),
@@ -56,8 +48,8 @@ class SettingsCard extends StatelessWidget {
     );
   }
 
-  Widget _divider() =>
-      const Divider(height: 1, indent: 16, endIndent: 16, color: Color(0xFFE2E8F0));
+  Widget _divider() => const Divider(
+      height: 1, indent: 16, endIndent: 16, color: Color(0xFFE2E8F0));
 }
 
 class _SettingsTile extends StatelessWidget {

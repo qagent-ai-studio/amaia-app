@@ -17,7 +17,7 @@ class SmsService {
       if (await Permission.sms.request().isGranted) {
         try {
           final result = await platformMainActivity.invokeMethod('sendSMS', {
-            'message': 'ALERTAMOVIL GEO=$geo',
+            'message': 'ALERTAMOVIL GEO=$geo ORIGIN=DIAL',
             'recipients': listRecipients,
           });
 
@@ -49,7 +49,7 @@ class SmsService {
       var url = Uri.parse(dotenv.env['URL_SMS_IOS'] as String);
       var headers = {'Content-Type': 'application/json'};
       var payload = jsonEncode(
-          <String, String>{"phone": phone, "body": "ALERTAMOVIL", "geo": geo});
+          <String, String>{"phone": phone, "body": "ALERTAMOVIL ORIGIN=DIAL", "geo": geo});
 
       var response = await http.post(
         url,

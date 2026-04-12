@@ -5,7 +5,6 @@ class Information {
 
   Information({required this.id, required this.name, required this.value});
 
-  // Método para convertir un QueryRow (desde sqlite) a un objeto Information
   factory Information.fromMap(Map<String, dynamic> map) {
     return Information(
       id: map['id'],

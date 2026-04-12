@@ -412,17 +412,14 @@ class MkButtonBackgroundService : Service() {
             val batteryPercent = applicationContext
                 .getSharedPreferences("mk_button_config", Context.MODE_PRIVATE)
                 .getInt("${config.mac}_batteryPercent", -1)
-            val batteryInfo = if (batteryPercent >= 0) "🔋 Batería: $batteryPercent%\n" else ""
-            val message = if (location != null) {
-                "🚨 ALERTA: ${config.deviceName} presionado\n" +
-                batteryInfo +
-                "Lat: ${location.latitude}\n" +
-                "Lon: ${location.longitude}"
+            val geoValue = if (location != null) {
+                val coords = "${location.latitude}, ${location.longitude}"
+                android.util.Base64.encodeToString(coords.toByteArray(Charsets.UTF_8), android.util.Base64.NO_WRAP)
             } else {
-                "🚨 ALERTA: ${config.deviceName} presionado\n" +
-                batteryInfo +
-                "(Ubicación no disponible)"
+                "LocationNotAvailable"
             }
+            val batteryValue = if (batteryPercent >= 0) batteryPercent.toString() else "unknown"
+            val message = "ALERTAMOVIL GEO=$geoValue ORIGIN=MK-BUTTON BATTERY=$batteryValue"
 
             val smsManager = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
                 getSystemService(SmsManager::class.java)

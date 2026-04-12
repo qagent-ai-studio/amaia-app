@@ -62,8 +62,10 @@ class _ConfigState extends State<_Config> {
 
   Future<void> _callExecutive() async {
     Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (_) => RepositoryProvider<BleButtonRepository>(
+      PageRouteBuilder(
+        transitionDuration: Duration.zero,
+        reverseTransitionDuration: Duration.zero,
+        pageBuilder: (_, __, ___) => RepositoryProvider<BleButtonRepository>(
           create: (_) => BleButtonRepositoryImpl(),
           child: BlocProvider(
             create: (context) => BleButtonBloc(
@@ -193,14 +195,6 @@ class _ConfigState extends State<_Config> {
                           ))
                     ],
                   )),
-              const SizedBox(height: 20),
-              const ListTile(
-                contentPadding: EdgeInsets.fromLTRB(15, 10, 25, 0),
-                subtitle: Text(
-                  'Somos Mistatas, empresa líder en seguridad para las personas mayores. Te presentamos nuestra app AMAIA, la cual te contacta con toda tu red de apoyo frente a emergencias.',
-                  textAlign: TextAlign.justify,
-                ),
-              ),
               cardExecutive(),
             ],
           )),
@@ -209,43 +203,70 @@ class _ConfigState extends State<_Config> {
 
   Card cardExecutive() {
     return Card(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-      margin: const EdgeInsets.all(15),
-      elevation: 5,
-      color: const Color.fromRGBO(105, 81, 193, 1.0),
-      child: Column(
-        children: <Widget>[
-          const ListTile(
-            contentPadding: EdgeInsets.fromLTRB(15, 10, 25, 0),
-            title: Text('Configuración de dispositivos',
-                style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 17,
-                    letterSpacing: -0.5,
-                    fontWeight: FontWeight.bold)),
-            subtitle: Text(
-                'Configura acá tus dispositivos',
-                style: TextStyle(color: Colors.white)),
-            leading: Icon(
-              Icons.call,
-              color: Colors.white,
-            ),
-          ),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.end,
-            children: <Widget>[
-              TextButton(
-                style: ButtonStyle(
-                  foregroundColor: WidgetStateProperty.all<Color>(Colors.white),
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 40),
+      elevation: 0,
+      color: Colors.white,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(12),
+        onTap: _callExecutive,
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Row(
+            children: [
+              // ICONO CON MISMO COLOR
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color:
+                      const Color.fromARGB(255, 92, 174, 246).withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(10),
                 ),
-                onPressed: () {
-                  _callExecutive();
-                },
-                child: const Text('VEr ble'),
+                child: const Icon(
+                  Icons.bluetooth_searching,
+                  color: Color.fromARGB(255, 7, 131, 226),
+                  size: 22,
+                ),
+              ),
+
+              const SizedBox(width: 14),
+
+              // TEXTOS
+              const Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Configuración de dispositivos',
+                      style: TextStyle(
+                        color: Color(0xFF1E293B),
+                        fontWeight: FontWeight.w600,
+                        fontSize: 15,
+                      ),
+                    ),
+                    SizedBox(height: 3),
+                    Text(
+                      'Configura acá tus dispositivos BLE',
+                      style: TextStyle(
+                        color: Color(0xFF94A3B8),
+                        fontSize: 12,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+              // FLECHA
+              const Icon(
+                Icons.arrow_forward_ios_rounded,
+                color: Color(0xFFB0BEC5),
+                size: 16,
               ),
             ],
-          )
-        ],
+          ),
+        ),
       ),
     );
   }

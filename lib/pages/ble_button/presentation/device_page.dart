@@ -51,75 +51,69 @@ class _DevicePageState extends State<DevicePage> {
       builder: (context, state) {
         if (state is! BleButtonConnected) {
           return const Scaffold(
-            backgroundColor: Color(0xFFF0F2FA),
-            body: Center(child: CircularProgressIndicator(color: Color(0xFF6951C1))),
+            backgroundColor: Color.fromARGB(255, 10, 53, 225),
+            body: Center(
+                child: CircularProgressIndicator(color: Color(0xFF6951C1))),
           );
         }
 
         final info = state.deviceInfo;
         return Scaffold(
-          backgroundColor: const Color(0xFFF0F2FA),
           appBar: _buildAppBar(context, state, info),
-          body: ListView(
-            padding: const EdgeInsets.only(bottom: 32),
-            children: [
-              if (state.isLoading)
-                const LinearProgressIndicator(
-                  minHeight: 2,
-                  backgroundColor: Color(0xFFE2E8F0),
-                  valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF6951C1)),
+          body: Container(
+            decoration: const BoxDecoration(
+                gradient: LinearGradient(
+                    colors: [
+                  Color.fromRGBO(244, 245, 252, 0.992),
+                  Color.fromRGBO(219, 220, 243, 2.0)
+                ],
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    tileMode: TileMode.clamp)),
+            child: ListView(
+              padding: const EdgeInsets.only(bottom: 32),
+              children: [
+                if (state.isLoading)
+                  const LinearProgressIndicator(
+                    minHeight: 2,
+                    backgroundColor: Color(0xFFE2E8F0),
+                    valueColor:
+                        AlwaysStoppedAnimation<Color>(Color(0xFF6951C1)),
+                  ),
+                const SizedBox(height: 16),
+                const SectionHeader(
+                  icon: Icons.battery_charging_full_rounded,
+                  title: 'Batería',
                 ),
-
-              // Battery
-              const SizedBox(height: 16),
-              const SectionHeader(
-                icon: Icons.battery_charging_full_rounded,
-                title: 'Batería',
-              ),
-              BatteryCard(
-                percent: info?.batteryPercent,
-                onRefresh: () => context
-                    .read<BleButtonBloc>()
-                    .add(const BatteryReadRequested()),
-              ),
-
-              // Buzzer / Localizar dispositivo
-              const SizedBox(height: 8),
-              const SectionHeader(
-                icon: Icons.volume_up_rounded,
-                title: 'Localizar dispositivo',
-              ),
-              _BuzzerCard(),
-
-              // Device Info
-              if (info != null) ...[
+                BatteryCard(
+                  percent: info?.batteryPercent,
+                  onRefresh: () => context
+                      .read<BleButtonBloc>()
+                      .add(const BatteryReadRequested()),
+                ),
+                if (info != null) ...[
+                  const SizedBox(height: 8),
+                  const SectionHeader(
+                    icon: Icons.info_outline_rounded,
+                    title: 'Información del Dispositivo',
+                  ),
+                  DeviceInfoCard(info: info, mac: widget.mac),
+                ],
                 const SizedBox(height: 8),
                 const SectionHeader(
-                  icon: Icons.info_outline_rounded,
-                  title: 'Información del Dispositivo',
+                  icon: Icons.tune_rounded,
+                  title: 'Configuración',
                 ),
-                DeviceInfoCard(info: info, mac: widget.mac),
+                SettingsCard(
+                  info: info,
+                  onChangePassword: () => _showPasswordDialog(context),
+                  onResetDevice: () => _showResetDialog(context),
+                ),
+                const SizedBox(height: 8),
+                _PermissionsButton(),
+                const SizedBox(height: 16),
               ],
-
-              // Settings
-              const SizedBox(height: 8),
-              const SectionHeader(
-                icon: Icons.tune_rounded,
-                title: 'Configuración',
-              ),
-              SettingsCard(
-                info: info,
-                onEditDeviceName: () => _showDeviceNameDialog(context, info),
-                onChangePassword: () => _showPasswordDialog(context),
-                onResetDevice: () => _showResetDialog(context),
-              ),
-
-              // Botón de permisos
-              const SizedBox(height: 8),
-              _PermissionsButton(),
-
-              const SizedBox(height: 16),
-            ],
+            ),
           ),
         );
       },
@@ -135,7 +129,8 @@ class _DevicePageState extends State<DevicePage> {
       backgroundColor: Colors.white,
       elevation: 0,
       leading: IconButton(
-        icon: const Icon(Icons.arrow_back_ios_rounded, color: Color(0xFF1E293B)),
+        icon:
+            const Icon(Icons.arrow_back_ios_rounded, color: Color(0xFF1E293B)),
         onPressed: () {
           context.read<BleButtonBloc>().add(const DeviceDisconnectRequested());
         },
@@ -144,11 +139,13 @@ class _DevicePageState extends State<DevicePage> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            info?.deviceName ?? 'MK Button',
+            (info?.deviceName.isNotEmpty == true)
+                ? info!.deviceName
+                : 'MK Button',
             style: const TextStyle(
-              color: Color(0xFF1E293B),
+              color: Color.fromARGB(255, 93, 93, 93),
               fontWeight: FontWeight.w700,
-              fontSize: 16,
+              fontSize: 15,
             ),
           ),
           Text(
@@ -186,24 +183,6 @@ class _DevicePageState extends State<DevicePage> {
         ),
       ],
     );
-  }
-
-  void _showDeviceNameDialog(BuildContext context, DeviceInfo? info) {
-    showDialog<String>(
-      context: context,
-      builder: (_) => _TextInputDialog(
-        title: 'Nombre del dispositivo',
-        initialValue: info?.deviceName ?? '',
-        maxLength: 18,
-        hint: 'Ingresa el nuevo nombre',
-      ),
-    ).then((value) {
-      if (value != null && value.isNotEmpty && context.mounted) {
-        context
-            .read<BleButtonBloc>()
-            .add(DeviceNameUpdateRequested(name: value));
-      }
-    });
   }
 
   void _showPasswordDialog(BuildContext context) {
@@ -272,8 +251,8 @@ class _TextInputDialogState extends State<_TextInputDialog> {
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       title: Text(
         widget.title,
-        style:
-            const TextStyle(color: Color(0xFF1E293B), fontWeight: FontWeight.w700),
+        style: const TextStyle(
+            color: Color(0xFF1E293B), fontWeight: FontWeight.w700),
       ),
       content: TextField(
         controller: _controller,
@@ -294,8 +273,8 @@ class _TextInputDialogState extends State<_TextInputDialog> {
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(context),
-          child:
-              const Text('Cancelar', style: TextStyle(color: Color(0xFF64748B))),
+          child: const Text('Cancelar',
+              style: TextStyle(color: Color(0xFF64748B))),
         ),
         ElevatedButton(
           style: ElevatedButton.styleFrom(
@@ -307,100 +286,6 @@ class _TextInputDialogState extends State<_TextInputDialog> {
           child: const Text('Guardar'),
         ),
       ],
-    );
-  }
-}
-
-/// Tarjeta para hacer sonar el dispositivo remotamente
-class _BuzzerCard extends StatefulWidget {
-  @override
-  State<_BuzzerCard> createState() => _BuzzerCardState();
-}
-
-class _BuzzerCardState extends State<_BuzzerCard> {
-  bool _isActive = false;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-      child: Material(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFF97316).withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Icon(
-                  _isActive ? Icons.volume_up_rounded : Icons.volume_off_rounded,
-                  color: const Color(0xFFF97316),
-                  size: 22,
-                ),
-              ),
-              const SizedBox(width: 14),
-              const Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Hacer sonar',
-                      style: TextStyle(
-                        color: Color(0xFF1E293B),
-                        fontWeight: FontWeight.w600,
-                        fontSize: 15,
-                      ),
-                    ),
-                    SizedBox(height: 3),
-                    Text(
-                      'Activa el buzzer del dispositivo para encontrarlo',
-                      style: TextStyle(color: Color(0xFF94A3B8), fontSize: 12),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(width: 8),
-              if (_isActive)
-                TextButton(
-                  onPressed: () {
-                    context.read<BleButtonBloc>().add(const BuzzerStopped());
-                    setState(() => _isActive = false);
-                  },
-                  style: TextButton.styleFrom(
-                    foregroundColor: const Color(0xFF64748B),
-                  ),
-                  child: const Text('Detener'),
-                )
-              else
-                ElevatedButton(
-                  onPressed: () {
-                    context.read<BleButtonBloc>().add(
-                          const BuzzerTriggered(durationMs: 5000, intervalMs: 0),
-                        );
-                    setState(() => _isActive = true);
-                    Future.delayed(const Duration(seconds: 5), () {
-                      if (mounted) setState(() => _isActive = false);
-                    });
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFFF97316),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 16, vertical: 10),
-                  ),
-                  child: const Text('Activar'),
-                ),
-            ],
-          ),
-        ),
-      ),
     );
   }
 }

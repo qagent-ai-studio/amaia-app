@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 
 import '../../domain/models.dart';
 
-/// Shows read-only device information: firmware, hardware, MAC address.
 class DeviceInfoCard extends StatelessWidget {
   const DeviceInfoCard({super.key, required this.info, required this.mac});
 
@@ -19,28 +18,14 @@ class DeviceInfoCard extends StatelessWidget {
           borderRadius: BorderRadius.circular(16),
         ),
         child: Column(
-          children: [
-            _InfoRow(label: 'MAC Address', value: mac, mono: true),
-            _divider(),
-            _InfoRow(label: 'Firmware', value: info.firmwareVersion),
-            _divider(),
-            _InfoRow(label: 'Hardware', value: info.hardwareVersion),
-            _divider(),
-            _InfoRow(
-              label: 'Contraseña',
-              value: info.isPasswordEnabled ? 'Activada' : 'Desactivada',
-              valueColor: info.isPasswordEnabled
-                  ? const Color(0xFFFBBF24)
-                  : Colors.white54,
-            ),
-          ],
+          children: [_InfoRow(label: 'MAC Address', value: mac, mono: true)],
         ),
       ),
     );
   }
 
-  Widget _divider() =>
-      const Divider(height: 1, indent: 16, endIndent: 16, color: Color(0xFFE2E8F0));
+  Widget _divider() => const Divider(
+      height: 1, indent: 16, endIndent: 16, color: Color(0xFFE2E8F0));
 }
 
 class _InfoRow extends StatelessWidget {
