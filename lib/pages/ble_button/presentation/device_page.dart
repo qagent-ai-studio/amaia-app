@@ -131,9 +131,7 @@ class _DevicePageState extends State<DevicePage> {
       leading: IconButton(
         icon:
             const Icon(Icons.arrow_back_ios_rounded, color: Color(0xFF1E293B)),
-        onPressed: () {
-          context.read<BleButtonBloc>().add(const DeviceDisconnectRequested());
-        },
+        onPressed: () => Navigator.of(context).pop(),
       ),
       title: Column(
         crossAxisAlignment: CrossAxisAlignment.start,

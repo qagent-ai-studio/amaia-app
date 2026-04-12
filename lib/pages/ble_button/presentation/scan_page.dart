@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../bloc/ble_button_bloc.dart';
+import '../data/device_storage.dart';
 import '../domain/models.dart';
 import '../domain/saved_device.dart';
 import 'device_page.dart';
@@ -15,13 +16,20 @@ class ScanPage extends StatefulWidget {
 }
 
 class _ScanPageState extends State<ScanPage> {
+  List<SavedDevice> _savedDevices = [];
+
   @override
   void initState() {
     super.initState();
-    // Intentar reconectar automáticamente al último dispositivo al abrir la app
+    _loadSavedDevices();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<BleButtonBloc>().add(const AutoReconnectRequested());
     });
+  }
+
+  Future<void> _loadSavedDevices() async {
+    final devices = await DeviceStorage.instance.getAllDevices();
+    if (mounted) setState(() => _savedDevices = devices);
   }
 
   @override
@@ -82,6 +90,9 @@ class _ScanPageState extends State<ScanPage> {
               ),
             );
           }
+          if (state is BleButtonDisconnected) {
+            _loadSavedDevices();
+          }
           if (state is BleButtonError) {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
@@ -96,6 +107,12 @@ class _ScanPageState extends State<ScanPage> {
             return const SizedBox.shrink();
           }
           if (state is BleButtonDisconnected) {
+            if (_savedDevices.isNotEmpty) {
+              return _DeviceList(
+                savedDevices: _savedDevices,
+                scannedDevices: const [],
+              );
+            }
             return _EmptyState(
               onScan: () =>
                   context.read<BleButtonBloc>().add(const ScanStarted()),
