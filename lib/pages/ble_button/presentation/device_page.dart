@@ -3,13 +3,11 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../bloc/ble_button_bloc.dart';
 import '../domain/models.dart';
+import 'logs_page.dart';
 import 'permissions_page.dart';
 import 'widgets/battery_card.dart';
 import 'widgets/device_info_card.dart';
-import 'widgets/password_dialog.dart';
-import 'widgets/reset_confirm_dialog.dart';
 import 'widgets/section_header.dart';
-import 'widgets/settings_card.dart';
 
 class DevicePage extends StatefulWidget {
   const DevicePage({super.key, required this.mac});
@@ -104,11 +102,7 @@ class _DevicePageState extends State<DevicePage> {
                   icon: Icons.tune_rounded,
                   title: 'Configuración',
                 ),
-                SettingsCard(
-                  info: info,
-                  onChangePassword: () => _showPasswordDialog(context),
-                  onResetDevice: () => _showResetDialog(context),
-                ),
+                _LogsButton(mac: widget.mac, deviceName: info?.deviceName ?? 'MK Button'),
                 const SizedBox(height: 8),
                 _PermissionsButton(),
                 const SizedBox(height: 16),
@@ -136,10 +130,7 @@ class _DevicePageState extends State<DevicePage> {
       title: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            (info?.deviceName.isNotEmpty == true)
-                ? info!.deviceName
-                : 'MK Button',
+          Text('TAG Amaia',
             style: const TextStyle(
               color: Color.fromARGB(255, 93, 93, 93),
               fontWeight: FontWeight.w700,
@@ -181,31 +172,6 @@ class _DevicePageState extends State<DevicePage> {
         ),
       ],
     );
-  }
-
-  void _showPasswordDialog(BuildContext context) {
-    showDialog<Map<String, String>>(
-      context: context,
-      builder: (_) => const PasswordDialog(),
-    ).then((value) {
-      if (value != null && context.mounted) {
-        context.read<BleButtonBloc>().add(PasswordUpdateRequested(
-              oldPassword: value['old']!,
-              newPassword: value['new']!,
-            ));
-      }
-    });
-  }
-
-  void _showResetDialog(BuildContext context) {
-    showDialog<bool>(
-      context: context,
-      builder: (_) => const ResetConfirmDialog(),
-    ).then((confirmed) {
-      if (confirmed == true && context.mounted) {
-        context.read<BleButtonBloc>().add(const DeviceResetRequested());
-      }
-    });
   }
 }
 
@@ -284,6 +250,83 @@ class _TextInputDialogState extends State<_TextInputDialog> {
           child: const Text('Guardar'),
         ),
       ],
+    );
+  }
+}
+
+class _LogsButton extends StatelessWidget {
+  const _LogsButton({required this.mac, required this.deviceName});
+
+  final String mac;
+  final String deviceName;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+      child: Material(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(12),
+          onTap: () {
+            Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (_) =>
+                    LogsPage(mac: mac, deviceName: deviceName),
+              ),
+            );
+          },
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF6951C1).withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: const Icon(
+                    Icons.history_rounded,
+                    color: Color(0xFF6951C1),
+                    size: 22,
+                  ),
+                ),
+                const SizedBox(width: 14),
+                const Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Registros',
+                        style: TextStyle(
+                          color: Color(0xFF1E293B),
+                          fontWeight: FontWeight.w600,
+                          fontSize: 15,
+                        ),
+                      ),
+                      SizedBox(height: 3),
+                      Text(
+                        'Historial de presiones del botón',
+                        style: TextStyle(
+                          color: Color(0xFF94A3B8),
+                          fontSize: 12,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const Icon(
+                  Icons.arrow_forward_ios_rounded,
+                  color: Color(0xFFB0BEC5),
+                  size: 16,
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
     );
   }
 }

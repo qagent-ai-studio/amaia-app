@@ -20,7 +20,7 @@ class DatabaseHelper {
 
     return await openDatabase(
       path,
-      version: 4, // v4: Cambiar buttonAction por defecto a 'sms_and_call'
+      version: 5,
       onCreate: _onCreate,
       onUpgrade: _onUpgrade,
     );
@@ -50,9 +50,22 @@ class DatabaseHelper {
       )
     ''');
 
-    // Índice para búsqueda rápida por MAC
     await db.execute('''
       CREATE INDEX idx_mac ON devices(mac)
+    ''');
+
+    await db.execute('''
+      CREATE TABLE button_press_logs (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        mac TEXT NOT NULL,
+        deviceName TEXT NOT NULL,
+        pressedAt INTEGER NOT NULL,
+        batteryPercent INTEGER
+      )
+    ''');
+
+    await db.execute('''
+      CREATE INDEX idx_logs_mac ON button_press_logs(mac)
     ''');
   }
 
@@ -73,9 +86,22 @@ class DatabaseHelper {
       ''');
     }
     if (oldVersion < 4) {
-      // Actualizar dispositivos existentes de 'open_app' a 'sms_and_call'
       await db.execute('''
         UPDATE devices SET buttonAction = 'sms_and_call' WHERE buttonAction = 'open_app'
+      ''');
+    }
+    if (oldVersion < 5) {
+      await db.execute('''
+        CREATE TABLE button_press_logs (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          mac TEXT NOT NULL,
+          deviceName TEXT NOT NULL,
+          pressedAt INTEGER NOT NULL,
+          batteryPercent INTEGER
+        )
+      ''');
+      await db.execute('''
+        CREATE INDEX idx_logs_mac ON button_press_logs(mac)
       ''');
     }
   }

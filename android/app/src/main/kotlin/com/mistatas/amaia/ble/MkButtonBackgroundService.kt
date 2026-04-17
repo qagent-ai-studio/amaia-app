@@ -39,6 +39,7 @@ class MkButtonBackgroundService : Service() {
         const val EXTRA_CLICK_TYPE = "clickType"
         const val EXTRA_BUTTON_ACTION = "buttonAction"
         const val EXTRA_EMERGENCY_PHONE = "emergencyPhone"
+        const val EXTRA_SMS_PHONE = "smsPhone"
         const val EXTRA_DEVICE_TYPE = "deviceType"
         const val EXTRA_DEVICE_NAME = "deviceName"
 
@@ -49,6 +50,7 @@ class MkButtonBackgroundService : Service() {
             clickType: String,
             buttonAction: String = "open_app",
             emergencyPhone: String? = null,
+            smsPhone: String? = null,
             deviceType: String = "button",
             deviceName: String = "Dispositivo MK"
         ) {
@@ -59,6 +61,7 @@ class MkButtonBackgroundService : Service() {
                 putExtra(EXTRA_CLICK_TYPE, clickType)
                 putExtra(EXTRA_BUTTON_ACTION, buttonAction)
                 putExtra(EXTRA_EMERGENCY_PHONE, emergencyPhone)
+                putExtra(EXTRA_SMS_PHONE, smsPhone)
                 putExtra(EXTRA_DEVICE_TYPE, deviceType)
                 putExtra(EXTRA_DEVICE_NAME, deviceName)
             }
@@ -76,6 +79,8 @@ class MkButtonBackgroundService : Service() {
             context.stopService(intent)
         }
 
+        val foregroundMacs = mutableSetOf<String>()
+
         fun removeDevice(context: Context, mac: String) {
             val intent = Intent(context, MkButtonBackgroundService::class.java).apply {
                 action = ACTION_REMOVE_DEVICE
@@ -89,6 +94,7 @@ class MkButtonBackgroundService : Service() {
             mac: String,
             buttonAction: String,
             emergencyPhone: String?,
+            smsPhone: String?,
             deviceName: String
         ) {
             val intent = Intent(context, MkButtonBackgroundService::class.java).apply {
@@ -96,6 +102,7 @@ class MkButtonBackgroundService : Service() {
                 putExtra(EXTRA_MAC, mac)
                 putExtra(EXTRA_BUTTON_ACTION, buttonAction)
                 putExtra(EXTRA_EMERGENCY_PHONE, emergencyPhone)
+                putExtra(EXTRA_SMS_PHONE, smsPhone)
                 putExtra(EXTRA_DEVICE_NAME, deviceName)
             }
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
@@ -112,6 +119,7 @@ class MkButtonBackgroundService : Service() {
         val clickTypeToOpen: String,
         val buttonAction: String,
         val emergencyPhone: String?,
+        val smsPhone: String?,
         val deviceName: String
     )
 
@@ -160,7 +168,8 @@ class MkButtonBackgroundService : Service() {
                     password = intent.getStringExtra(EXTRA_PASSWORD) ?: "Moko4321",
                     clickTypeToOpen = intent.getStringExtra(EXTRA_CLICK_TYPE) ?: "single",
                     buttonAction = intent.getStringExtra(EXTRA_BUTTON_ACTION) ?: "open_app",
-                    emergencyPhone = intent.getStringExtra(EXTRA_EMERGENCY_PHONE),
+                    emergencyPhone = intent.getStringExtra(EXTRA_EMERGENCY_PHONE)?.takeIf { it.isNotEmpty() },
+                    smsPhone = intent.getStringExtra(EXTRA_SMS_PHONE)?.takeIf { it.isNotEmpty() },
                     deviceName = intent.getStringExtra(EXTRA_DEVICE_NAME) ?: "Dispositivo MK"
                 )
 
@@ -180,13 +189,15 @@ class MkButtonBackgroundService : Service() {
                 android.util.Log.d("MkButtonBgService", "Removing device: $mac")
                 pendingReconnects.remove(mac)?.let { reconnectHandler.removeCallbacks(it) }
                 deviceStates.remove(mac)?.support?.disConnectBle()
+                clearDevicePrefs(mac)
                 android.util.Log.d("MkButtonBgService", "Device removed. Remaining: ${deviceStates.size}")
                 if (deviceStates.isEmpty()) disconnectAndStop()
             }
             ACTION_EXECUTE_EMERGENCY -> {
                 val mac = intent.getStringExtra(EXTRA_MAC) ?: return START_STICKY
                 val buttonAction = intent.getStringExtra(EXTRA_BUTTON_ACTION) ?: return START_STICKY
-                val emergencyPhone = intent.getStringExtra(EXTRA_EMERGENCY_PHONE)
+                val emergencyPhone = intent.getStringExtra(EXTRA_EMERGENCY_PHONE)?.takeIf { it.isNotEmpty() }
+                val smsPhone = intent.getStringExtra(EXTRA_SMS_PHONE)?.takeIf { it.isNotEmpty() }
                 val deviceName = intent.getStringExtra(EXTRA_DEVICE_NAME) ?: "Dispositivo"
                 if (deviceStates.isEmpty()) {
                     startForeground(NOTIFICATION_ID, createNotification("Activo"))
@@ -197,6 +208,7 @@ class MkButtonBackgroundService : Service() {
                     clickTypeToOpen = "single",
                     buttonAction = buttonAction,
                     emergencyPhone = emergencyPhone,
+                    smsPhone = smsPhone,
                     deviceName = deviceName
                 )
                 executeButtonAction(config)
@@ -234,10 +246,11 @@ class MkButtonBackgroundService : Service() {
             if (clickType == "disabled") continue
             val buttonAction = prefs.getString("${mac}_buttonAction", "open_app") ?: continue
             val emergencyPhone = prefs.getString("${mac}_emergencyPhone", "")?.takeIf { it.isNotEmpty() }
+            val smsPhone = prefs.getString("${mac}_smsPhone", "")?.takeIf { it.isNotEmpty() }
             val deviceName = prefs.getString("${mac}_deviceName", "Dispositivo MK") ?: "Dispositivo MK"
             val password = prefs.getString("${mac}_password", "123456") ?: "123456"
             android.util.Log.d("MkButtonBgService", "Restoring device from prefs: $mac ($deviceName)")
-            val config = DeviceConfig(mac, password, clickType, buttonAction, emergencyPhone, deviceName)
+            val config = DeviceConfig(mac, password, clickType, buttonAction, emergencyPhone, smsPhone, deviceName)
             val support = DMokoSupport(applicationContext, mac)
             support.setPassword(config.password)
             deviceStates[mac] = DeviceState(config = config, support = support)
@@ -335,6 +348,7 @@ class MkButtonBackgroundService : Service() {
     fun onOrderTaskResponseEvent(event: OrderTaskResponseEvent) {
         if (event.action != MokoConstants.ACTION_CURRENT_DATA) return
         val mac = event.macAddress ?: return
+        if (mac in foregroundMacs) return
         val response = event.response ?: return
         val value = response.responseValue ?: return
 
@@ -363,17 +377,51 @@ class MkButtonBackgroundService : Service() {
                     if (storedClickType == "disabled" || clickType != storedClickType) return
                     val buttonAction = prefs.getString("${mac}_buttonAction", "open_app") ?: return
                     val emergencyPhone = prefs.getString("${mac}_emergencyPhone", "")?.takeIf { it.isNotEmpty() }
+                    val smsPhone = prefs.getString("${mac}_smsPhone", "")?.takeIf { it.isNotEmpty() }
                     val deviceName = prefs.getString("${mac}_deviceName", "Dispositivo MK") ?: "Dispositivo MK"
                     android.util.Log.d("MkButtonBgService", "Click (SharedPrefs fallback) from $mac: $clickType → $buttonAction")
-                    executeButtonAction(DeviceConfig(mac, "", storedClickType, buttonAction, emergencyPhone, deviceName))
+                    executeButtonAction(DeviceConfig(mac, "", storedClickType, buttonAction, emergencyPhone, smsPhone, deviceName))
                 }
             }
             else -> {}
         }
     }
 
+    private fun clearDevicePrefs(mac: String) {
+        applicationContext.getSharedPreferences("mk_button_config", Context.MODE_PRIVATE)
+            .edit()
+            .remove("${mac}_clickType")
+            .remove("${mac}_buttonAction")
+            .remove("${mac}_emergencyPhone")
+            .remove("${mac}_smsPhone")
+            .remove("${mac}_deviceName")
+            .remove("${mac}_password")
+            .remove("${mac}_batteryPercent")
+            .apply()
+        android.util.Log.d("MkButtonBgService", "SharedPrefs cleared for $mac")
+    }
+
+    private fun savePressLog(config: DeviceConfig) {
+        try {
+            val prefs = applicationContext.getSharedPreferences("mk_button_config", Context.MODE_PRIVATE)
+            val battery = prefs.getInt("${config.mac}_batteryPercent", -1)
+            val entry = org.json.JSONObject().apply {
+                put("mac", config.mac)
+                put("deviceName", config.deviceName)
+                put("pressedAt", System.currentTimeMillis())
+                if (battery >= 0) put("batteryPercent", battery)
+            }
+            val existing = org.json.JSONArray(prefs.getString("mk_pending_logs", "[]") ?: "[]")
+            existing.put(entry)
+            prefs.edit().putString("mk_pending_logs", existing.toString()).apply()
+        } catch (e: Exception) {
+            android.util.Log.e("MkButtonBgService", "Failed to save press log", e)
+        }
+    }
+
     private fun executeButtonAction(config: DeviceConfig) {
         android.util.Log.d("MkButtonBgService", "Executing ${config.buttonAction} for ${config.deviceName}")
+        savePressLog(config)
         when (config.buttonAction) {
             "call" -> attemptImmediateCall(config)
             "sms" -> sendEmergencySMS(config)
@@ -402,11 +450,12 @@ class MkButtonBackgroundService : Service() {
     }
 
     private fun sendEmergencySMS(config: DeviceConfig) {
-        if (config.emergencyPhone.isNullOrEmpty()) {
-            android.util.Log.w("MkButtonBgService", "No emergency phone for ${config.deviceName}")
+        val recipient = config.smsPhone ?: config.emergencyPhone
+        if (recipient.isNullOrEmpty()) {
+            android.util.Log.w("MkButtonBgService", "No SMS phone for ${config.deviceName}")
             return
         }
-        android.util.Log.d("MkButtonBgService", "Sending SMS for ${config.deviceName} to ${config.emergencyPhone}")
+        android.util.Log.d("MkButtonBgService", "Sending SMS for ${config.deviceName} to $recipient")
         try {
             val location = getLocationFromSharedPreferences() ?: getCurrentLocation()
             val batteryPercent = applicationContext
@@ -429,9 +478,9 @@ class MkButtonBackgroundService : Service() {
             }
             val parts = smsManager.divideMessage(message)
             if (parts.size == 1) {
-                smsManager.sendTextMessage(config.emergencyPhone, null, message, null, null)
+                smsManager.sendTextMessage(recipient, null, message, null, null)
             } else {
-                smsManager.sendMultipartTextMessage(config.emergencyPhone, null, parts, null, null)
+                smsManager.sendMultipartTextMessage(recipient, null, parts, null, null)
             }
             android.util.Log.d("MkButtonBgService", "SMS sent for ${config.deviceName}")
             triggerImmediateVibration()

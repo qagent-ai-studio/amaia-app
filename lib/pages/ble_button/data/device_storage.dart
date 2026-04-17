@@ -1,5 +1,6 @@
 import 'package:sqflite/sqflite.dart';
 
+import '../domain/button_press_log.dart';
 import '../domain/saved_device.dart';
 import 'database_helper.dart';
 
@@ -126,14 +127,11 @@ class DeviceStorage {
     );
   }
 
-  /// Elimina un dispositivo por su MAC
+  /// Elimina un dispositivo por su MAC y todos sus registros asociados
   Future<int> deleteDevice(String mac) async {
     final db = await _db;
-    return await db.delete(
-      'devices',
-      where: 'mac = ?',
-      whereArgs: [mac],
-    );
+    await db.delete('button_press_logs', where: 'mac = ?', whereArgs: [mac]);
+    return await db.delete('devices', where: 'mac = ?', whereArgs: [mac]);
   }
 
   /// Elimina todos los dispositivos
@@ -151,5 +149,23 @@ class DeviceStorage {
       where: 'mac = ?',
       whereArgs: [mac],
     );
+  }
+
+  Future<void> insertPressLog(ButtonPressLog log) async {
+    final db = await _db;
+    await db.insert('button_press_logs', log.toMap());
+  }
+
+  Future<List<ButtonPressLog>> getLogsForDevice(String mac,
+      {int limit = 100}) async {
+    final db = await _db;
+    final maps = await db.query(
+      'button_press_logs',
+      where: 'mac = ?',
+      whereArgs: [mac],
+      orderBy: 'pressedAt DESC',
+      limit: limit,
+    );
+    return maps.map((m) => ButtonPressLog.fromMap(m)).toList();
   }
 }

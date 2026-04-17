@@ -50,6 +50,7 @@ class MkButtonChannel(
         val clickType: String,
         val buttonAction: String,
         val emergencyPhone: String?,
+        val smsPhone: String?,
         val deviceName: String
     )
     private val deviceActionConfigs = mutableMapOf<String, ForegroundActionConfig>()
@@ -71,6 +72,7 @@ class MkButtonChannel(
             isRegistered = false
         }
         scanner?.stopScanDevice()
+        foregroundMac?.let { MkButtonBackgroundService.foregroundMacs.remove(it) }
     }
 
     // ---------------------------------------------------------------------------
@@ -102,6 +104,7 @@ class MkButtonChannel(
             "requestBatteryOptimization"    -> handleRequestBatteryOptimization(result)
             "requestNotificationPermission" -> handleRequestNotificationPermission(result)
             "requestOverlayPermission"      -> handleRequestOverlayPermission(result)
+            "getPendingLogs"                -> handleGetPendingLogs(result)
             else                            -> result.notImplemented()
         }
     }
@@ -184,6 +187,7 @@ class MkButtonChannel(
     }
 
     private fun handleDisconnect(result: MethodChannel.Result) {
+        foregroundMac?.let { MkButtonBackgroundService.foregroundMacs.remove(it) }
         foregroundMac = null
         DMokoSupport.getInstance().disConnectBle()
         result.success(null)
@@ -336,7 +340,8 @@ class MkButtonChannel(
         val password = call.argument<String>("password") ?: "Moko4321"
         val clickType = call.argument<String>("clickType") ?: "single"
         val buttonAction = call.argument<String>("buttonAction") ?: "open_app"
-        val emergencyPhone = call.argument<String>("emergencyPhone")
+        val emergencyPhone = call.argument<String>("emergencyPhone")?.takeIf { it.isNotEmpty() }
+        val smsPhone = call.argument<String>("smsPhone")?.takeIf { it.isNotEmpty() }
         val deviceType = call.argument<String>("deviceType") ?: "button"
         val deviceName = call.argument<String>("deviceName") ?: "Dispositivo MK"
 
@@ -344,12 +349,14 @@ class MkButtonChannel(
             clickType = clickType,
             buttonAction = buttonAction,
             emergencyPhone = emergencyPhone,
+            smsPhone = smsPhone,
             deviceName = deviceName
         )
         context.getSharedPreferences("mk_button_config", Context.MODE_PRIVATE).edit()
             .putString("${mac}_clickType", clickType)
             .putString("${mac}_buttonAction", buttonAction)
             .putString("${mac}_emergencyPhone", emergencyPhone ?: "")
+            .putString("${mac}_smsPhone", smsPhone ?: "")
             .putString("${mac}_deviceName", deviceName)
             .putString("${mac}_password", password)
             .apply()
@@ -361,6 +368,7 @@ class MkButtonChannel(
                 clickType = clickType,
                 buttonAction = buttonAction,
                 emergencyPhone = emergencyPhone,
+                smsPhone = smsPhone,
                 deviceType = deviceType,
                 deviceName = deviceName
             )
@@ -390,9 +398,10 @@ class MkButtonChannel(
             result.error("INVALID_ARG", "buttonAction is required", null)
             return
         }
-        val emergencyPhone = call.argument<String>("emergencyPhone")
+        val emergencyPhone = call.argument<String>("emergencyPhone")?.takeIf { it.isNotEmpty() }
+        val smsPhone = call.argument<String>("smsPhone")?.takeIf { it.isNotEmpty() }
         val deviceName = call.argument<String>("deviceName") ?: "Dispositivo MK"
-        MkButtonBackgroundService.executeEmergencyAction(context, mac, buttonAction, emergencyPhone, deviceName)
+        MkButtonBackgroundService.executeEmergencyAction(context, mac, buttonAction, emergencyPhone, smsPhone, deviceName)
         result.success(null)
     }
 
@@ -402,6 +411,8 @@ class MkButtonChannel(
             return
         }
         try {
+            deviceActionConfigs.remove(mac)
+            MkButtonBackgroundService.foregroundMacs.remove(mac)
             MkButtonBackgroundService.removeDevice(context, mac)
             result.success(null)
         } catch (e: Exception) {
@@ -445,15 +456,23 @@ class MkButtonChannel(
     private fun handleRequestBatteryOptimization(result: MethodChannel.Result) {
         try {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                val intent = Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS).apply {
-                    data = Uri.parse("package:${context.packageName}")
-                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                try {
+                    val intent = Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS).apply {
+                        data = Uri.parse("package:${context.packageName}")
+                        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                    }
+                    context.startActivity(intent)
+                } catch (e: Exception) {
+                    android.util.Log.w("MkButton", "Direct battery optimization intent failed, falling back: ${e.message}")
+                    val fallback = Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS).apply {
+                        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                    }
+                    context.startActivity(fallback)
                 }
-                context.startActivity(intent)
             }
             result.success(null)
         } catch (e: Exception) {
-            android.util.Log.e("MkButton", "Failed to request battery optimization", e)
+            android.util.Log.e("MkButton", "Failed to open battery optimization settings", e)
             result.error("PERMISSION_ERROR", e.message, null)
         }
     }
@@ -499,6 +518,13 @@ class MkButtonChannel(
         }
     }
 
+    private fun handleGetPendingLogs(result: MethodChannel.Result) {
+        val prefs = context.getSharedPreferences("mk_button_config", Context.MODE_PRIVATE)
+        val logs = prefs.getString("mk_pending_logs", "[]") ?: "[]"
+        prefs.edit().remove("mk_pending_logs").apply()
+        result.success(logs)
+    }
+
     // ---------------------------------------------------------------------------
     // EventBus — Connection status
     // ---------------------------------------------------------------------------
@@ -516,14 +542,18 @@ class MkButtonChannel(
             isDeviceConnected = true
             connectedAt = System.currentTimeMillis()
             val connectedMac = eventMac ?: foregroundMac
+            if (connectedMac != null) {
+                MkButtonBackgroundService.foregroundMacs.add(connectedMac)
+            }
             if (connectedMac != null && !deviceActionConfigs.containsKey(connectedMac)) {
                 val prefs = context.getSharedPreferences("mk_button_config", Context.MODE_PRIVATE)
                 val clickType = prefs.getString("${connectedMac}_clickType", null)
                 val buttonAction = prefs.getString("${connectedMac}_buttonAction", null)
                 if (clickType != null && buttonAction != null) {
                     val ep = prefs.getString("${connectedMac}_emergencyPhone", "")?.takeIf { it.isNotEmpty() }
+                    val sp = prefs.getString("${connectedMac}_smsPhone", "")?.takeIf { it.isNotEmpty() }
                     val dn = prefs.getString("${connectedMac}_deviceName", "Dispositivo MK") ?: "Dispositivo MK"
-                    deviceActionConfigs[connectedMac] = ForegroundActionConfig(clickType, buttonAction, ep, dn)
+                    deviceActionConfigs[connectedMac] = ForegroundActionConfig(clickType, buttonAction, ep, sp, dn)
                     android.util.Log.d("MkButton", "Config restored from SharedPrefs for $connectedMac: clickType=$clickType buttonAction=$buttonAction")
                 } else {
                     android.util.Log.w("MkButton", "No SharedPrefs config found for $connectedMac")
@@ -571,6 +601,7 @@ class MkButtonChannel(
                 return
             }
             isDeviceConnected = false
+            foregroundMac?.let { MkButtonBackgroundService.foregroundMacs.remove(it) }
         }
 
         channel.invokeMethod("onConnectionStatus", mapOf("connected" to connected))
@@ -681,7 +712,7 @@ class MkButtonChannel(
         } else {
             android.util.Log.d("MkButton", "Executing emergency action: ${config.buttonAction}")
             MkButtonBackgroundService.executeEmergencyAction(
-                context, mac!!, config.buttonAction, config.emergencyPhone, config.deviceName
+                context, mac!!, config.buttonAction, config.emergencyPhone, config.smsPhone, config.deviceName
             )
         }
 

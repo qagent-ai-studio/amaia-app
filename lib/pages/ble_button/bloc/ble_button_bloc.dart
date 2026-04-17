@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -7,6 +8,7 @@ import 'package:permission_handler/permission_handler.dart';
 
 import '../data/ble_button_repository.dart';
 import '../data/device_storage.dart';
+import '../domain/button_press_log.dart';
 import '../domain/models.dart';
 import '../domain/saved_device.dart';
 
@@ -308,6 +310,22 @@ class BleButtonBloc extends Bloc<BleButtonEvent, BleButtonState> {
         event.pressType,
       );
 
+      final savedDevice =
+          await DeviceStorage.instance.getDeviceByMac(current.mac);
+      if (savedDevice != null &&
+          const ['call', 'sms', 'sms_and_call']
+              .contains(savedDevice.buttonAction) &&
+          event.pressType == savedDevice.clickToOpenApp) {
+        await DeviceStorage.instance.insertPressLog(ButtonPressLog(
+          mac: current.mac,
+          deviceName: current.deviceInfo?.deviceName?.isNotEmpty == true
+              ? current.deviceInfo!.deviceName
+              : savedDevice.name,
+          pressedAt: DateTime.now(),
+          batteryPercent: current.deviceInfo?.batteryPercent,
+        ));
+      }
+
       emit(current.copyWith(
         lastButtonPress: ButtonPressEvent(
           pressType: event.pressType,
@@ -423,9 +441,27 @@ class BleButtonBloc extends Bloc<BleButtonEvent, BleButtonState> {
     AutoReconnectRequested event,
     Emitter<BleButtonState> emit,
   ) async {
+    await _importBackgroundLogs();
     final allDevices = await DeviceStorage.instance.getAllDevices();
     emit(BleButtonScanning(savedDevices: allDevices));
     await _ensureAllDevicesInBackground(allDevices);
+  }
+
+  Future<void> _importBackgroundLogs() async {
+    try {
+      final raw = await _repo.getPendingLogs();
+      final list = jsonDecode(raw) as List<dynamic>;
+      for (final entry in list) {
+        final map = entry as Map<String, dynamic>;
+        await DeviceStorage.instance.insertPressLog(ButtonPressLog(
+          mac: map['mac'] as String,
+          deviceName: map['deviceName'] as String,
+          pressedAt: DateTime.fromMillisecondsSinceEpoch(
+              map['pressedAt'] as int),
+          batteryPercent: map['batteryPercent'] as int?,
+        ));
+      }
+    } catch (_) {}
   }
 
   Future<void> _ensureAllDevicesInBackground(
@@ -442,13 +478,12 @@ class BleButtonBloc extends Bloc<BleButtonEvent, BleButtonState> {
 
   Future<void> _startDeviceInBackground(SavedDevice device) async {
     String? emergencyPhone;
-    if (device.buttonAction == 'call' ||
-        device.buttonAction == 'sms' ||
-        device.buttonAction == 'sms_and_call') {
-      emergencyPhone =
-          (device.buttonAction == 'call' || device.buttonAction == 'sms_and_call')
-              ? dotenv.env['RECIPIENTS_CALL_EMERGENCY']
-              : dotenv.env['LIST_RECIPIENTS_SMS_EMERGENCY'];
+    String? smsPhone;
+    if (device.buttonAction == 'call' || device.buttonAction == 'sms_and_call') {
+      emergencyPhone = dotenv.env['RECIPIENTS_CALL_EMERGENCY'];
+    }
+    if (device.buttonAction == 'sms' || device.buttonAction == 'sms_and_call') {
+      smsPhone = dotenv.env['LIST_RECIPIENTS_SMS_EMERGENCY'];
     }
     await _repo.startBackgroundService(
       device.mac,
@@ -456,6 +491,7 @@ class BleButtonBloc extends Bloc<BleButtonEvent, BleButtonState> {
       device.clickToOpenApp,
       buttonAction: device.buttonAction,
       emergencyPhone: emergencyPhone,
+      smsPhone: smsPhone,
       deviceName: device.name,
     );
   }

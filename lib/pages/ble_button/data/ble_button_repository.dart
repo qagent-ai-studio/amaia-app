@@ -29,6 +29,7 @@ abstract class BleButtonRepository {
       String mac, String password, String clickType,
       {String buttonAction = 'open_app',
       String? emergencyPhone,
+      String? smsPhone,
       String deviceType = 'button',
       String deviceName = 'Dispositivo MK'});
   Future<void> stopBackgroundService();
@@ -37,6 +38,7 @@ abstract class BleButtonRepository {
       String mac, String buttonAction, String? emergencyPhone, String deviceName);
   Future<void> triggerBuzzer({int durationMs = 3000, int intervalMs = 0});
   Future<void> stopBuzzer();
+  Future<String> getPendingLogs();
 }
 
 /// Implementation using Flutter MethodChannel to communicate with
@@ -144,6 +146,7 @@ class BleButtonRepositoryImpl implements BleButtonRepository {
     String clickType, {
     String buttonAction = 'open_app',
     String? emergencyPhone,
+    String? smsPhone,
     String deviceType = 'button',
     String deviceName = 'Dispositivo MK',
   }) =>
@@ -153,6 +156,7 @@ class BleButtonRepositoryImpl implements BleButtonRepository {
         'clickType': clickType,
         'buttonAction': buttonAction,
         'emergencyPhone': emergencyPhone,
+        'smsPhone': smsPhone,
         'deviceType': deviceType,
         'deviceName': deviceName,
       });
@@ -180,6 +184,16 @@ class BleButtonRepositoryImpl implements BleButtonRepository {
 
   @override
   Future<void> stopBuzzer() => _invoke('stopBuzzer');
+
+  @override
+  Future<String> getPendingLogs() async {
+    try {
+      final result = await _channel.invokeMethod<String>('getPendingLogs');
+      return result ?? '[]';
+    } on PlatformException {
+      return '[]';
+    }
+  }
 
   Future<void> _invoke(String method, [Map<String, dynamic>? args]) async {
     try {
