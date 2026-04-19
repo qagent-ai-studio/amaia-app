@@ -81,10 +81,11 @@ class MkButtonBackgroundService : Service() {
 
         val foregroundMacs = mutableSetOf<String>()
 
-        fun removeDevice(context: Context, mac: String) {
+        fun removeDevice(context: Context, mac: String, clearPrefs: Boolean = false) {
             val intent = Intent(context, MkButtonBackgroundService::class.java).apply {
                 action = ACTION_REMOVE_DEVICE
                 putExtra(EXTRA_MAC, mac)
+                putExtra("clearPrefs", clearPrefs)
             }
             context.startService(intent)
         }
@@ -175,10 +176,18 @@ class MkButtonBackgroundService : Service() {
 
                 val support = DMokoSupport(applicationContext, mac)
                 support.setPassword(config.password)
-                deviceStates[mac] = DeviceState(config = config, support = support)
-                support.connDevice(mac)
+                val alreadyInForeground = mac in foregroundMacs
+                deviceStates[mac] = DeviceState(
+                    config = config,
+                    support = support,
+                    isConnected = alreadyInForeground,
+                    isInitialized = alreadyInForeground
+                )
+                if (!alreadyInForeground) {
+                    support.connDevice(mac)
+                }
 
-                android.util.Log.d("MkButtonBgService", "Device added: $mac (${config.deviceName}). Total: ${deviceStates.size}")
+                android.util.Log.d("MkButtonBgService", "Device added: $mac (${config.deviceName}), alreadyInForeground=$alreadyInForeground. Total: ${deviceStates.size}")
             }
             ACTION_STOP_SERVICE -> {
                 android.util.Log.d("MkButtonBgService", "Stopping service")
@@ -186,10 +195,11 @@ class MkButtonBackgroundService : Service() {
             }
             ACTION_REMOVE_DEVICE -> {
                 val mac = intent.getStringExtra(EXTRA_MAC) ?: return START_STICKY
-                android.util.Log.d("MkButtonBgService", "Removing device: $mac")
+                val clearPrefs = intent.getBooleanExtra("clearPrefs", false)
+                android.util.Log.d("MkButtonBgService", "Removing device: $mac (clearPrefs=$clearPrefs)")
                 pendingReconnects.remove(mac)?.let { reconnectHandler.removeCallbacks(it) }
                 deviceStates.remove(mac)?.support?.disConnectBle()
-                clearDevicePrefs(mac)
+                if (clearPrefs) clearDevicePrefs(mac)
                 android.util.Log.d("MkButtonBgService", "Device removed. Remaining: ${deviceStates.size}")
                 if (deviceStates.isEmpty()) disconnectAndStop()
             }

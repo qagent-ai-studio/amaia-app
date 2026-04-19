@@ -410,10 +410,11 @@ class MkButtonChannel(
             result.error("INVALID_ARG", "mac is required", null)
             return
         }
+        val clearConfig = call.argument<Boolean>("clearConfig") ?: false
         try {
-            deviceActionConfigs.remove(mac)
+            if (clearConfig) deviceActionConfigs.remove(mac)
             MkButtonBackgroundService.foregroundMacs.remove(mac)
-            MkButtonBackgroundService.removeDevice(context, mac)
+            MkButtonBackgroundService.removeDevice(context, mac, clearPrefs = clearConfig)
             result.success(null)
         } catch (e: Exception) {
             android.util.Log.e("MkButton", "Failed to remove device from background service", e)
@@ -701,7 +702,22 @@ class MkButtonChannel(
         }
 
         val mac = foregroundMac
-        val config = if (mac != null) deviceActionConfigs[mac] else null
+        var config = if (mac != null) deviceActionConfigs[mac] else null
+
+        if (config == null && mac != null) {
+            val prefs = context.getSharedPreferences("mk_button_config", Context.MODE_PRIVATE)
+            val clickType = prefs.getString("${mac}_clickType", null)
+            val buttonAction = prefs.getString("${mac}_buttonAction", null)
+            if (clickType != null && buttonAction != null) {
+                val ep = prefs.getString("${mac}_emergencyPhone", "")?.takeIf { it.isNotEmpty() }
+                val sp = prefs.getString("${mac}_smsPhone", "")?.takeIf { it.isNotEmpty() }
+                val dn = prefs.getString("${mac}_deviceName", "Dispositivo MK") ?: "Dispositivo MK"
+                config = ForegroundActionConfig(clickType, buttonAction, ep, sp, dn)
+                deviceActionConfigs[mac] = config
+                android.util.Log.d("MkButton", "Config restored from SharedPrefs for $mac: $buttonAction/$clickType")
+            }
+        }
+
         android.util.Log.d("MkButton", "handleNotifyData: mac=$mac pressType=$pressType config=${config?.buttonAction}/${config?.clickType}")
         if (config == null) {
             android.util.Log.w("MkButton", "No config for mac=$mac, deviceActionConfigs keys=${deviceActionConfigs.keys}")

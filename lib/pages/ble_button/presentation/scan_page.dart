@@ -51,11 +51,12 @@ class _ScanPageState extends State<ScanPage> {
         actions: [
           BlocBuilder<BleButtonBloc, BleButtonState>(
             builder: (context, state) {
-              final isScanning = state is BleButtonScanning;
+              final isActivelyScan = state is BleButtonScanning &&
+                  state.savedDevices.isEmpty;
               return Padding(
                 padding: const EdgeInsets.only(right: 8),
                 child: IconButton(
-                  icon: isScanning
+                  icon: isActivelyScan
                       ? const SizedBox(
                           width: 20,
                           height: 20,
@@ -66,10 +67,10 @@ class _ScanPageState extends State<ScanPage> {
                         )
                       : const Icon(Icons.radar_rounded,
                           color: Color(0xFF6951C1)),
-                  onPressed: () => isScanning
+                  onPressed: () => isActivelyScan
                       ? context.read<BleButtonBloc>().add(const ScanStopped())
                       : context.read<BleButtonBloc>().add(const ScanStarted()),
-                  tooltip: isScanning ? 'Detener escaneo' : 'Iniciar escaneo',
+                  tooltip: isActivelyScan ? 'Detener escaneo' : 'Iniciar escaneo',
                 ),
               );
             },
@@ -145,18 +146,19 @@ class _ScanPageState extends State<ScanPage> {
       ),
       floatingActionButton: BlocBuilder<BleButtonBloc, BleButtonState>(
         builder: (context, state) {
-          final isScanning = state is BleButtonScanning;
+          final isActivelyScan = state is BleButtonScanning &&
+              state.savedDevices.isEmpty;
           return FloatingActionButton.extended(
-            onPressed: () => isScanning
+            onPressed: () => isActivelyScan
                 ? context.read<BleButtonBloc>().add(const ScanStopped())
                 : context.read<BleButtonBloc>().add(const ScanStarted()),
-            backgroundColor:
-                isScanning ? Colors.red.shade700 : const Color(0xFF0EA5E9),
+            backgroundColor: isActivelyScan
+                ? Colors.red.shade700
+                : const Color(0xFF0EA5E9),
             foregroundColor: Colors.white,
-            icon: Icon(isScanning ? Icons.stop_rounded : Icons.search_rounded),
-            label: Text(
-              isScanning ? 'Detener' : 'Escanear',
-            ),
+            icon: Icon(
+                isActivelyScan ? Icons.stop_rounded : Icons.search_rounded),
+            label: Text(isActivelyScan ? 'Detener' : 'Escanear'),
           );
         },
       ),

@@ -33,7 +33,7 @@ abstract class BleButtonRepository {
       String deviceType = 'button',
       String deviceName = 'Dispositivo MK'});
   Future<void> stopBackgroundService();
-  Future<void> removeDeviceFromBackgroundService(String mac);
+  Future<void> removeDeviceFromBackgroundService(String mac, {bool clearConfig = false});
   Future<void> executeEmergencyAction(
       String mac, String buttonAction, String? emergencyPhone, String deviceName);
   Future<void> triggerBuzzer({int durationMs = 3000, int intervalMs = 0});
@@ -165,8 +165,8 @@ class BleButtonRepositoryImpl implements BleButtonRepository {
   Future<void> stopBackgroundService() => _invoke('stopBackgroundService');
 
   @override
-  Future<void> removeDeviceFromBackgroundService(String mac) =>
-      _invoke('removeDeviceFromBackgroundService', {'mac': mac});
+  Future<void> removeDeviceFromBackgroundService(String mac, {bool clearConfig = false}) =>
+      _invoke('removeDeviceFromBackgroundService', {'mac': mac, 'clearConfig': clearConfig});
 
   @override
   Future<void> executeEmergencyAction(

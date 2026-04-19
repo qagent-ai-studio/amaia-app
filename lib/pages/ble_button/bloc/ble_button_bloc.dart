@@ -75,6 +75,14 @@ class BleButtonBloc extends Bloc<BleButtonEvent, BleButtonState> {
     Emitter<BleButtonState> emit,
   ) async {
     try {
+      final savedDevices = await DeviceStorage.instance.getAllDevices();
+
+      if (savedDevices.isNotEmpty) {
+        emit(BleButtonScanning(savedDevices: savedDevices));
+        await _ensureAllDevicesInBackground(savedDevices);
+        return;
+      }
+
       // Solicitar permisos de Bluetooth en runtime (Android 12+)
       final bluetoothScanStatus = await Permission.bluetoothScan.request();
       final bluetoothConnectStatus =
@@ -98,16 +106,10 @@ class BleButtonBloc extends Bloc<BleButtonEvent, BleButtonState> {
         return;
       }
 
-      // Cargar dispositivos guardados de la BD
-      final savedDevices = await DeviceStorage.instance.getAllDevices();
-      print('[BLE] Loaded ${savedDevices.length} saved devices from database');
-
       await _repo.startScan();
-      print('[BLE] Scan started successfully');
-      emit(BleButtonScanning(savedDevices: savedDevices));
+      emit(BleButtonScanning(savedDevices: const []));
       await _ensureAllDevicesInBackground(savedDevices);
     } on BleButtonException catch (e) {
-      print('[BLE] Scan error: ${e.message}');
       emit(BleButtonError(message: e.message));
     }
   }
@@ -263,6 +265,13 @@ class BleButtonBloc extends Bloc<BleButtonEvent, BleButtonState> {
 
       await DeviceStorage.instance.updateLastConnected(mac);
       final savedDevice = await DeviceStorage.instance.getDeviceByMac(mac);
+
+      if (savedDevice != null && savedDevice.clickToOpenApp != 'disabled') {
+        try {
+          await _startDeviceInBackground(savedDevice);
+        } catch (_) {}
+      }
+
       emit(BleButtonConnected(
         mac: mac,
         isLoading: false,
@@ -405,7 +414,7 @@ class BleButtonBloc extends Bloc<BleButtonEvent, BleButtonState> {
     await DeviceStorage.instance.deleteDevice(event.mac);
 
     try {
-      await _repo.removeDeviceFromBackgroundService(event.mac);
+      await _repo.removeDeviceFromBackgroundService(event.mac, clearConfig: true);
     } catch (e) {
       print('Failed to remove device from background service: $e');
     }
@@ -414,6 +423,8 @@ class BleButtonBloc extends Bloc<BleButtonEvent, BleButtonState> {
 
     if (state is BleButtonScanning) {
       emit((state as BleButtonScanning).copyWith(savedDevices: savedDevices));
+    } else {
+      emit(const BleButtonDisconnected());
     }
   }
 
@@ -443,7 +454,7 @@ class BleButtonBloc extends Bloc<BleButtonEvent, BleButtonState> {
   ) async {
     await _importBackgroundLogs();
     final allDevices = await DeviceStorage.instance.getAllDevices();
-    emit(BleButtonScanning(savedDevices: allDevices));
+    emit(const BleButtonDisconnected());
     await _ensureAllDevicesInBackground(allDevices);
   }
 
