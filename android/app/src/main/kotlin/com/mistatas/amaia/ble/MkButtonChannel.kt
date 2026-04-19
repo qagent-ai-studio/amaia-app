@@ -412,7 +412,15 @@ class MkButtonChannel(
         }
         val clearConfig = call.argument<Boolean>("clearConfig") ?: false
         try {
-            if (clearConfig) deviceActionConfigs.remove(mac)
+            if (clearConfig) {
+                deviceActionConfigs.remove(mac)
+                if (foregroundMac == mac) {
+                    foregroundMac = null
+                    isDeviceConnected = false
+                    DMokoSupport.getInstance().disConnectBle()
+                    android.util.Log.d("MkButton", "Foreground connection closed for deleted device: $mac")
+                }
+            }
             MkButtonBackgroundService.foregroundMacs.remove(mac)
             MkButtonBackgroundService.removeDevice(context, mac, clearPrefs = clearConfig)
             result.success(null)

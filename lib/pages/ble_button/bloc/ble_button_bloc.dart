@@ -170,9 +170,15 @@ class BleButtonBloc extends Bloc<BleButtonEvent, BleButtonState> {
     BatteryReadRequested event,
     Emitter<BleButtonState> emit,
   ) async {
-    // ADVERTENCIA: Leer batería después de init puede causar desconexión
-    // Este comando se ejecuta SOLO cuando el usuario presiona el botón manualmente
-    await _sendCommand(emit, () => _repo.readBattery());
+    if (state is! BleButtonConnected) return;
+    final current = state as BleButtonConnected;
+    emit(current.copyWith(isLoading: true, clearError: true));
+    try {
+      await _repo.readBattery();
+      // isLoading permanece true hasta que _onTaskResultReceived reciba batteryPercent
+    } on BleButtonException catch (e) {
+      emit(current.copyWith(isLoading: false, errorMessage: e.message));
+    }
   }
 
   Future<void> _onDeviceInfoReadRequested(
@@ -411,7 +417,13 @@ class BleButtonBloc extends Bloc<BleButtonEvent, BleButtonState> {
     SavedDeviceDeleteRequested event,
     Emitter<BleButtonState> emit,
   ) async {
-    await DeviceStorage.instance.deleteDevice(event.mac);
+    emit(const BleButtonScanning(savedDevices: []));
+
+    try {
+      await DeviceStorage.instance.deleteDevice(event.mac);
+    } catch (e) {
+      print('Failed to delete device from storage: $e');
+    }
 
     try {
       await _repo.removeDeviceFromBackgroundService(event.mac, clearConfig: true);
@@ -421,11 +433,27 @@ class BleButtonBloc extends Bloc<BleButtonEvent, BleButtonState> {
 
     final savedDevices = await DeviceStorage.instance.getAllDevices();
 
-    if (state is BleButtonScanning) {
-      emit((state as BleButtonScanning).copyWith(savedDevices: savedDevices));
-    } else {
-      emit(const BleButtonDisconnected());
+    if (savedDevices.isNotEmpty) {
+      emit(BleButtonScanning(savedDevices: savedDevices));
+      await _ensureAllDevicesInBackground(savedDevices);
+      return;
     }
+
+    final bluetoothScanStatus = await Permission.bluetoothScan.request();
+    final bluetoothConnectStatus = await Permission.bluetoothConnect.request();
+    final locationStatus = await Permission.location.request();
+
+    if (bluetoothScanStatus.isGranted &&
+        bluetoothConnectStatus.isGranted &&
+        locationStatus.isGranted) {
+      try {
+        await _repo.startScan();
+      } catch (e) {
+        print('Failed to start scan after deletion: $e');
+      }
+    }
+
+    emit(const BleButtonScanning(savedDevices: []));
   }
 
   Future<void> _onBuzzerTriggered(

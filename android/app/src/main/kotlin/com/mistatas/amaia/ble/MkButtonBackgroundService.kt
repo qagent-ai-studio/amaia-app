@@ -1,8 +1,11 @@
 package com.mistatas.amaia.ble
 
 import android.app.*
+import android.bluetooth.BluetoothAdapter
+import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
+import android.content.IntentFilter
 import android.content.pm.PackageManager
 import android.location.Location
 import android.location.LocationManager
@@ -136,11 +139,32 @@ class MkButtonBackgroundService : Service() {
     private val reconnectHandler = android.os.Handler(android.os.Looper.getMainLooper())
     private val pendingReconnects = mutableMapOf<String, Runnable>()
 
+    private val bluetoothReceiver = object : BroadcastReceiver() {
+        override fun onReceive(context: Context?, intent: Intent?) {
+            if (intent?.action != BluetoothAdapter.ACTION_STATE_CHANGED) return
+            val btState = intent.getIntExtra(BluetoothAdapter.EXTRA_STATE, BluetoothAdapter.ERROR)
+            if (btState == BluetoothAdapter.STATE_ON) {
+                android.util.Log.d("MkButtonBgService", "Bluetooth ON — retrying all disconnected devices")
+                reconnectHandler.postDelayed({
+                    deviceStates.forEach { (mac, state) ->
+                        if (!state.isConnected) {
+                            pendingReconnects.remove(mac)?.let { reconnectHandler.removeCallbacks(it) }
+                            state.reconnectAttempts = 0
+                            state.support.connDevice(mac)
+                            android.util.Log.d("MkButtonBgService", "Retry after BT ON: ${state.config.deviceName}")
+                        }
+                    }
+                }, 2000)
+            }
+        }
+    }
+
     override fun onCreate() {
         super.onCreate()
         createNotificationChannel()
         createAlertNotificationChannel()
         EventBus.getDefault().register(this)
+        registerReceiver(bluetoothReceiver, IntentFilter(BluetoothAdapter.ACTION_STATE_CHANGED))
         android.util.Log.d("MkButtonBgService", "Service created")
     }
 
@@ -238,6 +262,7 @@ class MkButtonBackgroundService : Service() {
     override fun onDestroy() {
         super.onDestroy()
         EventBus.getDefault().unregister(this)
+        try { unregisterReceiver(bluetoothReceiver) } catch (_: Exception) {}
         reconnectHandler.removeCallbacksAndMessages(null)
         pendingReconnects.clear()
         deviceStates.values.forEach { it.support.disConnectBle() }
@@ -327,9 +352,7 @@ class MkButtonBackgroundService : Service() {
                 state.isInitialized = false
                 android.util.Log.d("MkButtonBgService", "Disconnected: ${state.config.deviceName} ($mac)")
 
-                if (wasInitialized) {
-                    showDeviceLostNotification(state.config)
-                }
+
 
                 val connectedCount = deviceStates.count { it.value.isConnected }
                 updateNotification(if (connectedCount > 0) "$connectedCount dispositivo(s) conectado(s)" else "Reconectando...")

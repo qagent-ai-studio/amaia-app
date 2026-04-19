@@ -78,6 +78,8 @@ class _ScanPageState extends State<ScanPage> {
         ],
       ),
       body: BlocConsumer<BleButtonBloc, BleButtonState>(
+        listenWhen: (previous, current) =>
+            current is BleButtonConnected && previous is! BleButtonConnected,
         listener: (context, state) {
           if (state is BleButtonConnected && state.mac.isNotEmpty) {
             Navigator.of(context).push(

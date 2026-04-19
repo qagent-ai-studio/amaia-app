@@ -58,7 +58,9 @@ class _DevicePageState extends State<DevicePage> {
         final info = state.deviceInfo;
         return Scaffold(
           appBar: _buildAppBar(context, state, info),
-          body: Container(
+          body: Stack(
+            children: [
+              Container(
             decoration: const BoxDecoration(
                 gradient: LinearGradient(
                     colors: [
@@ -71,13 +73,6 @@ class _DevicePageState extends State<DevicePage> {
             child: ListView(
               padding: const EdgeInsets.only(bottom: 32),
               children: [
-                if (state.isLoading)
-                  const LinearProgressIndicator(
-                    minHeight: 2,
-                    backgroundColor: Color(0xFFE2E8F0),
-                    valueColor:
-                        AlwaysStoppedAnimation<Color>(Color(0xFF6951C1)),
-                  ),
                 const SizedBox(height: 16),
                 const SectionHeader(
                   icon: Icons.battery_charging_full_rounded,
@@ -108,6 +103,19 @@ class _DevicePageState extends State<DevicePage> {
                 const SizedBox(height: 16),
               ],
             ),
+          ),
+              if (state.isLoading)
+                AbsorbPointer(
+                  child: Container(
+                    color: Colors.black.withOpacity(0.35),
+                    child: const Center(
+                      child: CircularProgressIndicator(
+                        color: Color(0xFF6951C1),
+                      ),
+                    ),
+                  ),
+                ),
+            ],
           ),
         );
       },
