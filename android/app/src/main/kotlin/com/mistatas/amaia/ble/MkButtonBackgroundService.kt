@@ -347,12 +347,9 @@ class MkButtonBackgroundService : Service() {
                 updateNotification("$connectedCount dispositivo(s) conectado(s)")
             }
             MokoConstants.ACTION_DISCONNECTED -> {
-                val wasInitialized = state.isInitialized
                 state.isConnected = false
                 state.isInitialized = false
                 android.util.Log.d("MkButtonBgService", "Disconnected: ${state.config.deviceName} ($mac)")
-
-
 
                 val connectedCount = deviceStates.count { it.value.isConnected }
                 updateNotification(if (connectedCount > 0) "$connectedCount dispositivo(s) conectado(s)" else "Reconectando...")
