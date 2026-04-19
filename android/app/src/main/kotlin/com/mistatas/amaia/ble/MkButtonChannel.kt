@@ -116,7 +116,7 @@ class MkButtonChannel(
     private fun handleStartScan(result: MethodChannel.Result) {
         val adapter = BluetoothAdapter.getDefaultAdapter()
         if (adapter == null || !adapter.isEnabled) {
-            result.error("BT_DISABLED", "Bluetooth is not enabled", null)
+            result.error("BT_DISABLED", "Bluetooth no está habilitado", null)
             return
         }
         scanner = MokoBleScanner(context).also { s ->
