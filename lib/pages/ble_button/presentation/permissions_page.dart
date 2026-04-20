@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-/// Pantalla para solicitar permisos necesarios para el servicio en segundo plano
 class PermissionsPage extends StatefulWidget {
   const PermissionsPage({super.key});
 

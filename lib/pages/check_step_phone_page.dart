@@ -49,7 +49,6 @@ class _CheckPhoneStepState extends State<_CheckPhoneStep> {
   };
   final double sizeHeightBox = Platform.isAndroid ? 140 : 170;
 
-  /// Current selected country
   final _currentSelectedCountry = CountryWithPhoneCode(
       phoneCode: '56',
       countryCode: 'CL',
@@ -134,9 +133,9 @@ class _CheckPhoneStepState extends State<_CheckPhoneStep> {
             backgroundColor: Colors.red,
             content: Text(error as String),
             duration: const Duration(milliseconds: 5000),
-            width: 280.0, // Width of the SnackBar.
+            width: 280.0,
             padding: const EdgeInsets.symmetric(
-                horizontal: 10, // Inner padding for SnackBar content.
+                horizontal: 10,
                 vertical: 15),
             behavior: SnackBarBehavior.floating,
             shape: RoundedRectangleBorder(
@@ -190,9 +189,9 @@ class _CheckPhoneStepState extends State<_CheckPhoneStep> {
               backgroundColor: Colors.green,
               content: const Text('Número válido!'),
               duration: const Duration(milliseconds: 3000),
-              width: 280.0, // Width of the SnackBar.
+              width: 280.0,
               padding: const EdgeInsets.symmetric(
-                  horizontal: 10, // Inner padding for SnackBar content.
+                  horizontal: 10,
                   vertical: 15),
               behavior: SnackBarBehavior.floating,
               shape: RoundedRectangleBorder(
@@ -499,7 +498,7 @@ class _CheckPhoneStepState extends State<_CheckPhoneStep> {
                               child: Container(
                                 decoration: const BoxDecoration(
                                   shape: BoxShape
-                                      .circle, // shape makes the circular button
+                                      .circle,
                                   gradient: LinearGradient(
                                     begin: Alignment.topLeft,
                                     end: Alignment.bottomRight,
@@ -521,7 +520,7 @@ class _CheckPhoneStepState extends State<_CheckPhoneStep> {
                                 child: ElevatedButton(
                                   style: ElevatedButton.styleFrom(
                                     backgroundColor: Colors.transparent,
-                                    //shadowColor: Colors.blue,
+
                                     disabledBackgroundColor: Colors.black12,
                                     shape: const CircleBorder(
                                         side: BorderSide(
@@ -531,8 +530,8 @@ class _CheckPhoneStepState extends State<_CheckPhoneStep> {
                                     padding:
                                         EdgeInsets.all(_getPadding('CALL')),
                                     shadowColor: Colors
-                                        .transparent, //specify the button's elevation color
-                                    elevation: 6.0, //buttons Material shadow
+                                        .transparent,
+                                    elevation: 6.0,
                                   ),
                                   onPressed: (textStatusPermission as Map<
                                                   String, String>)['CALL'] ==
@@ -552,7 +551,7 @@ class _CheckPhoneStepState extends State<_CheckPhoneStep> {
                                           style: const TextStyle(
                                               fontWeight: FontWeight.bold,
                                               color: Colors.white,
-                                              fontSize: 18)), // text
+                                              fontSize: 18)),
                                     ],
                                   ),
                                 ),
@@ -605,7 +604,7 @@ class _CheckPhoneStepState extends State<_CheckPhoneStep> {
                               child: Container(
                                 decoration: const BoxDecoration(
                                   shape: BoxShape
-                                      .circle, // shape makes the circular button
+                                      .circle,
                                   gradient: LinearGradient(
                                     begin: Alignment.topLeft,
                                     end: Alignment.bottomRight,
@@ -627,7 +626,7 @@ class _CheckPhoneStepState extends State<_CheckPhoneStep> {
                                 child: ElevatedButton(
                                   style: ElevatedButton.styleFrom(
                                     backgroundColor: Colors.transparent,
-                                    //shadowColor: Colors.blue,
+
                                     disabledBackgroundColor: Colors.black12,
                                     shape: const CircleBorder(
                                         side: BorderSide(
@@ -636,8 +635,8 @@ class _CheckPhoneStepState extends State<_CheckPhoneStep> {
                                     )),
                                     padding: EdgeInsets.all(_getPadding('SMS')),
                                     shadowColor: Colors
-                                        .transparent, //specify the button's elevation color
-                                    elevation: 6.0, //buttons Material shadow
+                                        .transparent,
+                                    elevation: 6.0,
                                   ),
                                   onPressed: (textStatusPermission as Map<
                                                   String, String>)['SMS'] ==
@@ -657,7 +656,7 @@ class _CheckPhoneStepState extends State<_CheckPhoneStep> {
                                           style: const TextStyle(
                                               fontWeight: FontWeight.bold,
                                               color: Colors.white,
-                                              fontSize: 18)), // text
+                                              fontSize: 18)),
                                     ],
                                   ),
                                 ),
@@ -709,7 +708,7 @@ class _CheckPhoneStepState extends State<_CheckPhoneStep> {
                             child: Container(
                               decoration: const BoxDecoration(
                                 shape: BoxShape
-                                    .circle, // shape makes the circular button
+                                    .circle,
                                 gradient: LinearGradient(
                                   begin: Alignment.topLeft,
                                   end: Alignment.bottomRight,
@@ -730,7 +729,7 @@ class _CheckPhoneStepState extends State<_CheckPhoneStep> {
                               child: ElevatedButton(
                                 style: ElevatedButton.styleFrom(
                                   backgroundColor: Colors.transparent,
-                                  //shadowColor: Colors.blue,
+
                                   disabledBackgroundColor: Colors.black12,
                                   shape: const CircleBorder(
                                       side: BorderSide(
@@ -739,8 +738,8 @@ class _CheckPhoneStepState extends State<_CheckPhoneStep> {
                                   )),
                                   padding: EdgeInsets.all(_getPadding('GEO')),
                                   shadowColor: Colors
-                                      .transparent, //specify the button's elevation color
-                                  elevation: 6.0, //buttons Material shadow
+                                      .transparent,
+                                  elevation: 6.0,
                                 ),
                                 onPressed: (textStatusPermission as Map<String,
                                                 String>)['GEO'] ==
@@ -760,7 +759,7 @@ class _CheckPhoneStepState extends State<_CheckPhoneStep> {
                                         style: const TextStyle(
                                             fontWeight: FontWeight.bold,
                                             color: Colors.white,
-                                            fontSize: 18)), // text
+                                            fontSize: 18)),
                                   ],
                                 ),
                               ),

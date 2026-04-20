@@ -3,7 +3,6 @@ import 'package:intl/intl.dart';
 
 import '../../domain/models.dart';
 
-/// Card that shows the last button press and a toggle for notifications.
 class ButtonPressCard extends StatelessWidget {
   const ButtonPressCard({
     super.key,
@@ -49,7 +48,7 @@ class ButtonPressCard extends StatelessWidget {
         ),
         child: Column(
           children: [
-            // Notify toggle
+
             Padding(
               padding:
                   const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -79,7 +78,6 @@ class ButtonPressCard extends StatelessWidget {
 
             const Divider(height: 1, color: Color(0xFF0F172A)),
 
-            // Last press display
             Padding(
               padding: const EdgeInsets.all(20),
               child: lastPress == null

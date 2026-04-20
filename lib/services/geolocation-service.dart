@@ -64,8 +64,7 @@ class GeolocationService {
           distanceFilter: 100,
           timeLimit: const Duration(seconds: 20),
           intervalDuration: const Duration(seconds: 60),
-          //(Optional) Set foreground notification config to keep the app alive
-          //when going to the background
+
           foregroundNotificationConfig: const ForegroundNotificationConfig(
             notificationText:
                 "Estamos obteniendo su ubicación, mientras se realiza la llamada.",
@@ -79,7 +78,7 @@ class GeolocationService {
         activityType: ActivityType.fitness,
         distanceFilter: 500,
         pauseLocationUpdatesAutomatically: true,
-        // Only set to true if our app will be started up in the background.
+
         showBackgroundLocationIndicator: false,
       );
     }
@@ -136,7 +135,7 @@ class GeolocationService {
       }
 
       if (permission == LocationPermission.deniedForever) {
-        // Permissions are denied forever, handle appropriately.
+
         return Future.error('Permiso denegado permanentemente.');
       }
 
@@ -176,7 +175,7 @@ class GeolocationService {
       }
 
       if (permission == LocationPermission.deniedForever) {
-        // Permissions are denied forever, handle appropriately.
+
         return Future.error('Permiso denegado permanentemente.');
       }
 
@@ -222,10 +221,7 @@ class GeolocationService {
       locationSettings = AndroidSettings(
           accuracy: LocationAccuracy.high,
           distanceFilter: 20,
-          //timeLimit: const Duration(seconds: 20),
-          //intervalDuration: const Duration(seconds: 60),
-          //(Optional) Set foreground notification config to keep the app alive
-          //when going to the background
+
           foregroundNotificationConfig: const ForegroundNotificationConfig(
             notificationText:
                 "Estamos obteniendo su ubicación para mantener la precisión en la llamada de ayuda.",
@@ -238,7 +234,7 @@ class GeolocationService {
         activityType: ActivityType.fitness,
         distanceFilter: 20,
         pauseLocationUpdatesAutomatically: true,
-        // Only set to true if our app will be started up in the background.
+
         showBackgroundLocationIndicator: false,
       );
     }

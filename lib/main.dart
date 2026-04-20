@@ -26,7 +26,7 @@ Future main() async {
       .then((value) => runApp(const NavigationApp()));
 
   Workmanager().initialize(
-      callbackDispatcher, // The top level function, aka callbackDispatcher
+      callbackDispatcher,
       isInDebugMode: false);
 
   Workmanager().registerPeriodicTask(
@@ -34,19 +34,8 @@ Future main() async {
     uniqueNamePeriodicTask,
     tag: "amaiaPeriodicTasks",
     frequency: const Duration(hours: 4),
-    //frequency: const Duration(minutes: 30),
-    /*constraints: Constraints(
-      networkType: NetworkType.connected, // Solo con conexión a Internet
-      requiresBatteryNotLow: true, // Opcional: no si la batería está baja
-      requiresCharging: false, // Opcional: no requiere estar cargando
-    ),*/
-  );
 
-  /*Workmanager().registerOneOffTask(
-    uniqueNamePeriodicTask,
-    uniqueNamePeriodicTask,
-    initialDelay: const Duration(minutes: 5),
-  );*/
+  );
 
   await checkAlive();
 

@@ -1,7 +1,6 @@
 import 'package:path/path.dart';
 import 'package:sqflite/sqflite.dart';
 
-/// Helper para gestionar la base de datos SQLite de dispositivos MK Button
 class DatabaseHelper {
   DatabaseHelper._();
   static final DatabaseHelper instance = DatabaseHelper._();
@@ -71,13 +70,13 @@ class DatabaseHelper {
 
   Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
     if (oldVersion < 2) {
-      // Agregar columna clickToOpenApp para dispositivos existentes
+
       await db.execute('''
         ALTER TABLE devices ADD COLUMN clickToOpenApp TEXT DEFAULT 'single'
       ''');
     }
     if (oldVersion < 3) {
-      // Agregar columnas buttonAction y emergencyPhone
+
       await db.execute('''
         ALTER TABLE devices ADD COLUMN buttonAction TEXT DEFAULT 'sms_and_call'
       ''');
@@ -106,14 +105,12 @@ class DatabaseHelper {
     }
   }
 
-  /// Cierra la base de datos
   Future<void> close() async {
     final db = await database;
     await db.close();
     _database = null;
   }
 
-  /// Elimina la base de datos (útil para testing)
   Future<void> deleteDatabase() async {
     final dbPath = await getDatabasesPath();
     final path = join(dbPath, 'mk_button_devices.db');

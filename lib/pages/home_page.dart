@@ -58,13 +58,11 @@ class _HomeState extends State<_Home> {
         ],
       ),
       body: <Widget>[
-        /// Home page
+
         const SendSmsPage(),
 
-        /// Information Page
         const InfoPage(),
 
-        /// Configuration Page
         const ConfigPage(),
       ][currentPageIndex],
     );

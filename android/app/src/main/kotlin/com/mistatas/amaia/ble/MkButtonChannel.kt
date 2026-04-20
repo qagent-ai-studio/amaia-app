@@ -24,9 +24,6 @@ import org.greenrobot.eventbus.EventBus
 import org.greenrobot.eventbus.Subscribe
 import org.greenrobot.eventbus.ThreadMode
 
-/**
- * Bridges the Flutter MethodChannel with the MKButton BLE SDK.
- */
 class MkButtonChannel(
     private val context: Context,
     private val channel: MethodChannel,
@@ -55,10 +52,6 @@ class MkButtonChannel(
     )
     private val deviceActionConfigs = mutableMapOf<String, ForegroundActionConfig>()
 
-    // ---------------------------------------------------------------------------
-    // Lifecycle
-    // ---------------------------------------------------------------------------
-
     fun register() {
         if (!isRegistered) {
             EventBus.getDefault().register(this)
@@ -74,10 +67,6 @@ class MkButtonChannel(
         scanner?.stopScanDevice()
         foregroundMac?.let { MkButtonBackgroundService.foregroundMacs.remove(it) }
     }
-
-    // ---------------------------------------------------------------------------
-    // MethodCallHandler
-    // ---------------------------------------------------------------------------
 
     override fun onMethodCall(call: MethodCall, result: MethodChannel.Result) {
         when (call.method) {
@@ -108,10 +97,6 @@ class MkButtonChannel(
             else                            -> result.notImplemented()
         }
     }
-
-    // ---------------------------------------------------------------------------
-    // Scan
-    // ---------------------------------------------------------------------------
 
     private fun handleStartScan(result: MethodChannel.Result) {
         val adapter = BluetoothAdapter.getDefaultAdapter()
@@ -148,10 +133,6 @@ class MkButtonChannel(
         scanner = null
         result.success(null)
     }
-
-    // ---------------------------------------------------------------------------
-    // Connection
-    // ---------------------------------------------------------------------------
 
     private fun handlePrepareConnect(call: MethodCall, result: MethodChannel.Result) {
         val mac = call.argument<String>("mac") ?: run { result.success(null); return }
@@ -193,23 +174,8 @@ class MkButtonChannel(
         result.success(null)
     }
 
-    // ---------------------------------------------------------------------------
-    // Read device info
-    // SDK real no tiene: getAdvInterval, getRadioTxPower, getLockState
-    // Usamos lo que sí existe
-    // ---------------------------------------------------------------------------
-
     private fun handleReadDeviceInfo(result: MethodChannel.Result) {
-        // IMPORTANTE: El dispositivo MK Button NO tolera comandos adicionales después
-        // de la inicialización. Enviar comandos de lectura (batería, nombre, etc.) causa
-        // ORDER TIMEOUT y desconexión inmediata.
-        // 
-        // Si necesitas esta información, debes implementar una estrategia diferente:
-        // 1. Obtener el nombre del dispositivo durante el escaneo BLE (antes de conectar)
-        // 2. La batería puede leerse solo si es absolutamente necesario y con cuidado
-        // 
-        // Por ahora, este método retorna success sin hacer nada para mantener la compatibilidad
-        // con el código existente.
+
         android.util.Log.w("MkButton", "readDeviceInfo called but disabled - MK Button doesn't support commands after init")
         result.success(null)
     }
@@ -225,19 +191,12 @@ class MkButtonChannel(
         }
     }
 
-    // ---------------------------------------------------------------------------
-    // Configuration commands
-    // ---------------------------------------------------------------------------
-
-    // El SDK real no expone setAdvInterval ni setRadioTxPower directamente.
-    // Usamos setSlotParams para el intervalo de publicidad (slot 0).
     private fun handleSetAdvInterval(call: MethodCall, result: MethodChannel.Result) {
         val intervalMs = call.argument<Int>("intervalMs") ?: run {
             result.error("INVALID_ARG", "intervalMs is required", null)
             return
         }
-        // setSlotParams(slot, enable, rssi, interval, txPower)
-        // Mantenemos slot=0, enable=1, rssi=-100 (sin filtro), txPower=0
+
         val clamped = intervalMs.coerceIn(20, 10000)
         DMokoSupport.getInstance().sendOrder(
             OrderTaskAssembler.setSlotParams(0, 1, -100, clamped, 0)
@@ -250,8 +209,7 @@ class MkButtonChannel(
             result.error("INVALID_ARG", "txPower is required", null)
             return
         }
-        // setSlotParams(slot, enable, rssi, interval, txPower)
-        // interval=1000ms como valor neutro, rssi=-100 (sin filtro)
+
         val clampedTx = txPower.coerceIn(-100, 0)
         DMokoSupport.getInstance().sendOrder(
             OrderTaskAssembler.setSlotParams(0, 1, -100, 1000, clampedTx)
@@ -270,8 +228,6 @@ class MkButtonChannel(
         result.success(null)
     }
 
-    // El SDK usa setPassword(newPassword) y setNewPassword(newPassword)
-    // Para cambiar: primero verificar con setPassword (contraseña actual), luego setNewPassword
     private fun handleChangePassword(call: MethodCall, result: MethodChannel.Result) {
         val oldPwd = call.argument<String>("oldPassword") ?: ""
         val newPwd = call.argument<String>("newPassword") ?: run {
@@ -285,7 +241,6 @@ class MkButtonChannel(
         result.success(null)
     }
 
-    // El SDK expone notificaciones separadas por tipo de pulsación
     private fun handleEnableButtonNotify(call: MethodCall, result: MethodChannel.Result) {
         val enable = call.argument<Boolean>("enable") ?: true
         val support = DMokoSupport.getInstance()
@@ -327,10 +282,6 @@ class MkButtonChannel(
         )
         result.success(null)
     }
-
-    // ---------------------------------------------------------------------------
-    // Background Service
-    // ---------------------------------------------------------------------------
 
     private fun handleStartBackgroundService(call: MethodCall, result: MethodChannel.Result) {
         val mac = call.argument<String>("mac") ?: run {
@@ -412,7 +363,22 @@ class MkButtonChannel(
         }
         val clearConfig = call.argument<Boolean>("clearConfig") ?: false
         try {
-            if (clearConfig) deviceActionConfigs.remove(mac)
+            if (clearConfig) {
+                deviceActionConfigs.remove(mac)
+                foregroundMac = null
+                isDeviceConnected = false
+                DMokoSupport.getInstance().disConnectBle()
+                context.getSharedPreferences("mk_button_config", Context.MODE_PRIVATE)
+                    .edit()
+                    .remove("${mac}_clickType")
+                    .remove("${mac}_buttonAction")
+                    .remove("${mac}_emergencyPhone")
+                    .remove("${mac}_smsPhone")
+                    .remove("${mac}_deviceName")
+                    .remove("${mac}_password")
+                    .remove("${mac}_batteryPercent")
+                    .commit()
+            }
             MkButtonBackgroundService.foregroundMacs.remove(mac)
             MkButtonBackgroundService.removeDevice(context, mac, clearPrefs = clearConfig)
             result.success(null)
@@ -422,35 +388,28 @@ class MkButtonChannel(
         }
     }
 
-    // ---------------------------------------------------------------------------
-    // Permissions Management
-    // ---------------------------------------------------------------------------
-
     private fun handleCheckPermissions(result: MethodChannel.Result) {
         val permissions = mutableMapOf<String, Any>()
-        
-        // Check battery optimization
+
         permissions["batteryOptimizationDisabled"] = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             val powerManager = context.getSystemService(Context.POWER_SERVICE) as PowerManager
             powerManager.isIgnoringBatteryOptimizations(context.packageName)
         } else {
-            true // No battery optimization on older versions
+            true
         }
-        
-        // Check notification permission
+
         permissions["notificationPermission"] = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             NotificationManagerCompat.from(context).areNotificationsEnabled()
         } else {
-            true // Notifications always enabled on older versions
+            true
         }
-        
-        // Check overlay permission
+
         permissions["overlayPermission"] = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             Settings.canDrawOverlays(context)
         } else {
             true
         }
-        
+
         result.success(permissions)
     }
 
@@ -481,15 +440,14 @@ class MkButtonChannel(
     private fun handleRequestNotificationPermission(result: MethodChannel.Result) {
         try {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                // For Android 13+, need to request permission at runtime
-                // This will be handled by Flutter's permission_handler or similar
+
                 val intent = Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).apply {
                     putExtra(Settings.EXTRA_APP_PACKAGE, context.packageName)
                     addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                 }
                 context.startActivity(intent)
             } else {
-                // For older versions, open app settings
+
                 val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
                     data = Uri.parse("package:${context.packageName}")
                     addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
@@ -502,7 +460,7 @@ class MkButtonChannel(
             result.error("PERMISSION_ERROR", e.message, null)
         }
     }
-    
+
     private fun handleRequestOverlayPermission(result: MethodChannel.Result) {
         try {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
@@ -525,10 +483,6 @@ class MkButtonChannel(
         prefs.edit().remove("mk_pending_logs").apply()
         result.success(logs)
     }
-
-    // ---------------------------------------------------------------------------
-    // EventBus — Connection status
-    // ---------------------------------------------------------------------------
 
     @Subscribe(threadMode = ThreadMode.MAIN)
     fun onConnectStatusEvent(event: ConnectStatusEvent) {
@@ -608,10 +562,6 @@ class MkButtonChannel(
         channel.invokeMethod("onConnectionStatus", mapOf("connected" to connected))
     }
 
-    // ---------------------------------------------------------------------------
-    // EventBus — Task responses & notify data
-    // ---------------------------------------------------------------------------
-
     @Subscribe(threadMode = ThreadMode.MAIN)
     fun onOrderTaskResponseEvent(event: OrderTaskResponseEvent) {
         val eventMac = event.macAddress
@@ -670,7 +620,7 @@ class MkButtonChannel(
                 map["hardwareVersion"] = String(value)
             }
             OrderCHAR.CHAR_PASSWORD -> {
-                // getVerifyPasswordEnable — 0x00 = desactivada, 0x01 = activada
+
                 if (value.isNotEmpty()) {
                     map["isPasswordEnabled"] = value[0].toInt() != 0
                 }
@@ -735,11 +685,9 @@ class MkButtonChannel(
         channel.invokeMethod("onButtonPress", mapOf("type" to pressType))
     }
 
-    // CHAR_CLICK_EVENT formato: EB 02 06 01 XX donde XX es el tipo de click
-    // XX = 01 (single), 02 (double), 03 (long press)
     private fun parseCHARClickEvent(value: ByteArray): String {
         if (value.size < 5) return "single"
-        // El tipo de click está en el último byte (posición 4)
+
         return when (value[4].toInt() and 0xFF) {
             0x01 -> "single"
             0x02 -> "double"

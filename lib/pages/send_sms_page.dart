@@ -73,9 +73,9 @@ class _SendSmsState extends State<_SendSms>
           backgroundColor: type == 'success' ? Colors.green : Colors.red,
           content: Text(msg),
           duration: const Duration(milliseconds: 5000),
-          width: 280.0, // Width of the SnackBar.
+          width: 280.0,
           padding: const EdgeInsets.symmetric(
-              horizontal: 10, // Inner padding for SnackBar content.
+              horizontal: 10,
               vertical: 15),
           behavior: SnackBarBehavior.floating,
           shape: RoundedRectangleBorder(
@@ -96,25 +96,22 @@ class _SendSmsState extends State<_SendSms>
 
   Future<void> _playNotificationSoundAndVibrate() async {
     try {
-      // Verificar si el dispositivo tiene vibración
+
       bool? hasVibrator = await Vibration.hasVibrator();
 
       if (hasVibrator == true) {
-        // Patrón de vibración: vibrar, pausar, vibrar
-        // [duración vibración, pausa, duración vibración]
+
         await Vibration.vibrate(
           pattern: [0, 500, 200, 500],
           intensities: [0, 255, 0, 255],
         );
       }
 
-      // Reproducir sonido de notificación del sistema usando HapticFeedback
-      // Esto da feedback táctil y auditivo en dispositivos compatibles
       await HapticFeedback.heavyImpact();
       await Future.delayed(const Duration(milliseconds: 200));
       await HapticFeedback.heavyImpact();
     } catch (e) {
-      // Si hay error con sonido o vibración, continuar sin interrumpir
+
       debugPrint('Error al reproducir sonido o vibración: $e');
     }
   }
@@ -139,7 +136,6 @@ class _SendSmsState extends State<_SendSms>
     try {
       await SmsService().sms(geoencoded, recipients);
 
-      // Reproducir sonido y vibración al enviar SMS exitosamente
       await _playNotificationSoundAndVibrate();
 
       _alertSnackBar(type: 'success', msg: 'SMS de ayuda enviado con éxito!');
@@ -244,7 +240,7 @@ class _SendSmsState extends State<_SendSms>
                 scale: 1.4,
                 child: Container(
                   decoration: const BoxDecoration(
-                    shape: BoxShape.circle, // shape makes the circular button
+                    shape: BoxShape.circle,
                     gradient: LinearGradient(
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
@@ -265,7 +261,7 @@ class _SendSmsState extends State<_SendSms>
                   child: ElevatedButton(
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.transparent,
-                      //shadowColor: Colors.blue,
+
                       disabledBackgroundColor: Colors.black,
                       shape: const CircleBorder(
                           side: BorderSide(
@@ -274,8 +270,8 @@ class _SendSmsState extends State<_SendSms>
                       )),
                       padding: EdgeInsets.all(!statusSendAll ? 60 : 38),
                       shadowColor: Colors
-                          .transparent, //specify the button's elevation color
-                      elevation: 6.0, //buttons Material shadow
+                          .transparent,
+                      elevation: 6.0,
                     ),
                     onPressed: isButtonDisabled ? null : () => _sendSMS(),
                     child: Column(
@@ -298,7 +294,7 @@ class _SendSmsState extends State<_SendSms>
                             style: const TextStyle(
                                 fontWeight: FontWeight.bold,
                                 color: Colors.white,
-                                fontSize: 18)), // text
+                                fontSize: 18)),
                       ],
                     ),
                   ),

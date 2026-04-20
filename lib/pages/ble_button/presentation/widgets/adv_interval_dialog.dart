@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
 
-/// Dialog for selecting advertising interval.
-/// Range: 100ms – 10000ms (100ms steps)
 class AdvIntervalDialog extends StatefulWidget {
   const AdvIntervalDialog({super.key, required this.currentIntervalMs});
 

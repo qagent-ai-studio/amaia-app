@@ -225,7 +225,9 @@ class MkButtonBackgroundService : Service() {
                 deviceStates.remove(mac)?.support?.disConnectBle()
                 if (clearPrefs) clearDevicePrefs(mac)
                 android.util.Log.d("MkButtonBgService", "Device removed. Remaining: ${deviceStates.size}")
-                if (deviceStates.isEmpty()) disconnectAndStop()
+                if (deviceStates.isEmpty()) {
+                    reconnectHandler.postDelayed({ disconnectAndStop() }, 2000)
+                }
             }
             ACTION_EXECUTE_EMERGENCY -> {
                 val mac = intent.getStringExtra(EXTRA_MAC) ?: return START_STICKY
@@ -427,7 +429,7 @@ class MkButtonBackgroundService : Service() {
             .remove("${mac}_deviceName")
             .remove("${mac}_password")
             .remove("${mac}_batteryPercent")
-            .apply()
+            .commit()
         android.util.Log.d("MkButtonBgService", "SharedPrefs cleared for $mac")
     }
 

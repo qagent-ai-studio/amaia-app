@@ -1,6 +1,5 @@
 import 'package:equatable/equatable.dart';
 
-/// Modelo para un dispositivo MK Button guardado en la base de datos local
 class SavedDevice extends Equatable {
   const SavedDevice({
     this.id,
@@ -18,18 +17,17 @@ class SavedDevice extends Equatable {
     this.lastSingleClick,
     this.lastDoubleClick,
     this.lastLongClick,
-    this.clickToOpenApp = 'single', // 'single', 'double', o 'disabled'
+    this.clickToOpenApp = 'single',
     this.buttonAction =
-        'sms_and_call', // 'open_app', 'call', 'sms', 'sms_and_call'
+        'sms_and_call',
     this.emergencyPhone,
   });
 
-  final int? id; // ID autoincremental de SQLite
-  final String mac; // Dirección MAC (único)
-  final String name; // Nombre del dispositivo
-  final String password; // Contraseña para conectar
+  final int? id;
+  final String mac;
+  final String name;
+  final String password;
 
-  // Información del dispositivo
   final int? batteryPercent;
   final String? firmwareVersion;
   final String? hardwareVersion;
@@ -37,21 +35,17 @@ class SavedDevice extends Equatable {
   final int? txPower;
   final bool? isPasswordEnabled;
 
-  // Metadatos de conexión
   final DateTime? lastConnectedAt;
 
-  // Historial de clicks
   final int totalClicks;
   final DateTime? lastSingleClick;
   final DateTime? lastDoubleClick;
   final DateTime? lastLongClick;
 
-  // Configuración de apertura de app
-  final String clickToOpenApp; // 'single', 'double', o 'disabled'
+  final String clickToOpenApp;
 
-  // Configuración de acción del botón
-  final String buttonAction; // 'open_app', 'call', 'sms', 'sms_and_call'
-  final String? emergencyPhone; // Número para llamar o enviar SMS
+  final String buttonAction;
+  final String? emergencyPhone;
 
   @override
   List<Object?> get props => [
@@ -117,7 +111,6 @@ class SavedDevice extends Equatable {
     );
   }
 
-  /// Convierte el modelo a un Map para SQLite
   Map<String, dynamic> toMap() {
     return {
       'id': id,
@@ -141,7 +134,6 @@ class SavedDevice extends Equatable {
     };
   }
 
-  /// Crea un modelo desde un Map de SQLite
   factory SavedDevice.fromMap(Map<String, dynamic> map) {
     return SavedDevice(
       id: map['id'] as int?,
@@ -168,9 +160,9 @@ class SavedDevice extends Equatable {
           ? DateTime.fromMillisecondsSinceEpoch(map['lastLongClick'] as int)
           : null,
       clickToOpenApp:
-          map['clickToOpenApp'] as String? ?? 'single', // Default: single click
+          map['clickToOpenApp'] as String? ?? 'single',
       buttonAction:
-          map['buttonAction'] as String? ?? 'open_app', // Default: abrir app
+          map['buttonAction'] as String? ?? 'open_app',
       emergencyPhone: map['emergencyPhone'] as String?,
     );
   }

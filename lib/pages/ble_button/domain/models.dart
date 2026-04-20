@@ -1,6 +1,5 @@
 import 'package:equatable/equatable.dart';
 
-/// Represents a BLE device found during scanning
 class ScannedDevice extends Equatable {
   const ScannedDevice({
     required this.mac,
@@ -22,7 +21,6 @@ class ScannedDevice extends Equatable {
   List<Object?> get props => [mac, name, rssi];
 }
 
-/// Device settings and info retrieved from the connected device
 class DeviceInfo extends Equatable {
   const DeviceInfo({
     required this.deviceName,
@@ -68,14 +66,13 @@ class DeviceInfo extends Equatable {
       ];
 }
 
-/// Represents a button press event from the device
 class ButtonPressEvent extends Equatable {
   const ButtonPressEvent({
     required this.pressType,
     required this.timestamp,
   });
 
-  final String pressType; // 'single', 'double', 'long'
+  final String pressType;
   final DateTime timestamp;
 
   String get label {
@@ -95,7 +92,6 @@ class ButtonPressEvent extends Equatable {
   List<Object?> get props => [pressType, timestamp];
 }
 
-/// TX Power levels supported by the device
 enum TxPowerLevel {
   neg40dBm(-40),
   neg20dBm(-20),

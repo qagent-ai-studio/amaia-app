@@ -46,9 +46,9 @@ class _ConfigState extends State<_Config> {
           backgroundColor: type == 'success' ? Colors.green : Colors.red,
           content: Text(msg),
           duration: const Duration(milliseconds: 5000),
-          width: 280.0, // Width of the SnackBar.
+          width: 280.0,
           padding: const EdgeInsets.symmetric(
-              horizontal: 10, // Inner padding for SnackBar content.
+              horizontal: 10,
               vertical: 15),
           behavior: SnackBarBehavior.floating,
           shape: RoundedRectangleBorder(
@@ -216,7 +216,7 @@ class _ConfigState extends State<_Config> {
           padding: const EdgeInsets.all(16),
           child: Row(
             children: [
-              // ICONO CON MISMO COLOR
+
               Container(
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
@@ -233,7 +233,6 @@ class _ConfigState extends State<_Config> {
 
               const SizedBox(width: 14),
 
-              // TEXTOS
               const Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -258,7 +257,6 @@ class _ConfigState extends State<_Config> {
                 ),
               ),
 
-              // FLECHA
               const Icon(
                 Icons.arrow_forward_ios_rounded,
                 color: Color(0xFFB0BEC5),

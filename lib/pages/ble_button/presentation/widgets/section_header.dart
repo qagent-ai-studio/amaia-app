@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 
-/// Section header with icon and title text.
 class SectionHeader extends StatelessWidget {
   const SectionHeader({
     super.key,

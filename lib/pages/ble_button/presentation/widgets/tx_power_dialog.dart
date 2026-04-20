@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 
 import '../../domain/models.dart';
 
-/// Dialog to select TX power level from supported values.
 class TxPowerDialog extends StatefulWidget {
   const TxPowerDialog({super.key, required this.currentTxPower});
 

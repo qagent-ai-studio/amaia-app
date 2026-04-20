@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 
-/// Confirmation dialog before factory reset.
 class ResetConfirmDialog extends StatelessWidget {
   const ResetConfirmDialog({super.key});
 

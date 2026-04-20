@@ -15,10 +15,6 @@ import '../domain/saved_device.dart';
 part 'ble_button_event.dart';
 part 'ble_button_state.dart';
 
-/// BLoC that manages all BLE Button device interactions.
-///
-/// Listens to native SDK events via [BleButtonRepository] and
-/// exposes clean state transitions for the UI.
 class BleButtonBloc extends Bloc<BleButtonEvent, BleButtonState> {
   BleButtonBloc({required BleButtonRepository repository})
       : _repo = repository,
@@ -66,10 +62,6 @@ class BleButtonBloc extends Bloc<BleButtonEvent, BleButtonState> {
         .listen((result) => add(_TaskResultReceived(result: result)));
   }
 
-  // ---------------------------------------------------------------------------
-  // Event handlers
-  // ---------------------------------------------------------------------------
-
   Future<void> _onScanStarted(
     ScanStarted event,
     Emitter<BleButtonState> emit,
@@ -83,7 +75,6 @@ class BleButtonBloc extends Bloc<BleButtonEvent, BleButtonState> {
         return;
       }
 
-      // Solicitar permisos de Bluetooth en runtime (Android 12+)
       final bluetoothScanStatus = await Permission.bluetoothScan.request();
       final bluetoothConnectStatus =
           await Permission.bluetoothConnect.request();
@@ -96,7 +87,6 @@ class BleButtonBloc extends Bloc<BleButtonEvent, BleButtonState> {
         return;
       }
 
-      // Solicitar permiso de ubicación (requerido para escaneo BLE en Android)
       final locationStatus = await Permission.location.request();
       if (!locationStatus.isGranted) {
         emit(const BleButtonError(
@@ -170,8 +160,7 @@ class BleButtonBloc extends Bloc<BleButtonEvent, BleButtonState> {
     BatteryReadRequested event,
     Emitter<BleButtonState> emit,
   ) async {
-    // ADVERTENCIA: Leer batería después de init puede causar desconexión
-    // Este comando se ejecuta SOLO cuando el usuario presiona el botón manualmente
+
     await _sendCommand(emit, () => _repo.readBattery());
   }
 
@@ -179,11 +168,9 @@ class BleButtonBloc extends Bloc<BleButtonEvent, BleButtonState> {
     DeviceInfoReadRequested event,
     Emitter<BleButtonState> emit,
   ) async {
-    // NOTE: MK Button NO soporta comandos después de la inicialización.
-    // Deshabilitado para prevenir desconexiones.
-    // La información del dispositivo se lee durante la secuencia de init (0x2C).
+
     if (state is BleButtonConnected) {
-      // No hacer nada - el comando está deshabilitado en el nativo
+
     }
   }
 
@@ -359,7 +346,6 @@ class BleButtonBloc extends Bloc<BleButtonEvent, BleButtonState> {
           ...result,
         });
 
-        // Actualizar información en la base de datos
         await DeviceStorage.instance.updateDeviceInfo(current.mac, result);
 
         emit(current.copyWith(deviceInfo: info, isLoading: false));
@@ -369,7 +355,6 @@ class BleButtonBloc extends Bloc<BleButtonEvent, BleButtonState> {
     }
   }
 
-  /// Helper to wrap write commands with loading state
   Future<void> _sendCommand(
     Emitter<BleButtonState> emit,
     Future<void> Function() command,
@@ -379,8 +364,7 @@ class BleButtonBloc extends Bloc<BleButtonEvent, BleButtonState> {
     emit(current.copyWith(isLoading: true, clearError: true));
     try {
       await command();
-      // Inmediatamente quitar el loading después de enviar el comando
-      // ya que el MK Button no envía respuestas TaskResult para la mayoría de comandos
+
       if (state is BleButtonConnected) {
         emit((state as BleButtonConnected).copyWith(isLoading: false));
       }
@@ -388,10 +372,6 @@ class BleButtonBloc extends Bloc<BleButtonEvent, BleButtonState> {
       emit(current.copyWith(isLoading: false, errorMessage: e.message));
     }
   }
-
-  // ---------------------------------------------------------------------------
-  // Saved devices handlers
-  // ---------------------------------------------------------------------------
 
   Future<void> _onSavedDevicesLoadRequested(
     SavedDevicesLoadRequested event,
@@ -402,7 +382,7 @@ class BleButtonBloc extends Bloc<BleButtonEvent, BleButtonState> {
     if (state is BleButtonScanning) {
       emit((state as BleButtonScanning).copyWith(savedDevices: savedDevices));
     } else {
-      // Si no estamos escaneando, iniciar con los dispositivos guardados
+
       emit(BleButtonScanning(savedDevices: savedDevices));
     }
   }
@@ -411,6 +391,8 @@ class BleButtonBloc extends Bloc<BleButtonEvent, BleButtonState> {
     SavedDeviceDeleteRequested event,
     Emitter<BleButtonState> emit,
   ) async {
+    emit(const BleButtonScanning(savedDevices: []));
+
     await DeviceStorage.instance.deleteDevice(event.mac);
 
     try {
@@ -419,13 +401,7 @@ class BleButtonBloc extends Bloc<BleButtonEvent, BleButtonState> {
       print('Failed to remove device from background service: $e');
     }
 
-    final savedDevices = await DeviceStorage.instance.getAllDevices();
-
-    if (state is BleButtonScanning) {
-      emit((state as BleButtonScanning).copyWith(savedDevices: savedDevices));
-    } else {
-      emit(const BleButtonDisconnected());
-    }
+    add(const ScanStarted());
   }
 
   Future<void> _onBuzzerTriggered(
@@ -517,7 +493,6 @@ class BleButtonBloc extends Bloc<BleButtonEvent, BleButtonState> {
   }
 }
 
-// Extension to allow DeviceInfo serialization for merging
 extension _DeviceInfoMapX on DeviceInfo {
   Map<String, dynamic> toMap() => {
         'deviceName': deviceName,

@@ -13,9 +13,6 @@ import android.widget.LinearLayout
 import com.mistatas.amaia.MainActivity
 import com.mistatas.amaia.R
 
-/**
- * Servicio que muestra una ventana flotante cuando se presiona el botón MK Button
- */
 class OverlayService : Service() {
     private var windowManager: WindowManager? = null
     private var overlayView: View? = null
@@ -28,15 +25,13 @@ class OverlayService : Service() {
     }
 
     private fun showOverlay() {
-        // Ya hay un overlay visible
+
         if (overlayView != null) return
 
         windowManager = getSystemService(WINDOW_SERVICE) as WindowManager
 
-        // Inflar el layout del overlay
         overlayView = LayoutInflater.from(this).inflate(R.layout.overlay_button_pressed, null)
 
-        // Configurar parámetros de la ventana
         val layoutType = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY
         } else {
@@ -55,13 +50,11 @@ class OverlayService : Service() {
             gravity = Gravity.CENTER
         }
 
-        // Click en el overlay completo
         val content = overlayView?.findViewById<LinearLayout>(R.id.overlay_content)
         content?.setOnClickListener {
             openApp()
         }
 
-        // Click en el botón específico
         val button = overlayView?.findViewById<View>(R.id.open_button)
         button?.setOnClickListener {
             openApp()
@@ -78,7 +71,7 @@ class OverlayService : Service() {
 
     private fun openApp() {
         android.util.Log.d("OverlayService", "Opening app from overlay")
-        
+
         val intent = Intent(this, MainActivity::class.java).apply {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or
                     Intent.FLAG_ACTIVITY_CLEAR_TOP or

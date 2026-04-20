@@ -4,8 +4,6 @@ import 'package:flutter/services.dart';
 
 import '../domain/models.dart';
 
-/// Contract for the BLE Button data source.
-/// Abstracts the platform channel for testability.
 abstract class BleButtonRepository {
   Stream<ScannedDevice> get onDeviceScanned;
   Stream<bool> get onConnectionStatusChanged;
@@ -41,8 +39,6 @@ abstract class BleButtonRepository {
   Future<String> getPendingLogs();
 }
 
-/// Implementation using Flutter MethodChannel to communicate with
-/// the native MKButton SDK on Android.
 class BleButtonRepositoryImpl implements BleButtonRepository {
   BleButtonRepositoryImpl() {
     _channel.setMethodCallHandler(_handleNativeCall);
@@ -85,7 +81,7 @@ class BleButtonRepositoryImpl implements BleButtonRepository {
       case 'onTaskResult':
         _taskResultController.add(args);
       default:
-        // Unhandled native call — ignore
+
         break;
     }
   }
@@ -214,7 +210,6 @@ class BleButtonRepositoryImpl implements BleButtonRepository {
   }
 }
 
-/// Exception thrown when the native channel reports an error
 class BleButtonException implements Exception {
   const BleButtonException({required this.code, required this.message});
 

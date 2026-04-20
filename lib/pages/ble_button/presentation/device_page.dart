@@ -175,7 +175,6 @@ class _DevicePageState extends State<DevicePage> {
   }
 }
 
-/// Generic text input dialog used for device name editing
 class _TextInputDialog extends StatefulWidget {
   const _TextInputDialog({
     required this.title,
@@ -331,7 +330,6 @@ class _LogsButton extends StatelessWidget {
   }
 }
 
-/// Botón para ir a la pantalla de permisos
 class _PermissionsButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {

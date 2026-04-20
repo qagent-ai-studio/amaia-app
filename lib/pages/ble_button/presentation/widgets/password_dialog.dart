@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 
-/// Dialog to change device password.
 class PasswordDialog extends StatefulWidget {
   const PasswordDialog({super.key});
 

@@ -7,7 +7,6 @@ import '../domain/models.dart';
 import '../domain/saved_device.dart';
 import 'device_page.dart';
 
-/// Screen that scans for MK Button BLE devices and lists them.
 class ScanPage extends StatefulWidget {
   const ScanPage({super.key});
 
@@ -120,7 +119,7 @@ class _ScanPageState extends State<ScanPage> {
             );
           }
           if (state is BleButtonScanning) {
-            // Mostrar dispositivos guardados y escaneados
+
             return _DeviceList(
               savedDevices: state.savedDevices,
               scannedDevices: state.devices,
@@ -249,7 +248,7 @@ class _DeviceList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Si no hay dispositivos guardados ni escaneados, mostrar indicador de búsqueda
+
     if (savedDevices.isEmpty && scannedDevices.isEmpty) {
       return const _SearchingIndicator();
     }
@@ -257,7 +256,7 @@ class _DeviceList extends StatelessWidget {
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
-        // Sección de dispositivos guardados
+
         if (savedDevices.isNotEmpty) ...[
           const _SectionTitle(title: 'Mis Dispositivos'),
           const SizedBox(height: 8),
@@ -268,7 +267,6 @@ class _DeviceList extends StatelessWidget {
           const SizedBox(height: 16),
         ],
 
-        // Sección de dispositivos escaneados
         if (scannedDevices.isNotEmpty) ...[
           const _SectionTitle(title: 'Dispositivos Cercanos'),
           const SizedBox(height: 8),
@@ -301,7 +299,6 @@ class _SectionTitle extends StatelessWidget {
   }
 }
 
-// Widget para dispositivos guardados (con opción de eliminar)
 class _SavedDeviceTile extends StatelessWidget {
   const _SavedDeviceTile({required this.device});
 
@@ -448,7 +445,6 @@ class _SavedDeviceTile extends StatelessWidget {
   }
 }
 
-// Widget para dispositivos escaneados (dispositivos cercanos)
 class _ScannedDeviceTile extends StatelessWidget {
   const _ScannedDeviceTile({required this.device});
 
@@ -460,11 +456,8 @@ class _ScannedDeviceTile extends StatelessWidget {
     return const Color(0xFFF87171);
   }
 
-  /// Muestra el diálogo de contraseña.
-  /// El BLoC se captura aquí — dentro del árbol de widgets — antes de abrir
-  /// el diálogo, así no hay problema de contexto desactivado.
   void _showPasswordPrompt(BuildContext context) {
-    // Capturar el bloc ANTES de abrir el diálogo
+
     final bloc = context.read<BleButtonBloc>();
     final controller = TextEditingController(text: 'Moko4321');
 
@@ -476,7 +469,7 @@ class _ScannedDeviceTile extends StatelessWidget {
           value: bloc,
           child: BlocListener<BleButtonBloc, BleButtonState>(
             listener: (_, state) {
-              // Cerrar el diálogo en cuanto empiece a conectar
+
               if (state is BleButtonConnecting || state is BleButtonConnected) {
                 if (Navigator.of(dialogContext).canPop()) {
                   Navigator.of(dialogContext).pop();
@@ -495,18 +488,9 @@ class _ScannedDeviceTile extends StatelessWidget {
               content: TextField(
                 controller: controller,
                 style: const TextStyle(color: Color(0xFF1E293B)),
-                //obscureText: true,
+
                 autofocus: true,
-                // decoration: InputDecoration(
-                //   hintText: 'Dejar vacío si no tiene contraseña',
-                //   hintStyle: const TextStyle(color: Colors.white38),
-                //   filled: true,
-                //   fillColor: const Color(0xFF0F172A),
-                //   border: OutlineInputBorder(
-                //     borderRadius: BorderRadius.circular(10),
-                //     borderSide: BorderSide.none,
-                //   ),
-                // ),
+
               ),
               actions: [
                 TextButton(

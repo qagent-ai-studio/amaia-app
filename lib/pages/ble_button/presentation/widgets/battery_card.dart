@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 
-/// Displays battery level with a visual gauge.
 class BatteryCard extends StatelessWidget {
   const BatteryCard({
     super.key,
