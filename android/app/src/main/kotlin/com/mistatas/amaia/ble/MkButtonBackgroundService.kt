@@ -326,7 +326,7 @@ class MkButtonBackgroundService : Service() {
 
                 val handler = android.os.Handler(android.os.Looper.getMainLooper())
                 handler.postDelayed({
-                    if (!deviceStates.containsKey(mac)) return@postDelayed
+                    if (!deviceStates.containsKey(mac) || !state.isConnected) return@postDelayed
                     state.support.enableClickEventNotify()
                     state.support.enableSingleTriggerNotify()
                     state.support.enableDoubleTriggerNotify()
@@ -334,7 +334,7 @@ class MkButtonBackgroundService : Service() {
                     android.util.Log.d("MkButtonBgService", "Notifications enabled: ${state.config.deviceName}")
 
                     handler.postDelayed({
-                        if (!deviceStates.containsKey(mac)) return@postDelayed
+                        if (!deviceStates.containsKey(mac) || !state.isConnected) return@postDelayed
                         state.isInitialized = true
                         android.util.Log.d("MkButtonBgService", "Device ready: ${state.config.deviceName}")
                         handler.postDelayed({
