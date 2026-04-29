@@ -6,6 +6,8 @@ import workmanager
 
 @objc class AppDelegate: FlutterAppDelegate {
 
+    private var mkButtonChannel: MkButtoniOSChannel?
+
     override func application(
         _ application: UIApplication,
         didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
@@ -13,26 +15,33 @@ import workmanager
         GeneratedPluginRegistrant.register(with: self)
         UNUserNotificationCenter.current().delegate = self
 
+        if let controller = window?.rootViewController as? FlutterViewController {
+            let flutterChannel = FlutterMethodChannel(
+                name: MkButtoniOSChannel.channelName,
+                binaryMessenger: controller.binaryMessenger
+            )
+            mkButtonChannel = MkButtoniOSChannel(channel: flutterChannel)
+            flutterChannel.setMethodCallHandler { [weak self] call, result in
+                self?.mkButtonChannel?.handle(call, result: result)
+            }
+        }
+
         WorkmanagerPlugin.setPluginRegistrantCallback { registry in
-            // Registry in this case is the FlutterEngine that is created in Workmanager's
-            // performFetchWithCompletionHandler or BGAppRefreshTask.
-            // This will make other plugins available during a background operation.
             GeneratedPluginRegistrant.register(with: registry)
         }
 
-        //WorkmanagerPlugin.registerBGProcessingTask(withIdentifier: "com.amaia.alive.task.periodic")
-
-        WorkmanagerPlugin.registerPeriodicTask(withIdentifier: "com.amaia.alive.task.periodic", frequency: NSNumber(value: 240 * 60))
+        WorkmanagerPlugin.registerPeriodicTask(
+            withIdentifier: "com.amaia.alive.task.periodic",
+            frequency: NSNumber(value: 240 * 60)
+        )
 
         return super.application(application, didFinishLaunchingWithOptions: launchOptions)
-
     }
 
     override func userNotificationCenter(
         _ center: UNUserNotificationCenter,
         willPresent notification: UNNotification,
         withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void) {
-         completionHandler(.alert) // shows banner even if app is in foreground
-     }
-
+        completionHandler([.alert, .sound])
+    }
 }

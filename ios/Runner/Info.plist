@@ -41,6 +41,10 @@
 		<key>NSAllowsArbitraryLoads</key>
 		<true/>
 	</dict>
+	<key>NSBluetoothAlwaysUsageDescription</key>
+	<string>Esta aplicación necesita Bluetooth para mantener la conexión con el botón de emergencia en segundo plano.</string>
+	<key>NSBluetoothPeripheralUsageDescription</key>
+	<string>Esta aplicación necesita Bluetooth para conectarse al botón de emergencia.</string>
 	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
 	<string>Esta aplicación necesita acceso a tu ubicación tanto en segundo plano como en primer plano.</string>
 	<key>NSLocationAlwaysUsageDescription</key>
@@ -55,6 +59,7 @@
 	<true/>
 	<key>UIBackgroundModes</key>
 	<array>
+		<string>bluetooth-central</string>
 		<string>location</string>
 		<string>processing</string>
 		<string>fetch</string>

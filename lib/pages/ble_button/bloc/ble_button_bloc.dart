@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:io' show Platform;
 
 import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -75,25 +76,39 @@ class BleButtonBloc extends Bloc<BleButtonEvent, BleButtonState> {
         return;
       }
 
-      final bluetoothScanStatus = await Permission.bluetoothScan.request();
-      final bluetoothConnectStatus =
-          await Permission.bluetoothConnect.request();
+      if (Platform.isAndroid) {
+        final bluetoothScanStatus = await Permission.bluetoothScan.request();
+        final bluetoothConnectStatus =
+            await Permission.bluetoothConnect.request();
 
-      if (!bluetoothScanStatus.isGranted || !bluetoothConnectStatus.isGranted) {
-        emit(const BleButtonError(
-          message:
-              'Se requieren permisos de Bluetooth para escanear dispositivos',
-        ));
-        return;
-      }
+        if (!bluetoothScanStatus.isGranted || !bluetoothConnectStatus.isGranted) {
+          emit(const BleButtonError(
+            message:
+                'Se requieren permisos de Bluetooth para escanear dispositivos',
+          ));
+          return;
+        }
 
-      final locationStatus = await Permission.location.request();
-      if (!locationStatus.isGranted) {
-        emit(const BleButtonError(
-          message:
-              'Se requiere permiso de ubicación para escanear dispositivos BLE',
-        ));
-        return;
+        final locationStatus = await Permission.location.request();
+        if (!locationStatus.isGranted) {
+          emit(const BleButtonError(
+            message:
+                'Se requiere permiso de ubicación para escanear dispositivos BLE',
+          ));
+          return;
+        }
+      } else if (Platform.isIOS) {
+        final bluetoothStatus = await Permission.bluetooth.request();
+        if (bluetoothStatus.isPermanentlyDenied) {
+          await openAppSettings();
+          return;
+        }
+        if (bluetoothStatus.isDenied) {
+          emit(const BleButtonError(
+            message: 'Se requiere permiso de Bluetooth para escanear dispositivos',
+          ));
+          return;
+        }
       }
 
       await _repo.startScan();
@@ -346,7 +361,16 @@ class BleButtonBloc extends Bloc<BleButtonEvent, BleButtonState> {
           ...result,
         });
 
-        await DeviceStorage.instance.updateDeviceInfo(current.mac, result);
+        const _dbKeys = {
+          'batteryPercent', 'deviceName', 'firmwareVersion',
+          'hardwareVersion', 'advIntervalMs', 'txPower', 'isPasswordEnabled',
+        };
+        final dbUpdate = Map.fromEntries(
+          result.entries.where((e) => _dbKeys.contains(e.key)),
+        );
+        if (dbUpdate.isNotEmpty) {
+          await DeviceStorage.instance.updateDeviceInfo(current.mac, dbUpdate);
+        }
 
         emit(current.copyWith(deviceInfo: info, isLoading: false));
       } else {

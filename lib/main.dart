@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io' show Platform;
 
 import 'package:amaia/models/information.dart';
 import 'package:amaia/pages/check_step_phone_page.dart';
@@ -21,6 +22,12 @@ Future main() async {
   WidgetsBinding widgetsBinding = WidgetsFlutterBinding.ensureInitialized();
   FlutterNativeSplash.preserve(widgetsBinding: widgetsBinding);
   await dotenv.load(fileName: ".env");
+
+  if (Platform.isIOS) {
+    final prefs = await SharedPreferences.getInstance();
+    final smsUrl = dotenv.env['URL_SMS_IOS'];
+    if (smsUrl != null) await prefs.setString('URL_SMS_IOS', smsUrl);
+  }
 
   SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp])
       .then((value) => runApp(const NavigationApp()));

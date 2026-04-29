@@ -123,12 +123,7 @@ class _SendSmsState extends State<_SendSms>
     });
 
     String geo = await locationStream.getNameFromStoreLocal();
-
-    log('***************************************************************************************');
-    log(geo);
-    debugPrint('#################################################################################');
-    debugPrint(geo);
-
+    
     Codec<String, String> stringToBase64 = utf8.fuse(base64);
 
     String geoencoded = stringToBase64.encode(geo);

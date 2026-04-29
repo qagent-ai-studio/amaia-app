@@ -1,5 +1,5 @@
 # Uncomment this line to define a global platform for your project
-platform :ios, '12.0'
+platform :ios, '14.0'
 
 # CocoaPods analytics sends network stats synchronously affecting flutter build latency.
 ENV['COCOAPODS_DISABLE_STATS'] = 'true'
@@ -27,9 +27,20 @@ require File.expand_path(File.join('packages', 'flutter_tools', 'bin', 'podhelpe
 
 flutter_ios_podfile_setup
 
+pre_install do |installer|
+  pod_dir = installer.sandbox.pod_dir('MKBeaconXDButton')
+  classes_path = File.join(pod_dir, 'MKBeaconXDButton', 'Classes')
+  %w[Functions Expand Target ConnectManager CTMediator].each do |dir|
+    path = File.join(classes_path, dir)
+    FileUtils.rm_rf(path) if File.exist?(path)
+  end
+end
+
 target 'Runner' do
   use_frameworks!
   use_modular_headers!
+
+  pod 'MKBeaconXDButton', :podspec => './MKBeaconXDButton.podspec'
 
   flutter_install_all_ios_pods File.dirname(File.realpath(__FILE__))
   target 'RunnerTests' do
@@ -93,7 +104,7 @@ post_install do |installer|
         'PERMISSION_SENSORS=0',
 
         ## dart: PermissionGroup.bluetooth
-        'PERMISSION_BLUETOOTH=0',
+        'PERMISSION_BLUETOOTH=1',
 
         ## dart: PermissionGroup.appTrackingTransparency
         'PERMISSION_APP_TRACKING_TRANSPARENCY=0',
