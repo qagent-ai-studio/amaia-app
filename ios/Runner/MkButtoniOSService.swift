@@ -26,6 +26,7 @@ class MkButtoniOSService: NSObject {
 
     private var deviceConfig: DeviceConfig?
     private var scannedPeripherals: [String: CBPeripheral] = [:]
+    private var peripheralUUIDToMac: [String: String] = [:]
     private var isInitialized = false
     private var isConnected = false
     private var isConnecting = false
@@ -244,8 +245,29 @@ class MkButtoniOSService: NSObject {
                 MKBXDCentralManager.shared().delegate = self
                 MKBXDCentralManager.shared().startScan()
                 self.readBattery()
+                self.configureDeviceForAlarmMode()
             }
         }
+    }
+
+    private func configureDeviceForAlarmMode() {
+        guard let config = deviceConfig else { return }
+        let channelType: MKBXDChannelAlarmType
+        switch config.clickType {
+        case "double": channelType = .double
+        case "long":   channelType = .long
+        default:       channelType = .single
+        }
+        MKBXDInterface.bxd_configChannelContentAlarmInfo(channelType, sucBlock: {
+            NSLog("[MK] configChannelContentAlarmInfo success")
+            MKBXDInterface.bxd_configStayAdvertising(beforeTriggered: channelType, isOn: true, sucBlock: {
+                NSLog("[MK] configStayAdvertisingBeforeTriggered success")
+            }, failedBlock: { error in
+                NSLog("[MK] configStayAdvertisingBeforeTriggered failed: \(error.localizedDescription)")
+            })
+        }, failedBlock: { error in
+            NSLog("[MK] configChannelContentAlarmInfo failed: \(error.localizedDescription)")
+        })
     }
 
     private func scheduleReconnect() {
@@ -425,26 +447,27 @@ extension MkButtoniOSService: mk_bxd_centralManagerScanDelegate {
         for model in deviceList {
             let peripheral = model.peripheral
             let name = peripheral.name ?? "MK Button"
+            let peripheralUUID = peripheral.identifier.uuidString
 
             var mac: String
             if let respondModel = model as? MKBXDAdvRespondDataModel,
                !respondModel.macAddress.isEmpty {
                 mac = respondModel.macAddress
+                peripheralUUIDToMac[peripheralUUID] = mac
             } else {
-                mac = peripheral.identifier.uuidString
+                mac = peripheralUUIDToMac[peripheralUUID] ?? peripheralUUID
             }
 
             scannedPeripherals[mac] = peripheral
 
             if let alarmModel = model as? MKBXDAdvDataModel,
                alarmModel.triggerStatus != 0,
-               isInitialized,
                let config = deviceConfig,
                config.mac == mac {
                 let count = alarmModel.triggerCount ?? ""
                 if count != lastAdvTriggerCount {
                     lastAdvTriggerCount = count
-                    NSLog("[MK] ADV alarm: alarmType=\(alarmModel.alarmType.rawValue) count=\(count)")
+                    NSLog("[MK] ADV alarm: alarmType=\(alarmModel.alarmType.rawValue) count=\(count) mac=\(mac)")
                     let alarmType = Int(alarmModel.alarmType.rawValue)
                     DispatchQueue.main.async { [weak self] in
                         self?.handleButtonPress(alarmType: alarmType)
