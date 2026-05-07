@@ -8,7 +8,8 @@ class PermissionsPage extends StatefulWidget {
   State<PermissionsPage> createState() => _PermissionsPageState();
 }
 
-class _PermissionsPageState extends State<PermissionsPage> {
+class _PermissionsPageState extends State<PermissionsPage>
+    with WidgetsBindingObserver {
   static const platform = MethodChannel('com.example.app/mk_button');
 
   bool _isBatteryOptimizationDisabled = false;
@@ -19,7 +20,21 @@ class _PermissionsPageState extends State<PermissionsPage> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _checkPermissions();
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      _checkPermissions();
+    }
   }
 
   Future<void> _checkPermissions() async {
@@ -48,8 +63,6 @@ class _PermissionsPageState extends State<PermissionsPage> {
   Future<void> _requestBatteryOptimization() async {
     try {
       await platform.invokeMethod('requestBatteryOptimization');
-      await Future.delayed(const Duration(seconds: 1));
-      _checkPermissions();
     } catch (e) {
       _showError('Error al solicitar permiso de batería');
     }
@@ -58,8 +71,6 @@ class _PermissionsPageState extends State<PermissionsPage> {
   Future<void> _requestNotificationPermission() async {
     try {
       await platform.invokeMethod('requestNotificationPermission');
-      await Future.delayed(const Duration(seconds: 1));
-      _checkPermissions();
     } catch (e) {
       _showError('Error al solicitar permiso de notificaciones');
     }
@@ -79,8 +90,6 @@ class _PermissionsPageState extends State<PermissionsPage> {
   Future<void> _requestOverlayPermission() async {
     try {
       await platform.invokeMethod('requestOverlayPermission');
-      await Future.delayed(const Duration(seconds: 1));
-      _checkPermissions();
     } catch (e) {
       _showError('Error al solicitar permiso de overlay');
     }

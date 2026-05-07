@@ -83,6 +83,7 @@ class MkButtonBackgroundService : Service() {
         }
 
         val foregroundMacs = mutableSetOf<String>()
+        val pendingRemovals = mutableSetOf<String>()
 
         fun removeDevice(context: Context, mac: String, clearPrefs: Boolean = false) {
             val intent = Intent(context, MkButtonBackgroundService::class.java).apply {
@@ -132,7 +133,8 @@ class MkButtonBackgroundService : Service() {
         val support: DMokoSupport,
         var isConnected: Boolean = false,
         var isInitialized: Boolean = false,
-        var reconnectAttempts: Int = 0
+        var reconnectAttempts: Int = 0,
+        var lastButtonPressAt: Long = 0,
     )
 
     private val deviceStates = mutableMapOf<String, DeviceState>()
@@ -222,11 +224,33 @@ class MkButtonBackgroundService : Service() {
                 val clearPrefs = intent.getBooleanExtra("clearPrefs", false)
                 android.util.Log.d("MkButtonBgService", "Removing device: $mac (clearPrefs=$clearPrefs)")
                 pendingReconnects.remove(mac)?.let { reconnectHandler.removeCallbacks(it) }
-                deviceStates.remove(mac)?.support?.disConnectBle()
                 if (clearPrefs) clearDevicePrefs(mac)
-                android.util.Log.d("MkButtonBgService", "Device removed. Remaining: ${deviceStates.size}")
-                if (deviceStates.isEmpty()) {
-                    reconnectHandler.postDelayed({ disconnectAndStop() }, 2000)
+                foregroundMacs.remove(mac)
+                val state = deviceStates[mac]
+                if (state == null) {
+                    android.util.Log.d("MkButtonBgService", "Device not tracked, nothing to remove")
+                    return START_STICKY
+                }
+                pendingRemovals.add(mac)
+                if (!state.isConnected) {
+                    deviceStates.remove(mac)
+                    pendingRemovals.remove(mac)
+                    android.util.Log.d("MkButtonBgService", "Device was disconnected, removed immediately. Remaining: ${deviceStates.size}")
+                    if (deviceStates.isEmpty()) {
+                        reconnectHandler.postDelayed({ disconnectAndStop() }, 500)
+                    }
+                } else {
+                    android.util.Log.d("MkButtonBgService", "Device connected, disconnecting before removal")
+                    state.support.disConnectBle()
+                    reconnectHandler.postDelayed({
+                        if (mac in pendingRemovals) {
+                            pendingRemovals.remove(mac)
+                            val removedState = deviceStates.remove(mac)
+                            removedState?.support?.disConnectBle()
+                            android.util.Log.w("MkButtonBgService", "Force-removed $mac after disconnect timeout")
+                            if (deviceStates.isEmpty()) disconnectAndStop()
+                        }
+                    }, 1500)
                 }
             }
             ACTION_EXECUTE_EMERGENCY -> {
@@ -247,7 +271,7 @@ class MkButtonBackgroundService : Service() {
                     smsPhone = smsPhone,
                     deviceName = deviceName
                 )
-                executeButtonAction(config)
+                executeButtonAction(config, skipLog = true)
             }
             else -> {
                 startForeground(NOTIFICATION_ID, createNotification("Activo"))
@@ -267,6 +291,7 @@ class MkButtonBackgroundService : Service() {
         try { unregisterReceiver(bluetoothReceiver) } catch (_: Exception) {}
         reconnectHandler.removeCallbacksAndMessages(null)
         pendingReconnects.clear()
+        pendingRemovals.clear()
         deviceStates.values.forEach { it.support.disConnectBle() }
         deviceStates.clear()
         android.util.Log.d("MkButtonBgService", "Service destroyed")
@@ -313,11 +338,35 @@ class MkButtonBackgroundService : Service() {
 
     @Subscribe(threadMode = ThreadMode.MAIN)
     fun onConnectStatusEvent(event: ConnectStatusEvent) {
+        if (event.macAddress == null && event.action == MokoConstants.ACTION_DISCONNECTED) {
+            val pending = pendingRemovals.toList()
+            for (pendingMac in pending) {
+                val pendingState = deviceStates.remove(pendingMac) ?: continue
+                pendingRemovals.remove(pendingMac)
+                pendingReconnects.remove(pendingMac)?.let { reconnectHandler.removeCallbacks(it) }
+                pendingState.support.disConnectBle()
+                android.util.Log.d("MkButtonBgService", "Null-mac disconnect: cleaned pending removal $pendingMac")
+            }
+            if (deviceStates.isEmpty() && pending.isNotEmpty()) {
+                reconnectHandler.postDelayed({ disconnectAndStop() }, 500)
+            }
+            return
+        }
         val mac = event.macAddress ?: return
         val state = deviceStates[mac] ?: return
 
         when (event.action) {
             MokoConstants.ACTION_DISCOVER_SUCCESS -> {
+                if (mac in pendingRemovals) {
+                    pendingRemovals.remove(mac)
+                    deviceStates.remove(mac)
+                    android.util.Log.d("MkButtonBgService", "Pending removal: disconnecting GATT for $mac")
+                    state.support.disConnectBle()
+                    if (deviceStates.isEmpty()) {
+                        reconnectHandler.postDelayed({ disconnectAndStop() }, 500)
+                    }
+                    return
+                }
                 pendingReconnects.remove(mac)?.let { reconnectHandler.removeCallbacks(it) }
                 cancelDeviceLostNotification(mac)
                 state.isConnected = true
@@ -353,6 +402,16 @@ class MkButtonBackgroundService : Service() {
                 state.isInitialized = false
                 android.util.Log.d("MkButtonBgService", "Disconnected: ${state.config.deviceName} ($mac)")
 
+                if (mac in pendingRemovals) {
+                    pendingRemovals.remove(mac)
+                    deviceStates.remove(mac)
+                    android.util.Log.d("MkButtonBgService", "Device fully removed after disconnect: $mac. Remaining: ${deviceStates.size}")
+                    if (deviceStates.isEmpty()) {
+                        reconnectHandler.postDelayed({ disconnectAndStop() }, 500)
+                    }
+                    return
+                }
+
                 val connectedCount = deviceStates.count { it.value.isConnected }
                 updateNotification(if (connectedCount > 0) "$connectedCount dispositivo(s) conectado(s)" else "Reconectando...")
 
@@ -381,6 +440,7 @@ class MkButtonBackgroundService : Service() {
         if (event.action != MokoConstants.ACTION_CURRENT_DATA) return
         val mac = event.macAddress ?: return
         if (mac in foregroundMacs) return
+        if (mac in pendingRemovals) return
         val response = event.response ?: return
         val value = response.responseValue ?: return
 
@@ -399,6 +459,12 @@ class MkButtonBackgroundService : Service() {
                         android.util.Log.w("MkButtonBgService", "Ignoring click from ${state.config.deviceName} - not initialized yet")
                         return
                     }
+                    val now = System.currentTimeMillis()
+                    if (now - state.lastButtonPressAt < 2000) {
+                        android.util.Log.d("MkButtonBgService", "Ignoring duplicate click from ${state.config.deviceName} (${now - state.lastButtonPressAt} ms)")
+                        return
+                    }
+                    state.lastButtonPressAt = now
                     android.util.Log.d("MkButtonBgService", "Click from ${state.config.deviceName} ($mac): $clickType")
                     if (clickType == state.config.clickTypeToOpen && state.config.clickTypeToOpen != "disabled") {
                         executeButtonAction(state.config)
@@ -451,9 +517,9 @@ class MkButtonBackgroundService : Service() {
         }
     }
 
-    private fun executeButtonAction(config: DeviceConfig) {
-        android.util.Log.d("MkButtonBgService", "Executing ${config.buttonAction} for ${config.deviceName}")
-        savePressLog(config)
+    private fun executeButtonAction(config: DeviceConfig, skipLog: Boolean = false) {
+        android.util.Log.d("MkButtonBgService", "Executing ${config.buttonAction} for ${config.deviceName} (skipLog=$skipLog)")
+        if (!skipLog) savePressLog(config)
         when (config.buttonAction) {
             "call" -> attemptImmediateCall(config)
             "sms" -> sendEmergencySMS(config)

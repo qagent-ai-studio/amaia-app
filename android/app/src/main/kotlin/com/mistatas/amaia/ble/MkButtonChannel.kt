@@ -39,6 +39,7 @@ class MkButtonChannel(
     private var pendingPassword: String = "123456"
     private var foregroundMac: String? = null
     private var connectedAt: Long = 0
+    private var lastButtonPressAt: Long = 0
     private var expectingConnect = false
     private var connectRetries = 0
     private val connectionTimeoutHandler = android.os.Handler(android.os.Looper.getMainLooper())
@@ -367,6 +368,7 @@ class MkButtonChannel(
                 deviceActionConfigs.remove(mac)
                 foregroundMac = null
                 isDeviceConnected = false
+                MkButtonBackgroundService.pendingRemovals.add(mac)
                 DMokoSupport.getInstance().disConnectBle()
                 context.getSharedPreferences("mk_button_config", Context.MODE_PRIVATE)
                     .edit()
@@ -557,6 +559,7 @@ class MkButtonChannel(
             }
             isDeviceConnected = false
             foregroundMac?.let { MkButtonBackgroundService.foregroundMacs.remove(it) }
+            foregroundMac = null
         }
 
         channel.invokeMethod("onConnectionStatus", mapOf("connected" to connected))
@@ -638,18 +641,20 @@ class MkButtonChannel(
         val value    = response.responseValue ?: return
 
         val pressType = when (response.orderCHAR as? OrderCHAR) {
-            OrderCHAR.CHAR_SINGLE_TRIGGER -> "single"
-            OrderCHAR.CHAR_DOUBLE_TRIGGER -> "double"
-            OrderCHAR.CHAR_LONG_TRIGGER   -> "long"
-            OrderCHAR.CHAR_CLICK_EVENT    -> parseCHARClickEvent(value)
+            OrderCHAR.CHAR_CLICK_EVENT -> parseCHARClickEvent(value)
             else -> return
         }
 
-        val elapsed = System.currentTimeMillis() - connectedAt
-        if (elapsed < 5000) {
-            android.util.Log.d("MkButton", "Click ignored — within 5s cooldown after connect ($elapsed ms)")
+        val now = System.currentTimeMillis()
+        if (now - connectedAt < 5000) {
+            android.util.Log.d("MkButton", "Click ignored — within 5s cooldown after connect (${now - connectedAt} ms)")
             return
         }
+        if (now - lastButtonPressAt < 2000) {
+            android.util.Log.d("MkButton", "Click ignored — duplicate within 2s (${now - lastButtonPressAt} ms)")
+            return
+        }
+        lastButtonPressAt = now
 
         val mac = foregroundMac
         var config = if (mac != null) deviceActionConfigs[mac] else null
