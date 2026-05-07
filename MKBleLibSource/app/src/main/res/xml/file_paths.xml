@@ -1,4 +1,0 @@
-<paths>
-    <external-path name="log" path="mokoEmpty/"/>
-    <external-path name="*" path="."/>
-</paths>
