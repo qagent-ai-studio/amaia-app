@@ -138,6 +138,7 @@ class MkButtonBackgroundService : Service() {
     private val deviceStates = mutableMapOf<String, DeviceState>()
     private val reconnectHandler = android.os.Handler(android.os.Looper.getMainLooper())
     private val pendingReconnects = mutableMapOf<String, Runnable>()
+    private val pendingRemovals = mutableSetOf<String>()
 
     private val bluetoothReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
@@ -222,11 +223,24 @@ class MkButtonBackgroundService : Service() {
                 val clearPrefs = intent.getBooleanExtra("clearPrefs", false)
                 android.util.Log.d("MkButtonBgService", "Removing device: $mac (clearPrefs=$clearPrefs)")
                 pendingReconnects.remove(mac)?.let { reconnectHandler.removeCallbacks(it) }
-                deviceStates.remove(mac)?.support?.disConnectBle()
                 if (clearPrefs) clearDevicePrefs(mac)
-                android.util.Log.d("MkButtonBgService", "Device removed. Remaining: ${deviceStates.size}")
-                if (deviceStates.isEmpty()) {
-                    reconnectHandler.postDelayed({ disconnectAndStop() }, 2000)
+                foregroundMacs.remove(mac)
+                val state = deviceStates[mac]
+                if (state == null) {
+                    android.util.Log.d("MkButtonBgService", "Device not tracked, nothing to remove")
+                    return START_STICKY
+                }
+                pendingRemovals.add(mac)
+                if (!state.isConnected) {
+                    deviceStates.remove(mac)
+                    pendingRemovals.remove(mac)
+                    android.util.Log.d("MkButtonBgService", "Device was disconnected, removed immediately. Remaining: ${deviceStates.size}")
+                    if (deviceStates.isEmpty()) {
+                        reconnectHandler.postDelayed({ disconnectAndStop() }, 500)
+                    }
+                } else {
+                    android.util.Log.d("MkButtonBgService", "Device connected, disconnecting before removal")
+                    state.support.disConnectBle()
                 }
             }
             ACTION_EXECUTE_EMERGENCY -> {
@@ -267,6 +281,7 @@ class MkButtonBackgroundService : Service() {
         try { unregisterReceiver(bluetoothReceiver) } catch (_: Exception) {}
         reconnectHandler.removeCallbacksAndMessages(null)
         pendingReconnects.clear()
+        pendingRemovals.clear()
         deviceStates.values.forEach { it.support.disConnectBle() }
         deviceStates.clear()
         android.util.Log.d("MkButtonBgService", "Service destroyed")
@@ -318,6 +333,11 @@ class MkButtonBackgroundService : Service() {
 
         when (event.action) {
             MokoConstants.ACTION_DISCOVER_SUCCESS -> {
+                if (mac in pendingRemovals) {
+                    android.util.Log.d("MkButtonBgService", "Connected but pending removal, disconnecting again: $mac")
+                    state.support.disConnectBle()
+                    return
+                }
                 pendingReconnects.remove(mac)?.let { reconnectHandler.removeCallbacks(it) }
                 cancelDeviceLostNotification(mac)
                 state.isConnected = true
@@ -352,6 +372,16 @@ class MkButtonBackgroundService : Service() {
                 state.isConnected = false
                 state.isInitialized = false
                 android.util.Log.d("MkButtonBgService", "Disconnected: ${state.config.deviceName} ($mac)")
+
+                if (mac in pendingRemovals) {
+                    pendingRemovals.remove(mac)
+                    deviceStates.remove(mac)
+                    android.util.Log.d("MkButtonBgService", "Device fully removed after disconnect: $mac. Remaining: ${deviceStates.size}")
+                    if (deviceStates.isEmpty()) {
+                        reconnectHandler.postDelayed({ disconnectAndStop() }, 500)
+                    }
+                    return
+                }
 
                 val connectedCount = deviceStates.count { it.value.isConnected }
                 updateNotification(if (connectedCount > 0) "$connectedCount dispositivo(s) conectado(s)" else "Reconectando...")
