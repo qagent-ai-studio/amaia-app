@@ -502,7 +502,7 @@
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 6;
-				DEVELOPMENT_TEAM = BE5GTRUCAL;
+				DEVELOPMENT_TEAM = 4V8K9DVLAF;
 				ENABLE_BITCODE = NO;
 				FLUTTER_BUILD_NUMBER = 5;
 				INFOPLIST_FILE = Runner/Info.plist;
@@ -512,7 +512,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = cl.mistatas.amaia.makertools;
+				PRODUCT_BUNDLE_IDENTIFIER = cl.mistatas.amaia.want;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				SWIFT_OBJC_BRIDGING_HEADER = "Runner/Runner-Bridging-Header.h";
@@ -691,7 +691,7 @@
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 6;
-				DEVELOPMENT_TEAM = BE5GTRUCAL;
+				DEVELOPMENT_TEAM = 4V8K9DVLAF;
 				ENABLE_BITCODE = NO;
 				FLUTTER_BUILD_NUMBER = 5;
 				INFOPLIST_FILE = Runner/Info.plist;
@@ -701,7 +701,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = cl.mistatas.amaia.makertools;
+				PRODUCT_BUNDLE_IDENTIFIER = cl.mistatas.amaia.want;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				SWIFT_OBJC_BRIDGING_HEADER = "Runner/Runner-Bridging-Header.h";
@@ -720,7 +720,7 @@
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 6;
-				DEVELOPMENT_TEAM = BE5GTRUCAL;
+				DEVELOPMENT_TEAM = 4V8K9DVLAF;
 				ENABLE_BITCODE = NO;
 				FLUTTER_BUILD_NUMBER = 5;
 				INFOPLIST_FILE = Runner/Info.plist;
@@ -730,7 +730,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = cl.mistatas.amaia.makertools;
+				PRODUCT_BUNDLE_IDENTIFIER = cl.mistatas.amaia.want;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				SWIFT_OBJC_BRIDGING_HEADER = "Runner/Runner-Bridging-Header.h";
