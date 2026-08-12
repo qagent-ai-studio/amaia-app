@@ -33,6 +33,7 @@ class MkButtoniOSService: NSObject {
     private var isConnected = false
     private var isConnecting = false
     private var isBackgroundMode = false
+    private var restorationPressWindow = false
     private var reconnectAttempts = 0
     private var reconnectWorkItem: DispatchWorkItem?
     private var disconnectNotifyWork: DispatchWorkItem?
@@ -74,6 +75,7 @@ class MkButtoniOSService: NSObject {
 
         isBackgroundMode = true
         isInitialized = false
+        restorationPressWindow = true
         reconnectAttempts = 0
         MKBXDCentralManager.shared().eventDelegate = self
         MKBXDCentralManager.shared().delegate = self
@@ -235,6 +237,7 @@ class MkButtoniOSService: NSObject {
     func stopBackgroundService() {
         isBackgroundMode = false
         isInitialized = false
+        restorationPressWindow = false
         isConnected = false
         isConnecting = false
         reconnectWorkItem?.cancel()
@@ -271,6 +274,7 @@ class MkButtoniOSService: NSObject {
 
     private func enableNotificationsAfterDelay() {
         NSLog("[MK] enableNotificationsAfterDelay: scheduled")
+        restorationPressWindow = false
         DispatchQueue.main.asyncAfter(deadline: .now() + 3.0) { [weak self] in
             guard let self = self, self.isConnected else {
                 NSLog("[MK] enableNotificationsAfterDelay: skipped isConnected=\(self?.isConnected ?? false)")
@@ -331,9 +335,9 @@ class MkButtoniOSService: NSObject {
     }
 
     private func handleButtonPress(alarmType: Int) {
-        NSLog("[MK] handleButtonPress alarmType=\(alarmType) isInitialized=\(isInitialized) isBackgroundMode=\(isBackgroundMode) deviceConfig=\(deviceConfig != nil)")
-        guard isInitialized, let config = deviceConfig else {
-            NSLog("[MK] handleButtonPress blocked: isInitialized=\(isInitialized) deviceConfig=\(deviceConfig != nil)")
+        NSLog("[MK] handleButtonPress alarmType=\(alarmType) isInitialized=\(isInitialized) restorationWindow=\(restorationPressWindow) isBackgroundMode=\(isBackgroundMode) deviceConfig=\(deviceConfig != nil)")
+        guard isInitialized || restorationPressWindow, let config = deviceConfig else {
+            NSLog("[MK] handleButtonPress blocked: isInitialized=\(isInitialized) restorationWindow=\(restorationPressWindow) deviceConfig=\(deviceConfig != nil)")
             return
         }
 
@@ -468,8 +472,8 @@ class MkButtoniOSService: NSObject {
 
     @objc private func onLongConnectionModeData(_ notification: Notification) {
         let count = (notification.userInfo?["count"] as? String) ?? ""
-        NSLog("[MK] onLongConnectionModeData: count=\(count) isInitialized=\(isInitialized) deviceConfig=\(deviceConfig != nil)")
-        guard !count.isEmpty, isInitialized, let config = deviceConfig else { return }
+        NSLog("[MK] onLongConnectionModeData: count=\(count) isInitialized=\(isInitialized) restorationWindow=\(restorationPressWindow) deviceConfig=\(deviceConfig != nil)")
+        guard !count.isEmpty, isInitialized || restorationPressWindow, let config = deviceConfig else { return }
         let alarmType: Int
         switch config.clickType {
         case "double": alarmType = 1
@@ -569,7 +573,7 @@ extension MkButtoniOSService: mk_bxd_centralManagerAlarmEventDelegate {
 
 extension MkButtoniOSService: mk_bxd_stateRestorationDelegate {
 
-    func mk_bxd_didRestoreState(withPeripherals peripherals: [CBPeripheral]) {
+    @objc func mk_bxd_didRestoreState(withPeripherals peripherals: [CBPeripheral]) {
         NSLog("[MK] didRestoreState: \(peripherals.count) peripherals")
 
         if deviceConfig == nil {

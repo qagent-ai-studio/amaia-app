@@ -81,7 +81,7 @@ SPEC CHECKSUMS:
   flutter_libphonenumber_ios: 6bd2fac9dfb8f37c5732451fb7c9a992f1088d86
   flutter_native_splash: 6cad9122ea0fad137d23137dd14b937f3e90b145
   geolocator_apple: 1560c3c875af2a412242c7a923e15d0d401966ff
-  MKBeaconXDButton: cdbbbebacc922cbbb9626c4ed30861da1d246c5e
+  MKBeaconXDButton: 67993cafde09028ba3f34afc873421f3af4706ba
   permission_handler_apple: 4ed2196e43d0651e8ff7ca3483a069d469701f2d
   PhoneNumberKit: 460b1ae0347f2447af12749fc42f27fc3eb743b1
   shared_preferences_foundation: 9e1978ff2562383bd5676f64ec4e9aa8fa06a6f7
