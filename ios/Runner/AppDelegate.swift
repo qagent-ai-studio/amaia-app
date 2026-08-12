@@ -12,6 +12,9 @@ import workmanager
         _ application: UIApplication,
         didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
 
+        let relaunchedForBluetooth = launchOptions?[.bluetoothCentrals] != nil
+        MkButtoniOSService.shared.configureStateRestoration(relaunchedForBluetooth: relaunchedForBluetooth)
+
         GeneratedPluginRegistrant.register(with: self)
         UNUserNotificationCenter.current().delegate = self
 

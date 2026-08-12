@@ -72,7 +72,7 @@ EXTERNAL SOURCES:
 
 CHECKOUT OPTIONS:
   MKBeaconXDButton:
-    :commit: 0c56ac6af132a415836abf2f3758d0f816ea7aa2
+    :commit: 544268dc5816206d31c3f9e3fc26abda6df8cce2
     :git: https://github.com/BeaconX-Pro/14-iOS-MKButton-SDK.git
 
 SPEC CHECKSUMS:
@@ -83,7 +83,7 @@ SPEC CHECKSUMS:
   geolocator_apple: 1560c3c875af2a412242c7a923e15d0d401966ff
   MKBeaconXDButton: cdbbbebacc922cbbb9626c4ed30861da1d246c5e
   permission_handler_apple: 4ed2196e43d0651e8ff7ca3483a069d469701f2d
-  PhoneNumberKit: ec00ab8cef5342c1dc49fadb99d23fa7e66cf0ef
+  PhoneNumberKit: 460b1ae0347f2447af12749fc42f27fc3eb743b1
   shared_preferences_foundation: 9e1978ff2562383bd5676f64ec4e9aa8fa06a6f7
   sqflite_darwin: 20b2a3a3b70e43edae938624ce550a3cbf66a3d0
   url_launcher_ios: 694010445543906933d732453a59da0a173ae33d

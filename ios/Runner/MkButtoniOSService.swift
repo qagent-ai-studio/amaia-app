@@ -14,6 +14,8 @@ class MkButtoniOSService: NSObject {
 
     static let shared = MkButtoniOSService()
 
+    private static let activeBackgroundMacKey = "mk_active_bg_mac"
+
     weak var channelDelegate: MkButtoniOSChannelDelegate?
 
     private struct DeviceConfig {
@@ -55,6 +57,43 @@ class MkButtoniOSService: NSObject {
 
     deinit {
         NotificationCenter.default.removeObserver(self)
+    }
+
+    // MARK: - State restoration
+
+    func configureStateRestoration(relaunchedForBluetooth: Bool) {
+        let identifier = Bundle.main.bundleIdentifier ?? "cl.mistatas.amaia.want"
+        MKBXDCentralManager.enableStateRestoration(withIdentifier: identifier)
+        MKBXDCentralManager.shared().restorationDelegate = self
+
+        guard relaunchedForBluetooth else { return }
+        NSLog("[MK] launched from state restoration")
+
+        reloadActiveConfigFromDefaults()
+        guard deviceConfig != nil else { return }
+
+        isBackgroundMode = true
+        isInitialized = false
+        reconnectAttempts = 0
+        MKBXDCentralManager.shared().eventDelegate = self
+        MKBXDCentralManager.shared().delegate = self
+        scheduleReconnect()
+    }
+
+    private func reloadActiveConfigFromDefaults() {
+        let d = UserDefaults.standard
+        guard let mac = d.string(forKey: Self.activeBackgroundMacKey), !mac.isEmpty else {
+            NSLog("[MK] reloadActiveConfigFromDefaults: no active mac")
+            return
+        }
+        deviceConfig = DeviceConfig(
+            mac: mac,
+            password:     d.string(forKey: "\(mac)_password") ?? "",
+            clickType:    d.string(forKey: "\(mac)_clickType") ?? "single",
+            buttonAction: d.string(forKey: "\(mac)_buttonAction") ?? "",
+            deviceName:   d.string(forKey: "\(mac)_deviceName") ?? "MK Button"
+        )
+        NSLog("[MK] reloadActiveConfigFromDefaults: restored config for mac=\(mac)")
     }
 
     // MARK: - Foreground
@@ -155,6 +194,7 @@ class MkButtoniOSService: NSObject {
         d.set(clickType,    forKey: "\(mac)_clickType")
         d.set(buttonAction, forKey: "\(mac)_buttonAction")
         d.set(deviceName,   forKey: "\(mac)_deviceName")
+        d.set(mac,          forKey: Self.activeBackgroundMacKey)
 
         let config = DeviceConfig(
             mac: mac,
@@ -204,6 +244,7 @@ class MkButtoniOSService: NSObject {
         MKBXDCentralManager.shared().eventDelegate = nil
         MKBXDCentralManager.shared().disconnect()
         deviceConfig = nil
+        UserDefaults.standard.removeObject(forKey: Self.activeBackgroundMacKey)
     }
 
     func removeDevice(mac: String, clearConfig: Bool) {
@@ -277,10 +318,10 @@ class MkButtoniOSService: NSObject {
 
         reconnectWorkItem?.cancel()
         let work = DispatchWorkItem { [weak self] in
-            guard let self = self, !self.isConnected else { return }
+            guard let self = self, self.isBackgroundMode, !self.isConnected else { return }
             MKBXDCentralManager.shared().startScan()
             DispatchQueue.main.asyncAfter(deadline: .now() + 30) { [weak self] in
-                guard let self = self, !self.isConnected else { return }
+                guard let self = self, self.isBackgroundMode, !self.isConnected else { return }
                 MKBXDCentralManager.shared().stopScan()
                 self.scheduleReconnect()
             }
@@ -521,5 +562,63 @@ extension MkButtoniOSService: mk_bxd_centralManagerAlarmEventDelegate {
         DispatchQueue.main.async { [weak self] in
             self?.handleButtonPress(alarmType: alarmType)
         }
+    }
+}
+
+// MARK: - mk_bxd_stateRestorationDelegate
+
+extension MkButtoniOSService: mk_bxd_stateRestorationDelegate {
+
+    func mk_bxd_didRestoreState(withPeripherals peripherals: [CBPeripheral]) {
+        NSLog("[MK] didRestoreState: \(peripherals.count) peripherals")
+
+        if deviceConfig == nil {
+            reloadActiveConfigFromDefaults()
+        }
+        guard let config = deviceConfig else {
+            NSLog("[MK] didRestoreState: no deviceConfig, ignoring")
+            return
+        }
+
+        isBackgroundMode = true
+        isInitialized = false
+        MKBXDCentralManager.shared().eventDelegate = self
+        MKBXDCentralManager.shared().delegate = self
+
+        guard let peripheral = peripherals.first else {
+            NSLog("[MK] didRestoreState: no peripheral restored, scheduling reconnect")
+            scheduleReconnect()
+            return
+        }
+
+        scannedPeripherals[config.mac] = peripheral
+        peripheralUUIDToMac[peripheral.identifier.uuidString] = config.mac
+
+        if peripheral.state == .connected {
+            NSLog("[MK] didRestoreState: peripheral already connected, re-auth")
+        }
+
+        isConnecting = true
+        MKBXDCentralManager.shared().connectPeripheral(
+            peripheral,
+            password: config.password,
+            sucBlock: { [weak self] _ in
+                NSLog("[MK] didRestoreState: re-auth success")
+                DispatchQueue.main.async {
+                    guard let self = self else { return }
+                    self.isConnecting = false
+                    self.isConnected = true
+                    self.reconnectAttempts = 0
+                    self.enableNotificationsAfterDelay()
+                }
+            },
+            failedBlock: { [weak self] error in
+                NSLog("[MK] didRestoreState: re-auth failed: \(error.localizedDescription)")
+                DispatchQueue.main.async {
+                    self?.isConnecting = false
+                    self?.scheduleReconnect()
+                }
+            }
+        )
     }
 }
