@@ -5,6 +5,7 @@ import 'dart:io' show Platform;
 import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:amaia/widgets/location_disclosure.dart';
 import 'package:permission_handler/permission_handler.dart';
 
 import '../data/ble_button_repository.dart';
@@ -85,6 +86,14 @@ class BleButtonBloc extends Bloc<BleButtonEvent, BleButtonState> {
           emit(const BleButtonError(
             message:
                 'Se requieren permisos de Bluetooth para escanear dispositivos',
+          ));
+          return;
+        }
+
+        if (!await LocationDisclosure.ensureAccepted()) {
+          emit(const BleButtonError(
+            message:
+                'Se requiere permiso de ubicación para escanear dispositivos BLE',
           ));
           return;
         }

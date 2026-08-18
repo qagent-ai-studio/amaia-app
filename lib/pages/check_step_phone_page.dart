@@ -689,13 +689,13 @@ class _CheckPhoneStepState extends State<_CheckPhoneStep> {
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         SizedBox(
-                          height: sizeHeightBox,
+                          height: sizeHeightBox + 60,
                           child: ListView(
                             children: [
                               Image.asset('assets/logo/logo.png', height: 20),
                               const SizedBox(height: 20),
                               const Text(
-                                'Esta APP requiere de los permisos de Geolocalización para ubicar, en tiempo real, al usuario activador de la emergencia. Favor de verificar y autorizar.',
+                                'Amaia recopila datos de ubicación (GPS) para enviar tu posición a tus contactos de emergencia y a la central de monitoreo cuando activas una alerta, incluso cuando la aplicación está cerrada o no se está usando. Pulsa Verificar para conocer el detalle y autorizar.',
                                 textAlign: TextAlign.justify,
                               ),
                             ],
@@ -767,7 +767,7 @@ class _CheckPhoneStepState extends State<_CheckPhoneStep> {
                           ),
                         )),
                         Container(
-                          height: 139,
+                          height: 79,
                         )
                       ],
                     )),

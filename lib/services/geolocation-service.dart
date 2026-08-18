@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:io' show Platform;
+import 'package:amaia/widgets/location_disclosure.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:geolocator_android/geolocator_android.dart';
 import 'package:geolocator_apple/geolocator_apple.dart';
@@ -37,6 +38,9 @@ class GeolocationService {
 
     permission = await Geolocator.checkPermission();
     if (permission == LocationPermission.denied) {
+      if (!await LocationDisclosure.ensureAccepted()) {
+        return 'Location permissions are denied';
+      }
       permission = await Geolocator.requestPermission();
       if (permission == LocationPermission.denied) {
         return 'Location permissions are denied';
@@ -93,6 +97,9 @@ class GeolocationService {
 
     permission = await Geolocator.checkPermission();
     if (permission == LocationPermission.denied) {
+      if (!await LocationDisclosure.ensureAccepted()) {
+        return 'Location permissions are denied';
+      }
       permission = await Geolocator.requestPermission();
       if (permission == LocationPermission.denied) {
         return 'Location permissions are denied';
@@ -128,6 +135,9 @@ class GeolocationService {
       return Future.error('Servicio GEO no habilitado');
     } else {
       if (permission == LocationPermission.denied) {
+        if (!await LocationDisclosure.ensureAccepted()) {
+          return Future.error('Permiso denegado');
+        }
         permission = await Geolocator.requestPermission();
         if (permission == LocationPermission.denied) {
           return Future.error('Permiso denegado');
@@ -168,6 +178,9 @@ class GeolocationService {
       return Future.error('Servicio GEO no habilitado');
     } else {
       if (permission == LocationPermission.denied) {
+        if (!await LocationDisclosure.ensureAccepted()) {
+          return Future.error('Permiso denegado');
+        }
         permission = await Geolocator.requestPermission();
         if (permission == LocationPermission.denied) {
           return Future.error('Permiso denegado');
@@ -207,6 +220,9 @@ class GeolocationService {
   Future<void> requestLocationPermission() async {
     LocationPermission permission = await Geolocator.checkPermission();
     if (permission == LocationPermission.denied) {
+      if (!await LocationDisclosure.ensureAccepted()) {
+        throw Exception('Permiso de ubicación no autorizado por el usuario.');
+      }
       permission = await Geolocator.requestPermission();
       if (permission == LocationPermission.deniedForever) {
         throw Exception('Permiso de ubicación denegado permanentemente.');
