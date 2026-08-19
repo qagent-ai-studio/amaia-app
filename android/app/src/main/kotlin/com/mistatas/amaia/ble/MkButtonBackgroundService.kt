@@ -7,6 +7,7 @@ import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.content.pm.PackageManager
+import android.content.pm.ServiceInfo
 import android.location.Location
 import android.location.LocationManager
 import android.os.Build
@@ -16,6 +17,7 @@ import android.os.Vibrator
 import android.telephony.SmsManager
 import androidx.core.app.ActivityCompat
 import androidx.core.app.NotificationCompat
+import androidx.core.app.ServiceCompat
 import com.moko.ble.lib.MokoConstants
 import com.moko.ble.lib.event.ConnectStatusEvent
 import com.moko.ble.lib.event.OrderTaskResponseEvent
@@ -182,7 +184,7 @@ class MkButtonBackgroundService : Service() {
                 }
 
                 if (deviceStates.isEmpty()) {
-                    startForeground(NOTIFICATION_ID, createNotification("Conectando..."))
+                    startServiceForeground("Conectando...")
                 }
 
                 if (deviceStates.containsKey(mac)) {
@@ -260,7 +262,7 @@ class MkButtonBackgroundService : Service() {
                 val smsPhone = intent.getStringExtra(EXTRA_SMS_PHONE)?.takeIf { it.isNotEmpty() }
                 val deviceName = intent.getStringExtra(EXTRA_DEVICE_NAME) ?: "Dispositivo"
                 if (deviceStates.isEmpty()) {
-                    startForeground(NOTIFICATION_ID, createNotification("Activo"))
+                    startServiceForeground("Activo")
                 }
                 val config = DeviceConfig(
                     mac = mac,
@@ -274,7 +276,7 @@ class MkButtonBackgroundService : Service() {
                 executeButtonAction(config, skipLog = true)
             }
             else -> {
-                startForeground(NOTIFICATION_ID, createNotification("Activo"))
+                startServiceForeground("Activo")
                 if (deviceStates.isEmpty()) {
                     restoreDevicesFromPrefs()
                 }
@@ -605,10 +607,22 @@ class MkButtonBackgroundService : Service() {
         } catch (e: Exception) { null }
     }
 
+    private fun hasLocationPermission(): Boolean =
+        ActivityCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED ||
+            ActivityCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED
+
+    private fun startServiceForeground(text: String) {
+        val type = if (hasLocationPermission()) {
+            ServiceInfo.FOREGROUND_SERVICE_TYPE_CONNECTED_DEVICE or ServiceInfo.FOREGROUND_SERVICE_TYPE_LOCATION
+        } else {
+            ServiceInfo.FOREGROUND_SERVICE_TYPE_CONNECTED_DEVICE
+        }
+        ServiceCompat.startForeground(this, NOTIFICATION_ID, createNotification(text), type)
+    }
+
     private fun getCurrentLocation(): Location? {
         return try {
-            if (ActivityCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED &&
-                ActivityCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) return null
+            if (!hasLocationPermission()) return null
             val lm = getSystemService(Context.LOCATION_SERVICE) as LocationManager
             val providers = listOf(LocationManager.GPS_PROVIDER, LocationManager.NETWORK_PROVIDER, LocationManager.PASSIVE_PROVIDER)
             var best: Location? = null
