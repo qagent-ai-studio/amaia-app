@@ -105,7 +105,9 @@ class _ConfigState extends State<_Config> {
                 ));
       }
     } catch (error) {
-      _alertSnackBar(type: 'error', msg: 'Permiso denegado!');
+      _alertSnackBar(
+          type: 'error',
+          msg: error is String ? error : 'Permiso denegado!');
     }
   }
 

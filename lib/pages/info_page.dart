@@ -92,7 +92,9 @@ class _InfoState extends State<_Info> {
                 ));
       }
     } catch (error) {
-      _alertSnackBar(type: 'error', msg: 'Permiso denegado!');
+      _alertSnackBar(
+          type: 'error',
+          msg: error is String ? error : 'Permiso denegado!');
     }
   }
 

@@ -131,7 +131,7 @@ class _CheckPhoneStepState extends State<_CheckPhoneStep> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             backgroundColor: Colors.red,
-            content: Text(error as String),
+            content: Text(error is String ? error : 'Permiso denegado!'),
             duration: const Duration(milliseconds: 5000),
             width: 280.0,
             padding: const EdgeInsets.symmetric(

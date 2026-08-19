@@ -10,10 +10,10 @@ const platformMainActivity = MethodChannel('com.mistatas.amaia.sms');
 
 class SmsService {
   Future<String> sms(String geo, List<String> listRecipients) async {
-    String msgError = '';
-
     if (Platform.isAndroid) {
-      if (await Permission.sms.request().isGranted) {
+      final status = await _requestSmsPermission();
+
+      if (status.isGranted) {
         try {
           final result = await platformMainActivity.invokeMethod('sendSMS', {
             'message': 'ALERTAMOVIL GEO=$geo ORIGIN=DIAL',
@@ -25,21 +25,7 @@ class SmsService {
           return Future.error("Error al enviar SMS: $e");
         }
       } else {
-        await Permission.sms.onDeniedCallback(() {
-          msgError = 'onDeniedCallback';
-        }).onGrantedCallback(() {
-          msgError = 'onGrantedCallback';
-        }).onPermanentlyDeniedCallback(() {
-          msgError = 'onPermanentlyDeniedCallback';
-        }).onRestrictedCallback(() {
-          msgError = 'onRestrictedCallback';
-        }).onLimitedCallback(() {
-          msgError = 'onLimitedCallback';
-        }).onProvisionalCallback(() {
-          msgError = 'onProvisionalCallback';
-        }).request();
-
-        return Future.error(msgError);
+        return Future.error(_smsPermissionError(status));
       }
     } else if (Platform.isIOS) {
       final prefs = await SharedPreferences.getInstance();
@@ -87,28 +73,47 @@ class SmsService {
 
   Future<String> checkSms() async {
     if (Platform.isAndroid) {
-      String msgError = '';
-      if (await Permission.sms.request().isGranted) {
+      final status = await _requestSmsPermission();
+
+      if (status.isGranted) {
         return 'Permiso validado correctamente';
       } else {
-        await Permission.sms.onDeniedCallback(() {
-          msgError = 'Permiso denegado';
-        }).onGrantedCallback(() {
-          msgError = 'onGrantedCallback';
-        }).onPermanentlyDeniedCallback(() {
-          msgError = 'Permanentemente denegado';
-        }).onRestrictedCallback(() {
-          msgError = 'Permiso restrictivo';
-        }).onLimitedCallback(() {
-          msgError = 'Permiso limitado';
-        }).onProvisionalCallback(() {
-          msgError = 'Permiso provisional';
-        }).request();
-
-        return Future.error(msgError);
+        return Future.error(_smsPermissionError(status));
       }
     }
 
     return 'Permiso validado correctamente';
+  }
+
+  Future<PermissionStatus> _requestSmsPermission() async {
+    final status = await Permission.sms.request();
+
+    if (status.isPermanentlyDenied || status.isRestricted) {
+      await openAppSettings();
+    }
+
+    return status;
+  }
+
+  String _smsPermissionError(PermissionStatus status) {
+    if (status.isPermanentlyDenied) {
+      return 'El permiso de SMS fue denegado permanentemente. '
+          'Actívalo en Ajustes > Permisos > SMS.';
+    }
+
+    if (status.isRestricted) {
+      return 'El permiso de SMS está restringido por el sistema. '
+          'Actívalo en Ajustes > Permisos > SMS.';
+    }
+
+    if (status.isLimited) {
+      return 'El permiso de SMS fue otorgado de forma limitada.';
+    }
+
+    if (status.isProvisional) {
+      return 'El permiso de SMS es provisional.';
+    }
+
+    return 'El permiso de SMS fue denegado.';
   }
 }
