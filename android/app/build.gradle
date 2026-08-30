@@ -9,7 +9,7 @@ dependencies {
     implementation("com.google.android.material:material:1.12.0")
     // para el import de import androidx.work.WorkManager
     // en el archivo amaia/android/app/src/main/kotlin/com/mistatas/amaia/MainActivity.kt
-    implementation "androidx.work:work-runtime-ktx:2.8.1"
+    implementation "androidx.work:work-runtime-ktx:2.10.1"
     implementation project(path: ':mokosupport')
     implementation 'com.elvishew:xlog:1.11.0'
 }
@@ -26,12 +26,12 @@ android {
     ndkVersion = flutter.ndkVersion
 
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_1_8
-        targetCompatibility = JavaVersion.VERSION_1_8
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
     }
 
     kotlinOptions {
-        jvmTarget = JavaVersion.VERSION_1_8
+        jvmTarget = JavaVersion.VERSION_17
     }
 
     defaultConfig {
