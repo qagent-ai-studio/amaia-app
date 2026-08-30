@@ -1,0 +1,793 @@
+<title>Migración a API 36</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;1,8..60,400&display=swap">
+
+<style>
+  :root {
+    --ground: #F2F3F1;
+    --surface: #FBFBFA;
+    --surface-2: #E7EAE7;
+    --ink: #141917;
+    --ink-2: #434F4B;
+    --ink-3: #6D7A76;
+    --rule: #D2D8D4;
+    --rule-strong: #B4BEB9;
+    --accent: #1F5E58;
+    --accent-soft: #DCE9E6;
+    --warn: #85570A;
+    --warn-soft: #F1E6CF;
+    --crit: #96302C;
+    --crit-soft: #F4DEDB;
+    --ok: #2F6B3A;
+    --ok-soft: #DDEBDF;
+    --shadow: 0 1px 2px rgba(20, 25, 23, .06), 0 8px 24px -16px rgba(20, 25, 23, .3);
+
+    --f-display: "Archivo", "Helvetica Neue", Arial, sans-serif;
+    --f-body: "Source Serif 4", Georgia, "Times New Roman", serif;
+    --f-mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --ground: #0F1412;
+      --surface: #161C1A;
+      --surface-2: #1E2624;
+      --ink: #E7EDEA;
+      --ink-2: #A6B3AF;
+      --ink-3: #78857F;
+      --rule: #2A3431;
+      --rule-strong: #3B4744;
+      --accent: #64C4B4;
+      --accent-soft: #16302C;
+      --warn: #D9A441;
+      --warn-soft: #322710;
+      --crit: #E58279;
+      --crit-soft: #3A1C19;
+      --ok: #78C388;
+      --ok-soft: #17301C;
+      --shadow: 0 1px 2px rgba(0, 0, 0, .4), 0 8px 24px -16px rgba(0, 0, 0, .8);
+    }
+  }
+
+  :root[data-theme="dark"] {
+    --ground: #0F1412;
+    --surface: #161C1A;
+    --surface-2: #1E2624;
+    --ink: #E7EDEA;
+    --ink-2: #A6B3AF;
+    --ink-3: #78857F;
+    --rule: #2A3431;
+    --rule-strong: #3B4744;
+    --accent: #64C4B4;
+    --accent-soft: #16302C;
+    --warn: #D9A441;
+    --warn-soft: #322710;
+    --crit: #E58279;
+    --crit-soft: #3A1C19;
+    --ok: #78C388;
+    --ok-soft: #17301C;
+    --shadow: 0 1px 2px rgba(0, 0, 0, .4), 0 8px 24px -16px rgba(0, 0, 0, .8);
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    background: var(--ground);
+    color: var(--ink);
+    font-family: var(--f-body);
+    font-size: 17px;
+    line-height: 1.62;
+    margin: 0;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .page {
+    max-width: 62rem;
+    margin: 0 auto;
+    padding: clamp(1.5rem, 4vw, 4rem) clamp(1rem, 4vw, 2.5rem) 6rem;
+  }
+
+  a { color: var(--accent); }
+
+  :focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 3px;
+    border-radius: 2px;
+  }
+
+  code, .mono { font-family: var(--f-mono); font-size: .84em; }
+
+  code:not(pre code) {
+    background: var(--surface-2);
+    border: 1px solid var(--rule);
+    border-radius: 3px;
+    padding: .08em .34em;
+    white-space: nowrap;
+  }
+
+  .eyebrow {
+    font-family: var(--f-display);
+    font-size: .7rem;
+    font-weight: 600;
+    letter-spacing: .16em;
+    text-transform: uppercase;
+    color: var(--ink-3);
+  }
+
+  header.masthead {
+    border-top: 3px solid var(--ink);
+    padding-top: 1.4rem;
+    margin-bottom: 3.5rem;
+  }
+
+  h1 {
+    font-family: var(--f-display);
+    font-size: clamp(2.1rem, 6vw, 3.4rem);
+    font-weight: 700;
+    letter-spacing: -.026em;
+    line-height: 1.02;
+    margin: .6rem 0 .8rem;
+    text-wrap: balance;
+  }
+
+  .standfirst {
+    font-size: 1.12rem;
+    color: var(--ink-2);
+    max-width: 42rem;
+    margin: 0 0 2rem;
+  }
+
+  .specs {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(9.5rem, 1fr));
+    gap: 1px;
+    background: var(--rule);
+    border: 1px solid var(--rule);
+  }
+
+  .spec {
+    background: var(--surface);
+    padding: .85rem 1rem .95rem;
+    display: flex;
+    flex-direction: column;
+    gap: .3rem;
+  }
+
+  .spec dt {
+    font-family: var(--f-display);
+    font-size: .66rem;
+    font-weight: 600;
+    letter-spacing: .13em;
+    text-transform: uppercase;
+    color: var(--ink-3);
+  }
+
+  .spec dd {
+    margin: 0;
+    font-family: var(--f-mono);
+    font-size: 1.02rem;
+    font-weight: 500;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .spec dd.is-crit { color: var(--crit); }
+  .spec dd.is-ok { color: var(--ok); }
+
+  h2 {
+    font-family: var(--f-display);
+    font-size: 1.55rem;
+    font-weight: 600;
+    letter-spacing: -.016em;
+    line-height: 1.15;
+    margin: 0 0 1.2rem;
+    text-wrap: balance;
+  }
+
+  h3 {
+    font-family: var(--f-display);
+    font-size: 1.02rem;
+    font-weight: 600;
+    letter-spacing: -.005em;
+    margin: 2rem 0 .6rem;
+  }
+
+  section { margin-bottom: 3.75rem; }
+
+  p { margin: 0 0 1.05rem; max-width: 42rem; }
+
+  .rule-head {
+    display: flex;
+    align-items: baseline;
+    gap: 1rem;
+    border-bottom: 1px solid var(--rule-strong);
+    padding-bottom: .55rem;
+    margin-bottom: 1.6rem;
+  }
+
+  .rule-head h2 { margin: 0; flex: 1; }
+
+  .scroller {
+    overflow-x: auto;
+    border: 1px solid var(--rule);
+    background: var(--surface);
+    margin: 0 0 1.4rem;
+  }
+
+  table {
+    border-collapse: collapse;
+    width: 100%;
+    min-width: 34rem;
+    font-family: var(--f-display);
+    font-size: .89rem;
+  }
+
+  th, td {
+    text-align: left;
+    padding: .6rem .9rem;
+    border-bottom: 1px solid var(--rule);
+    vertical-align: baseline;
+  }
+
+  thead th {
+    font-size: .66rem;
+    font-weight: 600;
+    letter-spacing: .13em;
+    text-transform: uppercase;
+    color: var(--ink-3);
+    background: var(--surface-2);
+    white-space: nowrap;
+  }
+
+  tbody tr:last-child td { border-bottom: 0; }
+
+  td.v { font-family: var(--f-mono); font-variant-numeric: tabular-nums; white-space: nowrap; }
+  td.v.now { color: var(--ink-2); }
+  td.v.want { color: var(--accent); font-weight: 500; }
+
+  pre {
+    margin: 0 0 1.4rem;
+    padding: .95rem 1.1rem;
+    background: var(--surface);
+    border: 1px solid var(--rule);
+    border-left: 3px solid var(--accent);
+    overflow-x: auto;
+    font-family: var(--f-mono);
+    font-size: .78rem;
+    line-height: 1.7;
+    color: var(--ink-2);
+  }
+
+  pre b { color: var(--crit); font-weight: 500; }
+  pre i { color: var(--ok); font-style: normal; }
+
+  .finding {
+    border: 1px solid var(--rule);
+    border-left: 3px solid var(--warn);
+    background: var(--surface);
+    padding: 1.05rem 1.2rem .3rem;
+    margin: 0 0 1.4rem;
+  }
+
+  .finding.is-crit { border-left-color: var(--crit); }
+
+  .finding .eyebrow { display: block; margin-bottom: .45rem; }
+  .finding p:last-child { margin-bottom: 1.05rem; }
+
+  .phase {
+    display: grid;
+    grid-template-columns: 5.5rem minmax(0, 1fr);
+    gap: 0 2rem;
+    padding: 1.9rem 0;
+    border-top: 1px solid var(--rule);
+  }
+
+  .phase:last-of-type { border-bottom: 1px solid var(--rule); }
+
+  .phase-rail {
+    display: flex;
+    flex-direction: column;
+    gap: .35rem;
+    position: sticky;
+    top: 1.25rem;
+    align-self: start;
+  }
+
+  .phase-num {
+    font-family: var(--f-display);
+    font-size: 2.4rem;
+    font-weight: 700;
+    line-height: .9;
+    letter-spacing: -.04em;
+    color: var(--rule-strong);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .phase.done .phase-num { color: var(--ok); }
+
+  .phase-days {
+    font-family: var(--f-mono);
+    font-size: .7rem;
+    color: var(--ink-3);
+  }
+
+  .phase-body > h2 { font-size: 1.3rem; margin-bottom: .5rem; }
+  .phase-body > p:first-of-type { color: var(--ink-2); }
+
+  ul.checks {
+    list-style: none;
+    margin: 1rem 0 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    background: var(--rule);
+    border: 1px solid var(--rule);
+  }
+
+  ul.checks li { background: var(--surface); }
+
+  ul.checks label {
+    display: grid;
+    grid-template-columns: 1.5rem minmax(0, 1fr);
+    gap: .1rem .7rem;
+    padding: .7rem .85rem .75rem;
+    cursor: pointer;
+    font-size: .97rem;
+  }
+
+  ul.checks input {
+    appearance: none;
+    -webkit-appearance: none;
+    width: 1.05rem;
+    height: 1.05rem;
+    margin: .28rem 0 0;
+    border: 1.5px solid var(--rule-strong);
+    border-radius: 2px;
+    background: var(--ground);
+    display: grid;
+    place-content: center;
+    cursor: pointer;
+    flex: none;
+  }
+
+  ul.checks input::after {
+    content: "";
+    width: .55rem;
+    height: .3rem;
+    border-left: 2px solid var(--surface);
+    border-bottom: 2px solid var(--surface);
+    transform: rotate(-45deg) translateY(-.06rem);
+    opacity: 0;
+  }
+
+  ul.checks input:checked {
+    background: var(--accent);
+    border-color: var(--accent);
+  }
+
+  ul.checks input:checked::after { opacity: 1; }
+
+  ul.checks label > span { min-width: 0; }
+
+  ul.checks input:checked ~ span {
+    color: var(--ink-3);
+    text-decoration: line-through;
+    text-decoration-color: var(--rule-strong);
+  }
+
+  ul.checks .note {
+    grid-column: 2;
+    font-size: .87rem;
+    color: var(--ink-3);
+    line-height: 1.5;
+    margin-top: .18rem;
+  }
+
+  ul.checks input:checked ~ .note { opacity: .55; text-decoration: none; }
+
+  .tag {
+    font-family: var(--f-display);
+    font-size: .6rem;
+    font-weight: 600;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    padding: .16em .45em .2em;
+    border-radius: 2px;
+    vertical-align: .12em;
+    margin-left: .45rem;
+    white-space: nowrap;
+  }
+
+  .tag.risk { background: var(--warn-soft); color: var(--warn); }
+  .tag.block { background: var(--crit-soft); color: var(--crit); }
+
+  .progress {
+    display: flex;
+    align-items: center;
+    gap: .7rem;
+    font-family: var(--f-mono);
+    font-size: .72rem;
+    color: var(--ink-3);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .bar {
+    width: 4.5rem;
+    height: 4px;
+    background: var(--rule);
+    overflow: hidden;
+    flex: none;
+  }
+
+  .bar span {
+    display: block;
+    height: 100%;
+    width: 0;
+    background: var(--accent);
+    transition: width .28s ease;
+  }
+
+  .overall {
+    position: sticky;
+    top: 0;
+    z-index: 5;
+    background: var(--ground);
+    border-bottom: 1px solid var(--rule);
+    padding: .6rem 0;
+    margin-bottom: 1.4rem;
+    display: flex;
+    align-items: center;
+    gap: .9rem;
+    flex-wrap: wrap;
+  }
+
+  .overall .bar { width: 100%; max-width: 16rem; flex: 1 1 8rem; }
+
+  .btn {
+    font-family: var(--f-display);
+    font-size: .72rem;
+    font-weight: 500;
+    letter-spacing: .04em;
+    color: var(--ink-3);
+    background: transparent;
+    border: 1px solid var(--rule-strong);
+    border-radius: 2px;
+    padding: .3rem .6rem;
+    cursor: pointer;
+  }
+
+  .btn:hover { color: var(--ink); border-color: var(--ink-3); }
+
+  .verdict {
+    border: 1px solid var(--rule);
+    border-top: 3px solid var(--accent);
+    background: var(--surface);
+    padding: 1.5rem 1.6rem .5rem;
+    box-shadow: var(--shadow);
+  }
+
+  .verdict h2 { font-size: 1.2rem; }
+
+  .risk-list {
+    list-style: none;
+    padding: 0;
+    margin: 0 0 1.05rem;
+    display: flex;
+    flex-direction: column;
+    gap: .8rem;
+  }
+
+  .risk-list li {
+    display: grid;
+    grid-template-columns: 3.2rem minmax(0, 1fr);
+    gap: .9rem;
+    align-items: baseline;
+    max-width: 42rem;
+  }
+
+  .risk-pct {
+    font-family: var(--f-mono);
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: var(--crit);
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+  }
+
+  footer {
+    margin-top: 3rem;
+    padding-top: 1.1rem;
+    border-top: 1px solid var(--rule);
+    font-family: var(--f-display);
+    font-size: .76rem;
+    color: var(--ink-3);
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+    flex-wrap: wrap;
+  }
+
+  @media (max-width: 34rem) {
+    body { font-size: 16px; }
+    .phase { grid-template-columns: 1fr; gap: .5rem; }
+    .phase-rail { position: static; flex-direction: row; align-items: baseline; gap: .8rem; }
+    .phase-num { font-size: 1.5rem; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    * { transition: none !important; animation: none !important; }
+  }
+</style>
+
+<div class="page">
+
+  <header class="masthead">
+    <div class="eyebrow">Amaia · Plan de migración Android</div>
+    <h1>Migración a API 36</h1>
+    <p class="standfirst">Google Play bloquea las actualizaciones de la app hasta que apunte a Android 16. El cambio de <code>targetSdk</code> es una línea; lo que hay detrás son tres upgrades encadenados y siete cambios de comportamiento que tocan el camino crítico del botón de pánico.</p>
+    <dl class="specs">
+      <div class="spec"><dt>Fecha límite</dt><dd class="is-crit">30 ago 2026</dd></div>
+      <div class="spec"><dt>Target actual</dt><dd>35</dd></div>
+      <div class="spec"><dt>Target exigido</dt><dd class="is-ok">36</dd></div>
+      <div class="spec"><dt>Estimación</dt><dd>8–13 d</dd></div>
+      <div class="spec"><dt>Rama</dt><dd>dev</dd></div>
+    </dl>
+  </header>
+
+  <section>
+    <div class="rule-head">
+      <h2>Estado actual del proyecto</h2>
+      <span class="eyebrow">Verificado en el repo</span>
+    </div>
+
+    <div class="scroller">
+      <table>
+        <thead>
+          <tr><th>Pieza</th><th>Hoy</th><th>Necesario para API 36</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Flutter</td><td class="v now">3.24.4 · oct 2024</td><td class="v want">3.35.x+</td></tr>
+          <tr><td>Android Gradle Plugin</td><td class="v now">8.1.0</td><td class="v want">8.9.x</td></tr>
+          <tr><td>Gradle</td><td class="v now">8.3</td><td class="v want">8.11.1+</td></tr>
+          <tr><td>Kotlin</td><td class="v now">1.8.22</td><td class="v want">2.1.x</td></tr>
+          <tr><td>compileSdk / targetSdk (app)</td><td class="v now">35 / 35</td><td class="v want">36 / 36</td></tr>
+          <tr><td>mokosupport · mokoBleLib</td><td class="v now">34</td><td class="v want">36</td></tr>
+          <tr><td>androidx.work</td><td class="v now">2.8.1</td><td class="v want">2.10.x</td></tr>
+          <tr><td>Java (source / target)</td><td class="v now">1.8</td><td class="v want">17</td></tr>
+          <tr><td>JDK local</td><td class="v now">17.0.16</td><td class="v want">sin cambios</td></tr>
+          <tr><td>minSdk</td><td class="v now">26</td><td class="v want">sin cambios</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="finding">
+      <span class="eyebrow">Hallazgo 1 · Configuración contradictoria</span>
+      <p><code>android/gradle.properties</code> ya declara <code>flutter.compileSdkVersion=36</code> y <code>flutter.targetSdkVersion=36</code>, pero <code>android/app/build.gradle:23,44</code> los pisa con <code>35</code> hardcodeado (commit <code>3e4f7a2</code>). Al subir la toolchain hay que quitar el hardcodeo o actualizarlo, no dejar las dos fuentes de verdad peleando.</p>
+    </div>
+
+    <div class="finding is-crit">
+      <span class="eyebrow">Hallazgo 2 · Bloqueador que Play todavía no reportó</span>
+      <p>Las librerías nativas del APK release están alineadas a 4 KB, no a 16 KB. Play exige soporte de páginas de 16 KB para apps que apuntan a Android 15+, así que esto habría bloqueado la publicación de todos modos.</p>
+<pre>lib/arm64-v8a/libapp.so        4K: <i>True</i>   16K: <b>False</b>
+lib/arm64-v8a/libflutter.so    4K: <i>True</i>   16K: <i>True</i>
+lib/armeabi-v7a/libapp.so      4K: <i>True</i>   16K: <i>True</i>
+lib/armeabi-v7a/libflutter.so  4K: <i>True</i>   16K: <b>False</b>
+lib/x86_64/libapp.so           4K: <i>True</i>   16K: <b>False</b>
+lib/x86_64/libflutter.so       4K: <i>True</i>   16K: <b>False</b></pre>
+      <p>Los ELF sí traen <code>LOAD align 0x10000</code> (64 KB, correcto): el problema no es el motor de Flutter sino el <code>zipalign</code> de 4 KB que hace AGP 8.1. Se corrige solo al pasar a AGP ≥ 8.5.1, pero hay que verificarlo explícitamente antes de publicar.</p>
+    </div>
+  </section>
+
+  <section>
+    <div class="rule-head">
+      <h2>Plan de trabajo</h2>
+      <span class="eyebrow">6 fases secuenciales</span>
+    </div>
+
+    <div class="overall">
+      <span class="eyebrow">Avance</span>
+      <div class="bar"><span id="overall-bar"></span></div>
+      <span class="mono" id="overall-count">0 / 0</span>
+      <button class="btn" id="reset">Reiniciar</button>
+    </div>
+
+    <p>Las fases están numeradas porque el orden es una dependencia real: no se puede compilar contra API 36 sin la toolchain, y no se pueden evaluar los cambios de comportamiento sin haber compilado. Cada fase termina con un <code>flutter build apk --release</code> verde.</p>
+
+    <div class="phase" data-phase="0">
+      <div class="phase-rail">
+        <div class="phase-num">00</div>
+        <div class="phase-days">0.5 día</div>
+        <div class="progress"><div class="bar"><span></span></div></div>
+      </div>
+      <div class="phase-body">
+        <h2>Preparación</h2>
+        <p>Asegurar la vía de escape antes de tocar nada: mientras dure la migración no se puede publicar un hotfix por el canal normal.</p>
+        <ul class="checks">
+          <li><label><input type="checkbox" data-id="p0-1"><span>Crear rama <code>feature/target-sdk-36</code> desde <code>dev</code></span></label></li>
+          <li><label><input type="checkbox" data-id="p0-2"><span>Archivar el APK release actual como referencia de regresión</span><span class="note">Sirve para comparar tamaño, permisos y comportamiento después del upgrade.</span></label></li>
+          <li><label><input type="checkbox" data-id="p0-3"><span>Revisar en Play Console si hay prórroga disponible</span><span class="note">Suele concederse hasta el 1 de noviembre. Evita quedar sin canal para hotfixes durante la migración.</span></label></li>
+          <li><label><input type="checkbox" data-id="p0-4"><span>Congelar cambios funcionales en <code>dev</code></span></label></li>
+          <li><label><input type="checkbox" data-id="p0-5"><span>Spike de medio día sobre el fork de <code>workmanager</code><span class="tag risk">Hacer primero</span></span><span class="note">Si el fork no se puede rescatar, cambia el alcance completo de la fase 2. Conviene saberlo antes de empezar, no a mitad de camino.</span></label></li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="phase" data-phase="1">
+      <div class="phase-rail">
+        <div class="phase-num">01</div>
+        <div class="phase-days">1–2 días</div>
+        <div class="progress"><div class="bar"><span></span></div></div>
+      </div>
+      <div class="phase-body">
+        <h2>Toolchain de build</h2>
+        <p>El orden importa. Compilar después de cada paso, no al final: si algo se rompe hay que saber cuál de los cuatro cambios fue.</p>
+        <ul class="checks">
+          <li><label><input type="checkbox" data-id="p1-1"><span>Gradle 8.3 → 8.11.1 en <code>gradle-wrapper.properties</code></span></label></li>
+          <li><label><input type="checkbox" data-id="p1-2"><span>Borrar la línea huérfana <code>distributionUrl=gradle-8.0</code> de <code>gradle.properties</code></span><span class="note">No hace nada ahí y confunde a quien busque la versión real del wrapper.</span></label></li>
+          <li><label><input type="checkbox" data-id="p1-3"><span>AGP 8.1.0 → 8.9.x en <code>settings.gradle</code></span></label></li>
+          <li><label><input type="checkbox" data-id="p1-4"><span>Kotlin 1.8.22 → 2.1.x<span class="tag risk">Riesgo</span></span><span class="note">Puede romper la compilación de <code>mokosupport</code> y <code>mokoBleLib</code>, que son código de terceros de MokoSmart. Plan B: dejar esos módulos en 1.9.24 por configuración de módulo, o quedarse en Kotlin 1.9.x en todo el proyecto.</span></label></li>
+          <li><label><input type="checkbox" data-id="p1-5"><span>Java 1.8 → 17 en <code>compileOptions</code> y <code>kotlinOptions</code> de los tres módulos</span></label></li>
+          <li><label><input type="checkbox" data-id="p1-6"><span><code>androidx.work</code> 2.8.1 → 2.10.x</span></label></li>
+          <li><label><input type="checkbox" data-id="p1-7"><span>Evaluar quitar <code>android.enableJetifier=true</code></span><span class="note">Probablemente ya no haya dependencias de la support library. Validar antes de removerlo.</span></label></li>
+          <li><label><input type="checkbox" data-id="p1-8"><span>Build release verde con la toolchain nueva, todavía en <code>targetSdk 35</code></span></label></li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="phase" data-phase="2">
+      <div class="phase-rail">
+        <div class="phase-num">02</div>
+        <div class="phase-days">2–3 días</div>
+        <div class="progress"><div class="bar"><span></span></div></div>
+      </div>
+      <div class="phase-body">
+        <h2>Upgrade de Flutter</h2>
+        <p>El tramo más incierto. Saltar de 3.24.4 a 3.35.x arrastra Dart 3.5 → 3.9 y un upgrade mayor de casi todas las dependencias.</p>
+        <ul class="checks">
+          <li><label><input type="checkbox" data-id="p2-1"><span>Flutter 3.24.4 → última estable 3.35.x</span></label></li>
+          <li><label><input type="checkbox" data-id="p2-2"><span><code>flutter pub upgrade --major-versions</code></span><span class="note">Caen <code>geolocator</code> 13→14, <code>permission_handler</code> 11→12, <code>flutter_bloc</code> 8→9, <code>flutter_lints</code> 4→6, <code>intl</code> y <code>vibration</code>.</span></label></li>
+          <li><label><input type="checkbox" data-id="p2-3"><span>Resolver el fork git de <code>workmanager</code><span class="tag block">Punto crítico</span></span><span class="note">Viene de <code>absar/flutter_workmanager</code>, ref <code>ios-bg-tasks-enh-final</code>, de la era Flutter 3.13. Muy probablemente falle por falta de <code>namespace</code> en su <code>build.gradle</code> y por APIs removidas del embedding. Evaluar en este orden: (a) ver si el fork tiene commits nuevos, (b) parchear el fork con <code>namespace</code> y publicarlo como fork propio, (c) migrar a <code>workmanager</code> upstream 0.9.x, (d) reemplazar por <code>MkButtonBackgroundService</code> nativo en Android más BGTaskScheduler propio en iOS.</span></label></li>
+          <li><label><input type="checkbox" data-id="p2-4"><span><code>flutter analyze</code> sin errores</span></label></li>
+          <li><label><input type="checkbox" data-id="p2-5"><span>Suite de <code>test/</code> en verde</span></label></li>
+          <li><label><input type="checkbox" data-id="p2-6"><span>Verificar que iOS sigue compilando y archivando</span><span class="note">El upgrade de Flutter afecta ambas plataformas aunque el problema de Play sea solo de Android.</span></label></li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="phase" data-phase="3">
+      <div class="phase-rail">
+        <div class="phase-num">03</div>
+        <div class="phase-days">3–5 días</div>
+        <div class="progress"><div class="bar"><span></span></div></div>
+      </div>
+      <div class="phase-body">
+        <h2>targetSdk 36 y cambios de comportamiento</h2>
+        <p>Recién aquí se sube el número. Cada punto de abajo es trabajo real que Android 16 impone a apps que apuntan a API 36, no solo verificación.</p>
+        <ul class="checks">
+          <li><label><input type="checkbox" data-id="p3-0"><span>Subir <code>compileSdk</code> y <code>targetSdk</code> a 36 en app, <code>mokosupport</code> y <code>mokoBleLib</code></span></label></li>
+          <li><label><input type="checkbox" data-id="p3-1"><span>Edge-to-edge obligatorio</span><span class="note">Android 16 ignora <code>windowOptOutEdgeToEdgeEnforcement</code>. Revisar <code>SafeArea</code> en las pantallas Flutter y los insets en las activities translúcidas: <code>ButtonPressedActivity</code>, <code>TrampolineActivity</code>, <code>EmergencyCallActivity</code> y el <code>OverlayService</code>.</span></label></li>
+          <li><label><input type="checkbox" data-id="p3-2"><span>Orientación fija ignorada en pantallas grandes</span><span class="note">En sw≥600dp dejan de aplicarse <code>android:screenOrientation="portrait"</code> (<code>AndroidManifest.xml:40</code>) y <code>SystemChrome.setPreferredOrientations</code> (<code>lib/main.dart:32</code>). Opciones: adaptar la UI a landscape, o declarar el opt-out temporal <code>PROPERTY_COMPAT_ALLOW_RESTRICTED_RESIZABILITY</code>, válido hasta API 37.</span></label></li>
+          <li><label><input type="checkbox" data-id="p3-3"><span>Intents más estrictos<span class="tag block">Mayor riesgo funcional</span></span><span class="note">Android 16 bloquea intents explícitos que apuntan a un componente con <code>intent-filter</code> sin coincidir con él, y los intents sin acción. Afecta directamente a <code>OpenAppReceiver</code> (<code>OPEN_APP_FROM_BUTTON</code>) y <code>EmergencyCallReceiver</code> (<code>MAKE_EMERGENCY_CALL</code>), que son el camino crítico del botón de pánico. Revisar también <code>MkButtonBackgroundService.kt</code>.</span></label></li>
+          <li><label><input type="checkbox" data-id="p3-4"><span>Predictive back activado por defecto</span><span class="note">Declarar <code>android:enableOnBackInvokedCallback</code> de forma explícita y verificar los <code>PopScope</code> del lado Flutter.</span></label></li>
+          <li><label><input type="checkbox" data-id="p3-5"><span>Foreground service BLE</span><span class="note"><code>connectedDevice|location</code> no entra en los timeouts nuevos, que aplican a <code>dataSync</code> y <code>mediaProcessing</code>. El servicio debería sobrevivir. Sí revalidar el arranque desde <code>BootReceiver</code> bajo las restricciones de BOOT_COMPLETED.</span></label></li>
+          <li><label><input type="checkbox" data-id="p3-6"><span>Cuotas de JobScheduler y WorkManager</span><span class="note">Más estrictas en Android 16. Validar que las tareas periódicas siguen ejecutándose con la app en background.</span></label></li>
+          <li><label><input type="checkbox" data-id="p3-7"><span>Notificaciones ongoing y cooldown</span><span class="note">Verificar que la notificación del servicio BLE y la de emergencia siguen visibles y no quedan agrupadas o silenciadas.</span></label></li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="phase" data-phase="4">
+      <div class="phase-rail">
+        <div class="phase-num">04</div>
+        <div class="phase-days">2 días</div>
+        <div class="progress"><div class="bar"><span></span></div></div>
+      </div>
+      <div class="phase-body">
+        <h2>Verificación</h2>
+        <p>La app es un sistema de alerta para adultos mayores: la regresión que importa no es la UI, es que el botón llegue a producir una llamada.</p>
+        <ul class="checks">
+          <li><label><input type="checkbox" data-id="p4-1"><span>Confirmar alineación de 16 KB en el AAB/APK final</span><span class="note">Mismo chequeo del hallazgo 2: offsets de datos de cada <code>.so</code> múltiplos de 16384.</span></label></li>
+          <li><label><input type="checkbox" data-id="p4-2"><span>Probar en emulador API 36</span></label></li>
+          <li><label><input type="checkbox" data-id="p4-3"><span>Probar en Samsung A06 físico</span><span class="note">Es el dispositivo con las restricciones de fabricante ya documentadas.</span></label></li>
+          <li><label><input type="checkbox" data-id="p4-4"><span>Probar con los dos MokoSmart reales</span></label></li>
+          <li><label><input type="checkbox" data-id="p4-5"><span>Regresión del camino crítico completo</span><span class="note">Presión de botón → servicio en background → app cerrada → SMS → llamada de emergencia.</span></label></li>
+          <li><label><input type="checkbox" data-id="p4-6"><span>Revalidar los dos bugs ya resueltos</span><span class="note">Permiso SMS hard-restricted (instalar con <code>adb install -r</code>, no a mano) y el stale GATT al reconectar el TAG.</span></label></li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="phase" data-phase="5">
+      <div class="phase-rail">
+        <div class="phase-num">05</div>
+        <div class="phase-days">1 día</div>
+        <div class="progress"><div class="bar"><span></span></div></div>
+      </div>
+      <div class="phase-body">
+        <h2>Publicación</h2>
+        <p>Dado el volumen de cambio acumulado, no saltarse etapas de testing aunque la fecha apriete.</p>
+        <ul class="checks">
+          <li><label><input type="checkbox" data-id="p5-1"><span>Subir <code>versionCode</code> y generar AAB firmado</span></label></li>
+          <li><label><input type="checkbox" data-id="p5-2"><span>Testing interno</span></label></li>
+          <li><label><input type="checkbox" data-id="p5-3"><span>Testing cerrado</span></label></li>
+          <li><label><input type="checkbox" data-id="p5-4"><span>Producción</span></label></li>
+          <li><label><input type="checkbox" data-id="p5-5"><span>Merge a <code>dev</code> y a <code>main</code></span></label></li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="verdict">
+      <h2>Dónde está concentrado el riesgo</h2>
+      <ul class="risk-list">
+        <li><span class="risk-pct">~35%</span><span><strong>El fork de <code>workmanager</code></strong> (fase 2). Es una dependencia git sin mantenimiento desde la era Flutter 3.13, y sostiene las tareas en background de iOS. Si no se rescata, el alcance de la fase 2 cambia por completo.</span></li>
+        <li><span class="risk-pct">~25%</span><span><strong>Los intents del flujo de emergencia</strong> (fase 3c). Es el único punto donde un cambio de Android 16 puede romper silenciosamente la función que da sentido a la app.</span></li>
+        <li><span class="risk-pct">~40%</span><span>Repartido entre Kotlin 2.x sobre los módulos de MokoSmart, el upgrade mayor de dependencias y el trabajo de edge-to-edge.</span></li>
+      </ul>
+      <p>Por eso el spike sobre <code>workmanager</code> está en la fase 0 y no en la 2: es la incógnita más cara y la más barata de despejar por adelantado.</p>
+    </div>
+  </section>
+
+  <footer>
+    <span>app_amaia · docs/plan_target_sdk_36.html</span>
+    <span>El progreso se guarda en este navegador</span>
+  </footer>
+</div>
+
+<script>
+  (function () {
+    var KEY = "amaia-sdk36-plan";
+    var boxes = Array.prototype.slice.call(document.querySelectorAll("ul.checks input"));
+
+    function load() {
+      try {
+        return JSON.parse(localStorage.getItem(KEY)) || {};
+      } catch (e) {
+        return {};
+      }
+    }
+
+    function save(state) {
+      try {
+        localStorage.setItem(KEY, JSON.stringify(state));
+      } catch (e) {}
+    }
+
+    function render() {
+      document.querySelectorAll(".phase").forEach(function (phase) {
+        var inputs = phase.querySelectorAll("ul.checks input");
+        var done = phase.querySelectorAll("ul.checks input:checked").length;
+        var pct = inputs.length ? (done / inputs.length) * 100 : 0;
+        var bar = phase.querySelector(".phase-rail .bar span");
+        if (bar) bar.style.width = pct + "%";
+        phase.classList.toggle("done", inputs.length > 0 && done === inputs.length);
+      });
+
+      var total = boxes.length;
+      var done = boxes.filter(function (b) { return b.checked; }).length;
+      document.getElementById("overall-bar").style.width = (total ? (done / total) * 100 : 0) + "%";
+      document.getElementById("overall-count").textContent = done + " / " + total;
+    }
+
+    var state = load();
+    boxes.forEach(function (box) {
+      var id = box.getAttribute("data-id");
+      box.checked = state[id] === true;
+      box.addEventListener("change", function () {
+        state[id] = box.checked;
+        save(state);
+        render();
+      });
+    });
+
+    document.getElementById("reset").addEventListener("click", function () {
+      state = {};
+      save(state);
+      boxes.forEach(function (b) { b.checked = false; });
+      render();
+    });
+
+    render();
+  })();
+</script>
