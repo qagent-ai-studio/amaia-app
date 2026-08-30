@@ -23,7 +23,7 @@ class ConfigPage extends StatelessWidget {
         useMaterial3: true,
       ),
       home: const Scaffold(
-        body: _Config(),
+        body: SafeArea(child: _Config()),
       ),
     );
   }

@@ -18,7 +18,7 @@ class ClosePage extends StatelessWidget {
         useMaterial3: true,
       ),
       home: const Scaffold(
-        body: _Close(),
+        body: SafeArea(child: _Close()),
       ),
     );
   }

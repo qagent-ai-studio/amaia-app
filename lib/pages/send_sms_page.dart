@@ -21,7 +21,7 @@ class SendSmsPage extends StatelessWidget {
         useMaterial3: true,
       ),
       home: const Scaffold(
-        body: _SendSms(),
+        body: SafeArea(child: _SendSms()),
       ),
     );
   }

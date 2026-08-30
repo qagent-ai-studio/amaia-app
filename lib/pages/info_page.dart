@@ -17,7 +17,7 @@ class InfoPage extends StatelessWidget {
         useMaterial3: true,
       ),
       home: const Scaffold(
-        body: _Info(),
+        body: SafeArea(child: _Info()),
       ),
     );
   }

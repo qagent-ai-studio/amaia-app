@@ -22,7 +22,7 @@ class CheckPhoneStepPage extends StatelessWidget {
         useMaterial3: true,
       ),
       home: const Scaffold(
-        body: _CheckPhoneStep(),
+        body: SafeArea(child: _CheckPhoneStep()),
       ),
     );
   }
