@@ -520,6 +520,45 @@
   }
 </style>
 
+<style>
+  .chip-done {
+    font-family: var(--f-display);
+    font-size: .6rem;
+    font-weight: 600;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    padding: .2em .5em .24em;
+    border-radius: 2px;
+    background: var(--ok-soft);
+    color: var(--ok);
+    white-space: nowrap;
+  }
+
+  .phase.complete .phase-num { color: var(--ok); }
+
+  .spec dd.is-done { color: var(--ok); }
+
+  .changed {
+    border: 1px solid var(--rule);
+    border-left: 3px solid var(--accent);
+    background: var(--surface);
+    padding: 1.05rem 1.2rem .3rem;
+    margin: 0 0 1.4rem;
+  }
+
+  .changed .eyebrow { display: block; margin-bottom: .45rem; }
+  .changed p:last-child { margin-bottom: 1.05rem; }
+
+  td.v.was { color: var(--ink-3); text-decoration: line-through; text-decoration-color: var(--rule-strong); }
+  td.v.now2 { color: var(--ok); font-weight: 500; }
+
+  .legend {
+    font-family: var(--f-display);
+    font-size: .78rem;
+    color: var(--ink-3);
+    margin: -.6rem 0 1.4rem;
+  }
+</style>
 <div class="page">
 
   <header class="masthead">
@@ -528,54 +567,82 @@
     <p class="standfirst">Google Play bloquea las actualizaciones de la app hasta que apunte a Android 16. El cambio de <code>targetSdk</code> es una línea; lo que hay detrás son tres upgrades encadenados y siete cambios de comportamiento que tocan el camino crítico del botón de pánico.</p>
     <dl class="specs">
       <div class="spec"><dt>Fecha límite</dt><dd class="is-crit">30 ago 2026</dd></div>
-      <div class="spec"><dt>Target actual</dt><dd>35</dd></div>
-      <div class="spec"><dt>Target exigido</dt><dd class="is-ok">36</dd></div>
-      <div class="spec"><dt>Estimación</dt><dd>8–13 d</dd></div>
-      <div class="spec"><dt>Rama</dt><dd>dev</dd></div>
+      <div class="spec"><dt>Fases hechas</dt><dd class="is-done">0 · 1 · 2</dd></div>
+      <div class="spec"><dt>compileSdk</dt><dd class="is-done">36</dd></div>
+      <div class="spec"><dt>targetSdk</dt><dd class="is-crit">35</dd></div>
+      <div class="spec"><dt>Rama</dt><dd>target-sdk-36</dd></div>
     </dl>
   </header>
 
   <section>
     <div class="rule-head">
-      <h2>Estado actual del proyecto</h2>
-      <span class="eyebrow">Verificado en el repo</span>
+      <h2>Dónde estamos</h2>
+      <span class="eyebrow">Fases 0 a 2 completas</span>
     </div>
+
+    <p>La toolchain está al día y ambas plataformas compilan en verde: APK de 55,9 MB, <code>Runner.app</code> de 21,1 MB, <code>flutter analyze</code> con cero errores. Falta lo que de verdad exige Play: subir <code>targetSdk</code> a 36 y absorber los cambios de comportamiento de Android 16.</p>
 
     <div class="scroller">
       <table>
         <thead>
-          <tr><th>Pieza</th><th>Hoy</th><th>Necesario para API 36</th></tr>
+          <tr><th>Pieza</th><th>Al empezar</th><th>Ahora</th></tr>
         </thead>
         <tbody>
-          <tr><td>Flutter</td><td class="v now">3.24.4 · oct 2024</td><td class="v want">3.35.x+</td></tr>
-          <tr><td>Android Gradle Plugin</td><td class="v now">8.1.0</td><td class="v want">8.9.x</td></tr>
-          <tr><td>Gradle</td><td class="v now">8.3</td><td class="v want">8.11.1+</td></tr>
-          <tr><td>Kotlin</td><td class="v now">1.8.22</td><td class="v want">2.1.x</td></tr>
-          <tr><td>compileSdk / targetSdk (app)</td><td class="v now">35 / 35</td><td class="v want">36 / 36</td></tr>
-          <tr><td>mokosupport · mokoBleLib</td><td class="v now">34</td><td class="v want">36</td></tr>
-          <tr><td>androidx.work</td><td class="v now">2.8.1</td><td class="v want">2.10.x</td></tr>
-          <tr><td>Java (source / target)</td><td class="v now">1.8</td><td class="v want">17</td></tr>
-          <tr><td>JDK local</td><td class="v now">17.0.16</td><td class="v want">sin cambios</td></tr>
-          <tr><td>minSdk</td><td class="v now">26</td><td class="v want">sin cambios</td></tr>
+          <tr><td>Flutter</td><td class="v was">3.24.4</td><td class="v now2">3.47.2</td></tr>
+          <tr><td>Dart</td><td class="v was">3.5.4</td><td class="v now2">3.13.2</td></tr>
+          <tr><td>Android Gradle Plugin</td><td class="v was">8.1.0</td><td class="v now2">8.13.2</td></tr>
+          <tr><td>Gradle</td><td class="v was">8.3</td><td class="v now2">8.14.5</td></tr>
+          <tr><td>Kotlin</td><td class="v was">1.8.22</td><td class="v now2">2.2.20</td></tr>
+          <tr><td>Java (source / target)</td><td class="v was">1.8</td><td class="v now2">17</td></tr>
+          <tr><td>compileSdk (los 3 módulos)</td><td class="v was">35 / 34 / 34</td><td class="v now2">36</td></tr>
+          <tr><td>androidx.work</td><td class="v was">2.8.1</td><td class="v now2">2.10.1</td></tr>
+          <tr><td><code>workmanager</code></td><td class="v was">fork git</td><td class="v now2">upstream 0.10.9</td></tr>
+          <tr><td>Alineación de páginas</td><td class="v was">4 KB</td><td class="v now2">16 KB</td></tr>
+          <tr><td>minSdk iOS</td><td class="v was">12.0</td><td class="v now2">15.0</td></tr>
+          <tr><td><strong>targetSdk</strong></td><td class="v was">35</td><td class="v" style="color:var(--crit);font-weight:500">35 · pendiente</td></tr>
         </tbody>
       </table>
     </div>
 
-    <div class="finding">
-      <span class="eyebrow">Hallazgo 1 · Configuración contradictoria</span>
-      <p><code>android/gradle.properties</code> ya declara <code>flutter.compileSdkVersion=36</code> y <code>flutter.targetSdkVersion=36</code>, pero <code>android/app/build.gradle:23,44</code> los pisa con <code>35</code> hardcodeado (commit <code>3e4f7a2</code>). Al subir la toolchain hay que quitar el hardcodeo o actualizarlo, no dejar las dos fuentes de verdad peleando.</p>
+    <h3>Los dos hallazgos iniciales, resueltos</h3>
+
+    <div class="changed">
+      <span class="eyebrow">Hallazgo 1 · Configuración contradictoria <span class="chip-done">Parcial</span></span>
+      <p><code>gradle.properties</code> declaraba <code>flutter.compileSdkVersion=36</code> mientras <code>app/build.gradle</code> lo pisaba con 35. El <code>compileSdk</code> ya está en 36 en los tres módulos, pero <code>targetSdk</code> sigue hardcodeado en 35 frente a <code>flutter.targetSdkVersion=36</code>. La contradicción se cierra del todo en la fase 3.</p>
     </div>
 
-    <div class="finding is-crit">
-      <span class="eyebrow">Hallazgo 2 · Bloqueador que Play todavía no reportó</span>
-      <p>Las librerías nativas del APK release están alineadas a 4 KB, no a 16 KB. Play exige soporte de páginas de 16 KB para apps que apuntan a Android 15+, así que esto habría bloqueado la publicación de todos modos.</p>
-<pre>lib/arm64-v8a/libapp.so        4K: <i>True</i>   16K: <b>False</b>
-lib/arm64-v8a/libflutter.so    4K: <i>True</i>   16K: <i>True</i>
-lib/armeabi-v7a/libapp.so      4K: <i>True</i>   16K: <i>True</i>
-lib/armeabi-v7a/libflutter.so  4K: <i>True</i>   16K: <b>False</b>
-lib/x86_64/libapp.so           4K: <i>True</i>   16K: <b>False</b>
-lib/x86_64/libflutter.so       4K: <i>True</i>   16K: <b>False</b></pre>
-      <p>Los ELF sí traen <code>LOAD align 0x10000</code> (64 KB, correcto): el problema no es el motor de Flutter sino el <code>zipalign</code> de 4 KB que hace AGP 8.1. Se corrige solo al pasar a AGP ≥ 8.5.1, pero hay que verificarlo explícitamente antes de publicar.</p>
+    <div class="changed">
+      <span class="eyebrow">Hallazgo 2 · Librerías nativas a 4 KB <span class="chip-done">Resuelto</span></span>
+      <p>Era el bloqueador que Play todavía no había reportado. Se resolvió solo con el cambio de AGP, tal como estaba previsto: las nueve <code>.so</code> del APK actual quedan alineadas a 16 KB, verificado sobre el artefacto final.</p>
+    </div>
+  </section>
+
+  <section>
+    <div class="rule-head">
+      <h2>Lo que el plan no anticipó</h2>
+      <span class="eyebrow">Correcciones al plan original</span>
+    </div>
+
+    <p>Cuatro supuestos cayeron durante la ejecución. Ninguno bloqueó el avance, pero cambian el mapa de riesgo de lo que queda.</p>
+
+    <div class="changed">
+      <span class="eyebrow">Flutter estable es 3.47.2, no 3.35.x</span>
+      <p>El plan se escribió con información hasta mayo de 2026. El salto real fue de 23 versiones menores. Aun así, <code>flutter analyze</code> terminó con cero errores: el código Dart de la app no usaba nada que se hubiera removido.</p>
+    </div>
+
+    <div class="changed">
+      <span class="eyebrow">Las versiones de la fase 1 se quedaron cortas</span>
+      <p>Flutter 3.47.2 exige Gradle ≥ 8.14.0, AGP ≥ 8.11.1 y Kotlin ≥ 2.2.20 como mínimos duros. Las que fijé en la fase 1 quedaron por debajo y hubo que volver a subirlas.</p>
+    </div>
+
+    <div class="changed">
+      <span class="eyebrow">El ecosistema ya compila contra API 37</span>
+      <p><code>permission_handler_android</code> 14 declara <code>compileSdk = 37</code>. Desde API 37 el esquema de nombres del SDK usa versión menor —<code>37.0</code>, <code>37.1</code>— y AGP 8.11 no lo entiende. Por eso el destino final fue AGP 8.13.2. Play exige 36 como mínimo, así que esto no cambia el objetivo, solo la toolchain.</p>
+    </div>
+
+    <div class="changed">
+      <span class="eyebrow">El fork de <code>workmanager</code> costó una línea</span>
+      <p>Era el riesgo estimado en ~35% y resultó el más barato de todos. Upstream ya incluye las dos APIs de iOS por las que existía el fork, así que no hubo cambios en Dart y en iOS solo cambió el nombre del módulo importado. La primera víctima real del v1 embedding fue otra: <code>flutter_libphonenumber_android</code>, resuelta con el upgrade mayor.</p>
     </div>
   </section>
 
@@ -592,65 +659,66 @@ lib/x86_64/libflutter.so       4K: <i>True</i>   16K: <b>False</b></pre>
       <button class="btn" id="reset">Reiniciar</button>
     </div>
 
-    <p>Las fases están numeradas porque el orden es una dependencia real: no se puede compilar contra API 36 sin la toolchain, y no se pueden evaluar los cambios de comportamiento sin haber compilado. Cada fase termina con un <code>flutter build apk --release</code> verde.</p>
+    <p>Las fases están numeradas porque el orden es una dependencia real: no se puede compilar contra API 36 sin la toolchain, y no se pueden evaluar los cambios de comportamiento sin haber compilado. Cada fase termina con un <code>flutter build</code> verde.</p>
+    <p class="legend">Las tres primeras fases quedan marcadas como hechas. Tu propio avance se guarda en este navegador.</p>
 
-    <div class="phase" data-phase="0">
+    <div class="phase complete" data-phase="0">
       <div class="phase-rail">
         <div class="phase-num">00</div>
         <div class="phase-days">0.5 día</div>
         <div class="progress"><div class="bar"><span></span></div></div>
       </div>
       <div class="phase-body">
-        <h2>Preparación</h2>
+        <h2>Preparación <span class="chip-done">Completa</span></h2>
         <p>Asegurar la vía de escape antes de tocar nada: mientras dure la migración no se puede publicar un hotfix por el canal normal.</p>
         <ul class="checks">
-          <li><label><input type="checkbox" data-id="p0-1"><span>Crear rama <code>feature/target-sdk-36</code> desde <code>dev</code></span></label></li>
-          <li><label><input type="checkbox" data-id="p0-2"><span>Archivar el APK release actual como referencia de regresión</span><span class="note">Sirve para comparar tamaño, permisos y comportamiento después del upgrade.</span></label></li>
-          <li><label><input type="checkbox" data-id="p0-3"><span>Revisar en Play Console si hay prórroga disponible</span><span class="note">Suele concederse hasta el 1 de noviembre. Evita quedar sin canal para hotfixes durante la migración.</span></label></li>
-          <li><label><input type="checkbox" data-id="p0-4"><span>Congelar cambios funcionales en <code>dev</code></span></label></li>
-          <li><label><input type="checkbox" data-id="p0-5"><span>Spike de medio día sobre el fork de <code>workmanager</code><span class="tag risk">Hacer primero</span></span><span class="note">Si el fork no se puede rescatar, cambia el alcance completo de la fase 2. Conviene saberlo antes de empezar, no a mitad de camino.</span></label></li>
+          <li><label><input type="checkbox" data-id="p0-1" checked><span>Rama <code>feature/target-sdk-36</code> creada desde <code>dev</code></span></label></li>
+          <li><label><input type="checkbox" data-id="p0-2" checked><span>APK release archivado como referencia de regresión</span><span class="note">Baseline v2.1.0+8, 52,4 MB, guardado fuera del repo.</span></label></li>
+          <li><label><input type="checkbox" data-id="p0-3"><span>Revisar en Play Console si hay prórroga disponible</span><span class="note">Pendiente. Suele concederse hasta el 1 de noviembre y evita quedar sin canal para hotfixes.</span></label></li>
+          <li><label><input type="checkbox" data-id="p0-4" checked><span>Cambios funcionales congelados en <code>dev</code></span></label></li>
+          <li><label><input type="checkbox" data-id="p0-5" checked><span>Spike sobre el fork de <code>workmanager</code></span><span class="note">Detectó las cuatro referencias al v1 embedding y concluyó que convenía migrar a upstream en vez de parchear. Se validó por completo en la fase 2.</span></label></li>
         </ul>
       </div>
     </div>
 
-    <div class="phase" data-phase="1">
+    <div class="phase complete" data-phase="1">
       <div class="phase-rail">
         <div class="phase-num">01</div>
-        <div class="phase-days">1–2 días</div>
+        <div class="phase-days">1 día</div>
         <div class="progress"><div class="bar"><span></span></div></div>
       </div>
       <div class="phase-body">
-        <h2>Toolchain de build</h2>
-        <p>El orden importa. Compilar después de cada paso, no al final: si algo se rompe hay que saber cuál de los cuatro cambios fue.</p>
+        <h2>Toolchain de build <span class="chip-done">Completa</span></h2>
+        <p>Commit <code>35d9a20</code>. Cada paso se validó con su propio build release en verde. Las versiones se volvieron a subir en la fase 2 al descubrir los mínimos reales de Flutter 3.47.</p>
         <ul class="checks">
-          <li><label><input type="checkbox" data-id="p1-1"><span>Gradle 8.3 → 8.11.1 en <code>gradle-wrapper.properties</code></span></label></li>
-          <li><label><input type="checkbox" data-id="p1-2"><span>Borrar la línea huérfana <code>distributionUrl=gradle-8.0</code> de <code>gradle.properties</code></span><span class="note">No hace nada ahí y confunde a quien busque la versión real del wrapper.</span></label></li>
-          <li><label><input type="checkbox" data-id="p1-3"><span>AGP 8.1.0 → 8.9.x en <code>settings.gradle</code></span></label></li>
-          <li><label><input type="checkbox" data-id="p1-4"><span>Kotlin 1.8.22 → 2.1.x<span class="tag risk">Riesgo</span></span><span class="note">Puede romper la compilación de <code>mokosupport</code> y <code>mokoBleLib</code>, que son código de terceros de MokoSmart. Plan B: dejar esos módulos en 1.9.24 por configuración de módulo, o quedarse en Kotlin 1.9.x en todo el proyecto.</span></label></li>
-          <li><label><input type="checkbox" data-id="p1-5"><span>Java 1.8 → 17 en <code>compileOptions</code> y <code>kotlinOptions</code> de los tres módulos</span></label></li>
-          <li><label><input type="checkbox" data-id="p1-6"><span><code>androidx.work</code> 2.8.1 → 2.10.x</span></label></li>
-          <li><label><input type="checkbox" data-id="p1-7"><span>Evaluar quitar <code>android.enableJetifier=true</code></span><span class="note">Probablemente ya no haya dependencias de la support library. Validar antes de removerlo.</span></label></li>
-          <li><label><input type="checkbox" data-id="p1-8"><span>Build release verde con la toolchain nueva, todavía en <code>targetSdk 35</code></span></label></li>
+          <li><label><input type="checkbox" data-id="p1-1" checked><span>Gradle actualizado</span></label></li>
+          <li><label><input type="checkbox" data-id="p1-2" checked><span>Línea huérfana <code>distributionUrl</code> eliminada de <code>gradle.properties</code></span></label></li>
+          <li><label><input type="checkbox" data-id="p1-3" checked><span>AGP actualizado</span></label></li>
+          <li><label><input type="checkbox" data-id="p1-4" checked><span>Kotlin actualizado</span><span class="note">El plan B de dejar los módulos de MokoSmart en 1.9.24 no hizo falta: compilaron limpio.</span></label></li>
+          <li><label><input type="checkbox" data-id="p1-5" checked><span>Java 1.8 → 17 en los tres módulos</span></label></li>
+          <li><label><input type="checkbox" data-id="p1-6" checked><span><code>androidx.work</code> 2.8.1 → 2.10.1</span></label></li>
+          <li><label><input type="checkbox" data-id="p1-7" checked><span><code>enableJetifier</code> removido</span><span class="note">Ya no había dependencias de la support library.</span></label></li>
+          <li><label><input type="checkbox" data-id="p1-8" checked><span>Alineación de 16 KB conseguida</span><span class="note">Solo con el cambio de AGP, sin tocar nada más.</span></label></li>
         </ul>
       </div>
     </div>
 
-    <div class="phase" data-phase="2">
+    <div class="phase complete" data-phase="2">
       <div class="phase-rail">
         <div class="phase-num">02</div>
-        <div class="phase-days">2–3 días</div>
+        <div class="phase-days">1 día</div>
         <div class="progress"><div class="bar"><span></span></div></div>
       </div>
       <div class="phase-body">
-        <h2>Upgrade de Flutter</h2>
-        <p>El tramo más incierto. Saltar de 3.24.4 a 3.35.x arrastra Dart 3.5 → 3.9 y un upgrade mayor de casi todas las dependencias.</p>
+        <h2>Upgrade de Flutter <span class="chip-done">Completa</span></h2>
+        <p>Commit <code>1d5e75f</code>. Era el tramo marcado como más incierto y salió más barato de lo previsto: 94 dependencias actualizadas sin un solo error de análisis.</p>
         <ul class="checks">
-          <li><label><input type="checkbox" data-id="p2-1"><span>Flutter 3.24.4 → última estable 3.35.x</span></label></li>
-          <li><label><input type="checkbox" data-id="p2-2"><span><code>flutter pub upgrade --major-versions</code></span><span class="note">Caen <code>geolocator</code> 13→14, <code>permission_handler</code> 11→12, <code>flutter_bloc</code> 8→9, <code>flutter_lints</code> 4→6, <code>intl</code> y <code>vibration</code>.</span></label></li>
-          <li><label><input type="checkbox" data-id="p2-3"><span>Resolver el fork git de <code>workmanager</code><span class="tag block">Punto crítico</span></span><span class="note">Viene de <code>absar/flutter_workmanager</code>, ref <code>ios-bg-tasks-enh-final</code>, de la era Flutter 3.13. Muy probablemente falle por falta de <code>namespace</code> en su <code>build.gradle</code> y por APIs removidas del embedding. Evaluar en este orden: (a) ver si el fork tiene commits nuevos, (b) parchear el fork con <code>namespace</code> y publicarlo como fork propio, (c) migrar a <code>workmanager</code> upstream 0.9.x, (d) reemplazar por <code>MkButtonBackgroundService</code> nativo en Android más BGTaskScheduler propio en iOS.</span></label></li>
-          <li><label><input type="checkbox" data-id="p2-4"><span><code>flutter analyze</code> sin errores</span></label></li>
-          <li><label><input type="checkbox" data-id="p2-5"><span>Suite de <code>test/</code> en verde</span></label></li>
-          <li><label><input type="checkbox" data-id="p2-6"><span>Verificar que iOS sigue compilando y archivando</span><span class="note">El upgrade de Flutter afecta ambas plataformas aunque el problema de Play sea solo de Android.</span></label></li>
+          <li><label><input type="checkbox" data-id="p2-1" checked><span>Flutter 3.24.4 → 3.47.2</span></label></li>
+          <li><label><input type="checkbox" data-id="p2-2" checked><span>Upgrade mayor de dependencias</span><span class="note"><code>bloc</code> 8→9, <code>permission_handler</code> 11→13, <code>geolocator</code> 13→14, <code>flutter_dotenv</code> 5→6, <code>android_intent_plus</code> 5→6, <code>vibration</code> 2→3. Ninguno rompió código Dart.</span></label></li>
+          <li><label><input type="checkbox" data-id="p2-3" checked><span><code>workmanager</code> migrado a upstream 0.10.9</span><span class="note">Una línea en <code>pubspec.yaml</code> y el rename del import a <code>workmanager_apple</code> en <code>AppDelegate.swift</code>.</span></label></li>
+          <li><label><input type="checkbox" data-id="p2-4" checked><span><code>flutter analyze</code> con 0 errores</span><span class="note">Quedan 15 warnings y 56 infos, todos preexistentes.</span></label></li>
+          <li><label><input type="checkbox" data-id="p2-5"><span>Suite de <code>test/</code> en verde</span><span class="note">No conseguido, y no es una regresión: <code>widget_test.dart</code> es el boilerplate del template que viene sin adaptar desde el primer commit y busca un contador que la app nunca tuvo. Falla desde siempre. Borrarlo o escribir uno real es trabajo aparte.</span></label></li>
+          <li><label><input type="checkbox" data-id="p2-6" checked><span>iOS compila</span><span class="note">El mínimo sube de 12.0 a 15.0, forzado por Flutter 3.47. No deja fuera ningún dispositivo: iOS 15 soporta la misma lista que iOS 14.</span></label></li>
         </ul>
       </div>
     </div>
@@ -663,15 +731,15 @@ lib/x86_64/libflutter.so       4K: <i>True</i>   16K: <b>False</b></pre>
       </div>
       <div class="phase-body">
         <h2>targetSdk 36 y cambios de comportamiento</h2>
-        <p>Recién aquí se sube el número. Cada punto de abajo es trabajo real que Android 16 impone a apps que apuntan a API 36, no solo verificación.</p>
+        <p>Aquí se concentra ahora casi todo el riesgo que queda. <code>compileSdk</code> ya está en 36; lo que falta es <code>targetSdk</code>, que es lo que activa los comportamientos nuevos de Android 16.</p>
         <ul class="checks">
-          <li><label><input type="checkbox" data-id="p3-0"><span>Subir <code>compileSdk</code> y <code>targetSdk</code> a 36 en app, <code>mokosupport</code> y <code>mokoBleLib</code></span></label></li>
+          <li><label><input type="checkbox" data-id="p3-0"><span>Subir <code>targetSdk</code> a 36 y unificar con <code>flutter.targetSdkVersion</code></span><span class="note">Cierra el hallazgo 1: hoy conviven un 35 hardcodeado y un 36 en <code>gradle.properties</code>.</span></label></li>
           <li><label><input type="checkbox" data-id="p3-1"><span>Edge-to-edge obligatorio</span><span class="note">Android 16 ignora <code>windowOptOutEdgeToEdgeEnforcement</code>. Revisar <code>SafeArea</code> en las pantallas Flutter y los insets en las activities translúcidas: <code>ButtonPressedActivity</code>, <code>TrampolineActivity</code>, <code>EmergencyCallActivity</code> y el <code>OverlayService</code>.</span></label></li>
           <li><label><input type="checkbox" data-id="p3-2"><span>Orientación fija ignorada en pantallas grandes</span><span class="note">En sw≥600dp dejan de aplicarse <code>android:screenOrientation="portrait"</code> (<code>AndroidManifest.xml:40</code>) y <code>SystemChrome.setPreferredOrientations</code> (<code>lib/main.dart:32</code>). Opciones: adaptar la UI a landscape, o declarar el opt-out temporal <code>PROPERTY_COMPAT_ALLOW_RESTRICTED_RESIZABILITY</code>, válido hasta API 37.</span></label></li>
-          <li><label><input type="checkbox" data-id="p3-3"><span>Intents más estrictos<span class="tag block">Mayor riesgo funcional</span></span><span class="note">Android 16 bloquea intents explícitos que apuntan a un componente con <code>intent-filter</code> sin coincidir con él, y los intents sin acción. Afecta directamente a <code>OpenAppReceiver</code> (<code>OPEN_APP_FROM_BUTTON</code>) y <code>EmergencyCallReceiver</code> (<code>MAKE_EMERGENCY_CALL</code>), que son el camino crítico del botón de pánico. Revisar también <code>MkButtonBackgroundService.kt</code>.</span></label></li>
+          <li><label><input type="checkbox" data-id="p3-3"><span>Intents más estrictos<span class="tag block">Mayor riesgo</span></span><span class="note">Android 16 bloquea intents explícitos que apuntan a un componente con <code>intent-filter</code> sin coincidir con él, y los intents sin acción. Afecta a <code>OpenAppReceiver</code> (<code>OPEN_APP_FROM_BUTTON</code>) y <code>EmergencyCallReceiver</code> (<code>MAKE_EMERGENCY_CALL</code>), que son el camino crítico del botón de pánico. Revisar también <code>MkButtonBackgroundService.kt</code>.</span></label></li>
           <li><label><input type="checkbox" data-id="p3-4"><span>Predictive back activado por defecto</span><span class="note">Declarar <code>android:enableOnBackInvokedCallback</code> de forma explícita y verificar los <code>PopScope</code> del lado Flutter.</span></label></li>
-          <li><label><input type="checkbox" data-id="p3-5"><span>Foreground service BLE</span><span class="note"><code>connectedDevice|location</code> no entra en los timeouts nuevos, que aplican a <code>dataSync</code> y <code>mediaProcessing</code>. El servicio debería sobrevivir. Sí revalidar el arranque desde <code>BootReceiver</code> bajo las restricciones de BOOT_COMPLETED.</span></label></li>
-          <li><label><input type="checkbox" data-id="p3-6"><span>Cuotas de JobScheduler y WorkManager</span><span class="note">Más estrictas en Android 16. Validar que las tareas periódicas siguen ejecutándose con la app en background.</span></label></li>
+          <li><label><input type="checkbox" data-id="p3-5"><span>Foreground service BLE</span><span class="note"><code>connectedDevice|location</code> no entra en los timeouts nuevos, que aplican a <code>dataSync</code> y <code>mediaProcessing</code>. Sí revalidar el arranque desde <code>BootReceiver</code> bajo las restricciones de BOOT_COMPLETED.</span></label></li>
+          <li><label><input type="checkbox" data-id="p3-6"><span>Cuotas de JobScheduler y WorkManager</span><span class="note">Más estrictas en Android 16. Validar que las tareas periódicas siguen ejecutándose con la app en background, ahora sobre upstream 0.10.9.</span></label></li>
           <li><label><input type="checkbox" data-id="p3-7"><span>Notificaciones ongoing y cooldown</span><span class="note">Verificar que la notificación del servicio BLE y la de emergencia siguen visibles y no quedan agrupadas o silenciadas.</span></label></li>
         </ul>
       </div>
@@ -687,12 +755,13 @@ lib/x86_64/libflutter.so       4K: <i>True</i>   16K: <b>False</b></pre>
         <h2>Verificación</h2>
         <p>La app es un sistema de alerta para adultos mayores: la regresión que importa no es la UI, es que el botón llegue a producir una llamada.</p>
         <ul class="checks">
-          <li><label><input type="checkbox" data-id="p4-1"><span>Confirmar alineación de 16 KB en el AAB/APK final</span><span class="note">Mismo chequeo del hallazgo 2: offsets de datos de cada <code>.so</code> múltiplos de 16384.</span></label></li>
+          <li><label><input type="checkbox" data-id="p4-1"><span>Confirmar alineación de 16 KB en el AAB final</span><span class="note">Ya se cumple en el APK actual; revalidar sobre el artefacto que se sube a Play.</span></label></li>
           <li><label><input type="checkbox" data-id="p4-2"><span>Probar en emulador API 36</span></label></li>
           <li><label><input type="checkbox" data-id="p4-3"><span>Probar en Samsung A06 físico</span><span class="note">Es el dispositivo con las restricciones de fabricante ya documentadas.</span></label></li>
           <li><label><input type="checkbox" data-id="p4-4"><span>Probar con los dos MokoSmart reales</span></label></li>
           <li><label><input type="checkbox" data-id="p4-5"><span>Regresión del camino crítico completo</span><span class="note">Presión de botón → servicio en background → app cerrada → SMS → llamada de emergencia.</span></label></li>
-          <li><label><input type="checkbox" data-id="p4-6"><span>Revalidar los dos bugs ya resueltos</span><span class="note">Permiso SMS hard-restricted (instalar con <code>adb install -r</code>, no a mano) y el stale GATT al reconectar el TAG.</span></label></li>
+          <li><label><input type="checkbox" data-id="p4-6"><span>Revalidar los dos bugs ya resueltos</span><span class="note">Permiso SMS hard-restricted (instalar con <code>adb install -r</code>) y el stale GATT al reconectar el TAG.</span></label></li>
+          <li><label><input type="checkbox" data-id="p4-7"><span>Revalidar iOS en dispositivo</span><span class="note">Nuevo: el upgrade tocó el mínimo del sistema, los pods y las tareas en background. Incluye la restauración de estado de CoreBluetooth.</span></label></li>
         </ul>
       </div>
     </div>
@@ -719,19 +788,20 @@ lib/x86_64/libflutter.so       4K: <i>True</i>   16K: <b>False</b></pre>
 
   <section>
     <div class="verdict">
-      <h2>Dónde está concentrado el riesgo</h2>
+      <h2>Dónde está el riesgo ahora</h2>
+      <p>El reparto cambió por completo respecto al plan original. Los dos grandes riesgos de las fases 1 y 2 —Kotlin 2.x sobre los módulos de MokoSmart y el fork de <code>workmanager</code>— no se materializaron.</p>
       <ul class="risk-list">
-        <li><span class="risk-pct">~35%</span><span><strong>El fork de <code>workmanager</code></strong> (fase 2). Es una dependencia git sin mantenimiento desde la era Flutter 3.13, y sostiene las tareas en background de iOS. Si no se rescata, el alcance de la fase 2 cambia por completo.</span></li>
-        <li><span class="risk-pct">~25%</span><span><strong>Los intents del flujo de emergencia</strong> (fase 3c). Es el único punto donde un cambio de Android 16 puede romper silenciosamente la función que da sentido a la app.</span></li>
-        <li><span class="risk-pct">~40%</span><span>Repartido entre Kotlin 2.x sobre los módulos de MokoSmart, el upgrade mayor de dependencias y el trabajo de edge-to-edge.</span></li>
+        <li><span class="risk-pct">~60%</span><span><strong>Los intents del flujo de emergencia</strong> (fase 3). Es el único punto donde un cambio de Android 16 puede romper silenciosamente la función que da sentido a la app: el botón deja de llamar y nada lo avisa hasta que alguien lo necesita.</span></li>
+        <li><span class="risk-pct">~25%</span><span><strong>Edge-to-edge y orientación</strong> sobre las activities translúcidas y el overlay, que son código nativo propio y poco convencional.</span></li>
+        <li><span class="risk-pct">~15%</span><span>Regresiones de runtime que el compilador no ve: cuotas de WorkManager, notificaciones ongoing y el comportamiento en iOS tras el cambio de pods y mínimo de sistema.</span></li>
       </ul>
-      <p>Por eso el spike sobre <code>workmanager</code> está en la fase 0 y no en la 2: es la incógnita más cara y la más barata de despejar por adelantado.</p>
+      <p>La consecuencia práctica: la fase 4 pesa más que antes. Casi todo lo que queda por descubrir aparece en dispositivo, no en el build.</p>
     </div>
   </section>
 
   <footer>
     <span>app_amaia · docs/plan_target_sdk_36.html</span>
-    <span>El progreso se guarda en este navegador</span>
+    <span>Actualizado tras la fase 2</span>
   </footer>
 </div>
 
@@ -773,7 +843,9 @@ lib/x86_64/libflutter.so       4K: <i>True</i>   16K: <b>False</b></pre>
     var state = load();
     boxes.forEach(function (box) {
       var id = box.getAttribute("data-id");
-      box.checked = state[id] === true;
+      if (Object.prototype.hasOwnProperty.call(state, id)) {
+        box.checked = state[id] === true;
+      }
       box.addEventListener("change", function () {
         state[id] = box.checked;
         save(state);
@@ -784,7 +856,7 @@ lib/x86_64/libflutter.so       4K: <i>True</i>   16K: <b>False</b></pre>
     document.getElementById("reset").addEventListener("click", function () {
       state = {};
       save(state);
-      boxes.forEach(function (b) { b.checked = false; });
+      boxes.forEach(function (b) { b.checked = b.hasAttribute("checked"); });
       render();
     });
 
