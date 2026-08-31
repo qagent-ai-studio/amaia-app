@@ -1,27 +1,31 @@
 <title>Migración a API 36</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;1,8..60,400&display=swap">
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link
+  rel="stylesheet"
+  href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;1,8..60,400&display=swap"
+/>
 
 <style>
   :root {
-    --ground: #F2F3F1;
-    --surface: #FBFBFA;
-    --surface-2: #E7EAE7;
+    --ground: #f2f3f1;
+    --surface: #fbfbfa;
+    --surface-2: #e7eae7;
     --ink: #141917;
-    --ink-2: #434F4B;
-    --ink-3: #6D7A76;
-    --rule: #D2D8D4;
-    --rule-strong: #B4BEB9;
-    --accent: #1F5E58;
-    --accent-soft: #DCE9E6;
-    --warn: #85570A;
-    --warn-soft: #F1E6CF;
-    --crit: #96302C;
-    --crit-soft: #F4DEDB;
-    --ok: #2F6B3A;
-    --ok-soft: #DDEBDF;
-    --shadow: 0 1px 2px rgba(20, 25, 23, .06), 0 8px 24px -16px rgba(20, 25, 23, .3);
+    --ink-2: #434f4b;
+    --ink-3: #6d7a76;
+    --rule: #d2d8d4;
+    --rule-strong: #b4beb9;
+    --accent: #1f5e58;
+    --accent-soft: #dce9e6;
+    --warn: #85570a;
+    --warn-soft: #f1e6cf;
+    --crit: #96302c;
+    --crit-soft: #f4dedb;
+    --ok: #2f6b3a;
+    --ok-soft: #ddebdf;
+    --shadow:
+      0 1px 2px rgba(20, 25, 23, 0.06), 0 8px 24px -16px rgba(20, 25, 23, 0.3);
 
     --f-display: "Archivo", "Helvetica Neue", Arial, sans-serif;
     --f-body: "Source Serif 4", Georgia, "Times New Roman", serif;
@@ -30,47 +34,50 @@
 
   @media (prefers-color-scheme: dark) {
     :root:not([data-theme="light"]) {
-      --ground: #0F1412;
-      --surface: #161C1A;
-      --surface-2: #1E2624;
-      --ink: #E7EDEA;
-      --ink-2: #A6B3AF;
-      --ink-3: #78857F;
-      --rule: #2A3431;
-      --rule-strong: #3B4744;
-      --accent: #64C4B4;
-      --accent-soft: #16302C;
-      --warn: #D9A441;
+      --ground: #0f1412;
+      --surface: #161c1a;
+      --surface-2: #1e2624;
+      --ink: #e7edea;
+      --ink-2: #a6b3af;
+      --ink-3: #78857f;
+      --rule: #2a3431;
+      --rule-strong: #3b4744;
+      --accent: #64c4b4;
+      --accent-soft: #16302c;
+      --warn: #d9a441;
       --warn-soft: #322710;
-      --crit: #E58279;
-      --crit-soft: #3A1C19;
-      --ok: #78C388;
-      --ok-soft: #17301C;
-      --shadow: 0 1px 2px rgba(0, 0, 0, .4), 0 8px 24px -16px rgba(0, 0, 0, .8);
+      --crit: #e58279;
+      --crit-soft: #3a1c19;
+      --ok: #78c388;
+      --ok-soft: #17301c;
+      --shadow:
+        0 1px 2px rgba(0, 0, 0, 0.4), 0 8px 24px -16px rgba(0, 0, 0, 0.8);
     }
   }
 
   :root[data-theme="dark"] {
-    --ground: #0F1412;
-    --surface: #161C1A;
-    --surface-2: #1E2624;
-    --ink: #E7EDEA;
-    --ink-2: #A6B3AF;
-    --ink-3: #78857F;
-    --rule: #2A3431;
-    --rule-strong: #3B4744;
-    --accent: #64C4B4;
-    --accent-soft: #16302C;
-    --warn: #D9A441;
+    --ground: #0f1412;
+    --surface: #161c1a;
+    --surface-2: #1e2624;
+    --ink: #e7edea;
+    --ink-2: #a6b3af;
+    --ink-3: #78857f;
+    --rule: #2a3431;
+    --rule-strong: #3b4744;
+    --accent: #64c4b4;
+    --accent-soft: #16302c;
+    --warn: #d9a441;
     --warn-soft: #322710;
-    --crit: #E58279;
-    --crit-soft: #3A1C19;
-    --ok: #78C388;
-    --ok-soft: #17301C;
-    --shadow: 0 1px 2px rgba(0, 0, 0, .4), 0 8px 24px -16px rgba(0, 0, 0, .8);
+    --crit: #e58279;
+    --crit-soft: #3a1c19;
+    --ok: #78c388;
+    --ok-soft: #17301c;
+    --shadow: 0 1px 2px rgba(0, 0, 0, 0.4), 0 8px 24px -16px rgba(0, 0, 0, 0.8);
   }
 
-  * { box-sizing: border-box; }
+  * {
+    box-sizing: border-box;
+  }
 
   body {
     background: var(--ground);
@@ -88,7 +95,9 @@
     padding: clamp(1.5rem, 4vw, 4rem) clamp(1rem, 4vw, 2.5rem) 6rem;
   }
 
-  a { color: var(--accent); }
+  a {
+    color: var(--accent);
+  }
 
   :focus-visible {
     outline: 2px solid var(--accent);
@@ -96,21 +105,25 @@
     border-radius: 2px;
   }
 
-  code, .mono { font-family: var(--f-mono); font-size: .84em; }
+  code,
+  .mono {
+    font-family: var(--f-mono);
+    font-size: 0.84em;
+  }
 
   code:not(pre code) {
     background: var(--surface-2);
     border: 1px solid var(--rule);
     border-radius: 3px;
-    padding: .08em .34em;
+    padding: 0.08em 0.34em;
     white-space: nowrap;
   }
 
   .eyebrow {
     font-family: var(--f-display);
-    font-size: .7rem;
+    font-size: 0.7rem;
     font-weight: 600;
-    letter-spacing: .16em;
+    letter-spacing: 0.16em;
     text-transform: uppercase;
     color: var(--ink-3);
   }
@@ -125,9 +138,9 @@
     font-family: var(--f-display);
     font-size: clamp(2.1rem, 6vw, 3.4rem);
     font-weight: 700;
-    letter-spacing: -.026em;
+    letter-spacing: -0.026em;
     line-height: 1.02;
-    margin: .6rem 0 .8rem;
+    margin: 0.6rem 0 0.8rem;
     text-wrap: balance;
   }
 
@@ -148,17 +161,17 @@
 
   .spec {
     background: var(--surface);
-    padding: .85rem 1rem .95rem;
+    padding: 0.85rem 1rem 0.95rem;
     display: flex;
     flex-direction: column;
-    gap: .3rem;
+    gap: 0.3rem;
   }
 
   .spec dt {
     font-family: var(--f-display);
-    font-size: .66rem;
+    font-size: 0.66rem;
     font-weight: 600;
-    letter-spacing: .13em;
+    letter-spacing: 0.13em;
     text-transform: uppercase;
     color: var(--ink-3);
   }
@@ -171,14 +184,18 @@
     font-variant-numeric: tabular-nums;
   }
 
-  .spec dd.is-crit { color: var(--crit); }
-  .spec dd.is-ok { color: var(--ok); }
+  .spec dd.is-crit {
+    color: var(--crit);
+  }
+  .spec dd.is-ok {
+    color: var(--ok);
+  }
 
   h2 {
     font-family: var(--f-display);
     font-size: 1.55rem;
     font-weight: 600;
-    letter-spacing: -.016em;
+    letter-spacing: -0.016em;
     line-height: 1.15;
     margin: 0 0 1.2rem;
     text-wrap: balance;
@@ -188,24 +205,32 @@
     font-family: var(--f-display);
     font-size: 1.02rem;
     font-weight: 600;
-    letter-spacing: -.005em;
-    margin: 2rem 0 .6rem;
+    letter-spacing: -0.005em;
+    margin: 2rem 0 0.6rem;
   }
 
-  section { margin-bottom: 3.75rem; }
+  section {
+    margin-bottom: 3.75rem;
+  }
 
-  p { margin: 0 0 1.05rem; max-width: 42rem; }
+  p {
+    margin: 0 0 1.05rem;
+    max-width: 42rem;
+  }
 
   .rule-head {
     display: flex;
     align-items: baseline;
     gap: 1rem;
     border-bottom: 1px solid var(--rule-strong);
-    padding-bottom: .55rem;
+    padding-bottom: 0.55rem;
     margin-bottom: 1.6rem;
   }
 
-  .rule-head h2 { margin: 0; flex: 1; }
+  .rule-head h2 {
+    margin: 0;
+    flex: 1;
+  }
 
   .scroller {
     overflow-x: auto;
@@ -219,60 +244,85 @@
     width: 100%;
     min-width: 34rem;
     font-family: var(--f-display);
-    font-size: .89rem;
+    font-size: 0.89rem;
   }
 
-  th, td {
+  th,
+  td {
     text-align: left;
-    padding: .6rem .9rem;
+    padding: 0.6rem 0.9rem;
     border-bottom: 1px solid var(--rule);
     vertical-align: baseline;
   }
 
   thead th {
-    font-size: .66rem;
+    font-size: 0.66rem;
     font-weight: 600;
-    letter-spacing: .13em;
+    letter-spacing: 0.13em;
     text-transform: uppercase;
     color: var(--ink-3);
     background: var(--surface-2);
     white-space: nowrap;
   }
 
-  tbody tr:last-child td { border-bottom: 0; }
+  tbody tr:last-child td {
+    border-bottom: 0;
+  }
 
-  td.v { font-family: var(--f-mono); font-variant-numeric: tabular-nums; white-space: nowrap; }
-  td.v.now { color: var(--ink-2); }
-  td.v.want { color: var(--accent); font-weight: 500; }
+  td.v {
+    font-family: var(--f-mono);
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+  td.v.now {
+    color: var(--ink-2);
+  }
+  td.v.want {
+    color: var(--accent);
+    font-weight: 500;
+  }
 
   pre {
     margin: 0 0 1.4rem;
-    padding: .95rem 1.1rem;
+    padding: 0.95rem 1.1rem;
     background: var(--surface);
     border: 1px solid var(--rule);
     border-left: 3px solid var(--accent);
     overflow-x: auto;
     font-family: var(--f-mono);
-    font-size: .78rem;
+    font-size: 0.78rem;
     line-height: 1.7;
     color: var(--ink-2);
   }
 
-  pre b { color: var(--crit); font-weight: 500; }
-  pre i { color: var(--ok); font-style: normal; }
+  pre b {
+    color: var(--crit);
+    font-weight: 500;
+  }
+  pre i {
+    color: var(--ok);
+    font-style: normal;
+  }
 
   .finding {
     border: 1px solid var(--rule);
     border-left: 3px solid var(--warn);
     background: var(--surface);
-    padding: 1.05rem 1.2rem .3rem;
+    padding: 1.05rem 1.2rem 0.3rem;
     margin: 0 0 1.4rem;
   }
 
-  .finding.is-crit { border-left-color: var(--crit); }
+  .finding.is-crit {
+    border-left-color: var(--crit);
+  }
 
-  .finding .eyebrow { display: block; margin-bottom: .45rem; }
-  .finding p:last-child { margin-bottom: 1.05rem; }
+  .finding .eyebrow {
+    display: block;
+    margin-bottom: 0.45rem;
+  }
+  .finding p:last-child {
+    margin-bottom: 1.05rem;
+  }
 
   .phase {
     display: grid;
@@ -282,12 +332,14 @@
     border-top: 1px solid var(--rule);
   }
 
-  .phase:last-of-type { border-bottom: 1px solid var(--rule); }
+  .phase:last-of-type {
+    border-bottom: 1px solid var(--rule);
+  }
 
   .phase-rail {
     display: flex;
     flex-direction: column;
-    gap: .35rem;
+    gap: 0.35rem;
     position: sticky;
     top: 1.25rem;
     align-self: start;
@@ -297,22 +349,29 @@
     font-family: var(--f-display);
     font-size: 2.4rem;
     font-weight: 700;
-    line-height: .9;
-    letter-spacing: -.04em;
+    line-height: 0.9;
+    letter-spacing: -0.04em;
     color: var(--rule-strong);
     font-variant-numeric: tabular-nums;
   }
 
-  .phase.done .phase-num { color: var(--ok); }
+  .phase.done .phase-num {
+    color: var(--ok);
+  }
 
   .phase-days {
     font-family: var(--f-mono);
-    font-size: .7rem;
+    font-size: 0.7rem;
     color: var(--ink-3);
   }
 
-  .phase-body > h2 { font-size: 1.3rem; margin-bottom: .5rem; }
-  .phase-body > p:first-of-type { color: var(--ink-2); }
+  .phase-body > h2 {
+    font-size: 1.3rem;
+    margin-bottom: 0.5rem;
+  }
+  .phase-body > p:first-of-type {
+    color: var(--ink-2);
+  }
 
   ul.checks {
     list-style: none;
@@ -325,15 +384,17 @@
     border: 1px solid var(--rule);
   }
 
-  ul.checks li { background: var(--surface); }
+  ul.checks li {
+    background: var(--surface);
+  }
 
   ul.checks label {
     display: grid;
     grid-template-columns: 1.5rem minmax(0, 1fr);
-    gap: .1rem .7rem;
-    padding: .7rem .85rem .75rem;
+    gap: 0.1rem 0.7rem;
+    padding: 0.7rem 0.85rem 0.75rem;
     cursor: pointer;
-    font-size: .97rem;
+    font-size: 0.97rem;
   }
 
   ul.checks input {
@@ -341,7 +402,7 @@
     -webkit-appearance: none;
     width: 1.05rem;
     height: 1.05rem;
-    margin: .28rem 0 0;
+    margin: 0.28rem 0 0;
     border: 1.5px solid var(--rule-strong);
     border-radius: 2px;
     background: var(--ground);
@@ -353,11 +414,11 @@
 
   ul.checks input::after {
     content: "";
-    width: .55rem;
-    height: .3rem;
+    width: 0.55rem;
+    height: 0.3rem;
     border-left: 2px solid var(--surface);
     border-bottom: 2px solid var(--surface);
-    transform: rotate(-45deg) translateY(-.06rem);
+    transform: rotate(-45deg) translateY(-0.06rem);
     opacity: 0;
   }
 
@@ -366,9 +427,13 @@
     border-color: var(--accent);
   }
 
-  ul.checks input:checked::after { opacity: 1; }
+  ul.checks input:checked::after {
+    opacity: 1;
+  }
 
-  ul.checks label > span { min-width: 0; }
+  ul.checks label > span {
+    min-width: 0;
+  }
 
   ul.checks input:checked ~ span {
     color: var(--ink-3);
@@ -378,36 +443,45 @@
 
   ul.checks .note {
     grid-column: 2;
-    font-size: .87rem;
+    font-size: 0.87rem;
     color: var(--ink-3);
     line-height: 1.5;
-    margin-top: .18rem;
+    margin-top: 0.18rem;
   }
 
-  ul.checks input:checked ~ .note { opacity: .55; text-decoration: none; }
+  ul.checks input:checked ~ .note {
+    opacity: 0.55;
+    text-decoration: none;
+  }
 
   .tag {
     font-family: var(--f-display);
-    font-size: .6rem;
+    font-size: 0.6rem;
     font-weight: 600;
-    letter-spacing: .12em;
+    letter-spacing: 0.12em;
     text-transform: uppercase;
-    padding: .16em .45em .2em;
+    padding: 0.16em 0.45em 0.2em;
     border-radius: 2px;
-    vertical-align: .12em;
-    margin-left: .45rem;
+    vertical-align: 0.12em;
+    margin-left: 0.45rem;
     white-space: nowrap;
   }
 
-  .tag.risk { background: var(--warn-soft); color: var(--warn); }
-  .tag.block { background: var(--crit-soft); color: var(--crit); }
+  .tag.risk {
+    background: var(--warn-soft);
+    color: var(--warn);
+  }
+  .tag.block {
+    background: var(--crit-soft);
+    color: var(--crit);
+  }
 
   .progress {
     display: flex;
     align-items: center;
-    gap: .7rem;
+    gap: 0.7rem;
     font-family: var(--f-mono);
-    font-size: .72rem;
+    font-size: 0.72rem;
     color: var(--ink-3);
     font-variant-numeric: tabular-nums;
   }
@@ -425,7 +499,7 @@
     height: 100%;
     width: 0;
     background: var(--accent);
-    transition: width .28s ease;
+    transition: width 0.28s ease;
   }
 
   .overall {
@@ -434,40 +508,49 @@
     z-index: 5;
     background: var(--ground);
     border-bottom: 1px solid var(--rule);
-    padding: .6rem 0;
+    padding: 0.6rem 0;
     margin-bottom: 1.4rem;
     display: flex;
     align-items: center;
-    gap: .9rem;
+    gap: 0.9rem;
     flex-wrap: wrap;
   }
 
-  .overall .bar { width: 100%; max-width: 16rem; flex: 1 1 8rem; }
+  .overall .bar {
+    width: 100%;
+    max-width: 16rem;
+    flex: 1 1 8rem;
+  }
 
   .btn {
     font-family: var(--f-display);
-    font-size: .72rem;
+    font-size: 0.72rem;
     font-weight: 500;
-    letter-spacing: .04em;
+    letter-spacing: 0.04em;
     color: var(--ink-3);
     background: transparent;
     border: 1px solid var(--rule-strong);
     border-radius: 2px;
-    padding: .3rem .6rem;
+    padding: 0.3rem 0.6rem;
     cursor: pointer;
   }
 
-  .btn:hover { color: var(--ink); border-color: var(--ink-3); }
+  .btn:hover {
+    color: var(--ink);
+    border-color: var(--ink-3);
+  }
 
   .verdict {
     border: 1px solid var(--rule);
     border-top: 3px solid var(--accent);
     background: var(--surface);
-    padding: 1.5rem 1.6rem .5rem;
+    padding: 1.5rem 1.6rem 0.5rem;
     box-shadow: var(--shadow);
   }
 
-  .verdict h2 { font-size: 1.2rem; }
+  .verdict h2 {
+    font-size: 1.2rem;
+  }
 
   .risk-list {
     list-style: none;
@@ -475,13 +558,13 @@
     margin: 0 0 1.05rem;
     display: flex;
     flex-direction: column;
-    gap: .8rem;
+    gap: 0.8rem;
   }
 
   .risk-list li {
     display: grid;
     grid-template-columns: 3.2rem minmax(0, 1fr);
-    gap: .9rem;
+    gap: 0.9rem;
     align-items: baseline;
     max-width: 42rem;
   }
@@ -500,7 +583,7 @@
     padding-top: 1.1rem;
     border-top: 1px solid var(--rule);
     font-family: var(--f-display);
-    font-size: .76rem;
+    font-size: 0.76rem;
     color: var(--ink-3);
     display: flex;
     justify-content: space-between;
@@ -509,68 +592,118 @@
   }
 
   @media (max-width: 34rem) {
-    body { font-size: 16px; }
-    .phase { grid-template-columns: 1fr; gap: .5rem; }
-    .phase-rail { position: static; flex-direction: row; align-items: baseline; gap: .8rem; }
-    .phase-num { font-size: 1.5rem; }
+    body {
+      font-size: 16px;
+    }
+    .phase {
+      grid-template-columns: 1fr;
+      gap: 0.5rem;
+    }
+    .phase-rail {
+      position: static;
+      flex-direction: row;
+      align-items: baseline;
+      gap: 0.8rem;
+    }
+    .phase-num {
+      font-size: 1.5rem;
+    }
   }
 
   @media (prefers-reduced-motion: reduce) {
-    * { transition: none !important; animation: none !important; }
+    * {
+      transition: none !important;
+      animation: none !important;
+    }
   }
 </style>
 
 <style>
   .chip-done {
     font-family: var(--f-display);
-    font-size: .6rem;
+    font-size: 0.6rem;
     font-weight: 600;
-    letter-spacing: .12em;
+    letter-spacing: 0.12em;
     text-transform: uppercase;
-    padding: .2em .5em .24em;
+    padding: 0.2em 0.5em 0.24em;
     border-radius: 2px;
     background: var(--ok-soft);
     color: var(--ok);
     white-space: nowrap;
   }
 
-  .phase.complete .phase-num { color: var(--ok); }
+  .phase.complete .phase-num {
+    color: var(--ok);
+  }
 
-  .spec dd.is-done { color: var(--ok); }
+  .spec dd.is-done {
+    color: var(--ok);
+  }
 
   .changed {
     border: 1px solid var(--rule);
     border-left: 3px solid var(--accent);
     background: var(--surface);
-    padding: 1.05rem 1.2rem .3rem;
+    padding: 1.05rem 1.2rem 0.3rem;
     margin: 0 0 1.4rem;
   }
 
-  .changed .eyebrow { display: block; margin-bottom: .45rem; }
-  .changed p:last-child { margin-bottom: 1.05rem; }
+  .changed .eyebrow {
+    display: block;
+    margin-bottom: 0.45rem;
+  }
+  .changed p:last-child {
+    margin-bottom: 1.05rem;
+  }
 
-  td.v.was { color: var(--ink-3); text-decoration: line-through; text-decoration-color: var(--rule-strong); }
-  td.v.now2 { color: var(--ok); font-weight: 500; }
+  td.v.was {
+    color: var(--ink-3);
+    text-decoration: line-through;
+    text-decoration-color: var(--rule-strong);
+  }
+  td.v.now2 {
+    color: var(--ok);
+    font-weight: 500;
+  }
 
   .legend {
     font-family: var(--f-display);
-    font-size: .78rem;
+    font-size: 0.78rem;
     color: var(--ink-3);
-    margin: -.6rem 0 1.4rem;
+    margin: -0.6rem 0 1.4rem;
   }
 </style>
 <div class="page">
-
   <header class="masthead">
     <div class="eyebrow">Amaia · Plan de migración Android</div>
     <h1>Migración a API 36</h1>
-    <p class="standfirst">Google Play bloquea las actualizaciones de la app hasta que apunte a Android 16. El cambio de <code>targetSdk</code> es una línea; lo que hay detrás son tres upgrades encadenados y siete cambios de comportamiento que tocan el camino crítico del botón de pánico.</p>
+    <p class="standfirst">
+      Google Play bloquea las actualizaciones de la app hasta que apunte a
+      Android 16. El cambio de <code>targetSdk</code> es una línea; lo que hay
+      detrás son tres upgrades encadenados y siete cambios de comportamiento que
+      tocan el camino crítico del botón de pánico.
+    </p>
     <dl class="specs">
-      <div class="spec"><dt>Fecha límite</dt><dd class="is-crit">30 ago 2026</dd></div>
-      <div class="spec"><dt>Fases hechas</dt><dd class="is-done">0 · 1 · 2</dd></div>
-      <div class="spec"><dt>compileSdk</dt><dd class="is-done">36</dd></div>
-      <div class="spec"><dt>targetSdk</dt><dd class="is-crit">35</dd></div>
-      <div class="spec"><dt>Rama</dt><dd>target-sdk-36</dd></div>
+      <div class="spec">
+        <dt>Fecha límite</dt>
+        <dd class="is-crit">30 ago 2026</dd>
+      </div>
+      <div class="spec">
+        <dt>Fases hechas</dt>
+        <dd class="is-done">0 · 1 · 2</dd>
+      </div>
+      <div class="spec">
+        <dt>compileSdk</dt>
+        <dd class="is-done">36</dd>
+      </div>
+      <div class="spec">
+        <dt>targetSdk</dt>
+        <dd class="is-crit">35</dd>
+      </div>
+      <div class="spec">
+        <dt>Rama</dt>
+        <dd>target-sdk-36</dd>
+      </div>
     </dl>
   </header>
 
@@ -580,69 +713,103 @@
       <span class="eyebrow">Fases 0 a 2 completas</span>
     </div>
 
-    <p>La toolchain está al día y ambas plataformas compilan en verde: APK de 55,9 MB, <code>Runner.app</code> de 21,1 MB, <code>flutter analyze</code> con cero errores. Falta lo que de verdad exige Play: subir <code>targetSdk</code> a 36 y absorber los cambios de comportamiento de Android 16.</p>
+    <p>
+      La toolchain está al día y ambas plataformas compilan en verde: APK de
+      55,9 MB, <code>Runner.app</code> de 21,1 MB,
+      <code>flutter analyze</code> con cero errores. Falta lo que de verdad
+      exige Play: subir <code>targetSdk</code> a 36 y absorber los cambios de
+      comportamiento de Android 16.
+    </p>
 
     <div class="scroller">
       <table>
         <thead>
-          <tr><th>Pieza</th><th>Al empezar</th><th>Ahora</th></tr>
+          <tr>
+            <th>Pieza</th>
+            <th>Al empezar</th>
+            <th>Ahora</th>
+          </tr>
         </thead>
         <tbody>
-          <tr><td>Flutter</td><td class="v was">3.24.4</td><td class="v now2">3.47.2</td></tr>
-          <tr><td>Dart</td><td class="v was">3.5.4</td><td class="v now2">3.13.2</td></tr>
-          <tr><td>Android Gradle Plugin</td><td class="v was">8.1.0</td><td class="v now2">8.13.2</td></tr>
-          <tr><td>Gradle</td><td class="v was">8.3</td><td class="v now2">8.14.5</td></tr>
-          <tr><td>Kotlin</td><td class="v was">1.8.22</td><td class="v now2">2.2.20</td></tr>
-          <tr><td>Java (source / target)</td><td class="v was">1.8</td><td class="v now2">17</td></tr>
-          <tr><td>compileSdk (los 3 módulos)</td><td class="v was">35 / 34 / 34</td><td class="v now2">36</td></tr>
-          <tr><td>androidx.work</td><td class="v was">2.8.1</td><td class="v now2">2.10.1</td></tr>
-          <tr><td><code>workmanager</code></td><td class="v was">fork git</td><td class="v now2">upstream 0.10.9</td></tr>
-          <tr><td>Alineación de páginas</td><td class="v was">4 KB</td><td class="v now2">16 KB</td></tr>
-          <tr><td>minSdk iOS</td><td class="v was">12.0</td><td class="v now2">15.0</td></tr>
-          <tr><td><strong>targetSdk</strong></td><td class="v was">35</td><td class="v" style="color:var(--crit);font-weight:500">35 · pendiente</td></tr>
+          <tr>
+            <td>Flutter</td>
+            <td class="v was">3.24.4</td>
+            <td class="v now2">3.47.2</td>
+          </tr>
+          <tr>
+            <td>Dart</td>
+            <td class="v was">3.5.4</td>
+            <td class="v now2">3.13.2</td>
+          </tr>
+          <tr>
+            <td>Android Gradle Plugin</td>
+            <td class="v was">8.1.0</td>
+            <td class="v now2">8.13.2</td>
+          </tr>
+          <tr>
+            <td>Gradle</td>
+            <td class="v was">8.3</td>
+            <td class="v now2">8.14.5</td>
+          </tr>
+          <tr>
+            <td>Kotlin</td>
+            <td class="v was">1.8.22</td>
+            <td class="v now2">2.2.20</td>
+          </tr>
+          <tr>
+            <td>Java (source / target)</td>
+            <td class="v was">1.8</td>
+            <td class="v now2">17</td>
+          </tr>
+          <tr>
+            <td>compileSdk (los 3 módulos)</td>
+            <td class="v was">35 / 34 / 34</td>
+            <td class="v now2">36</td>
+          </tr>
+          <tr>
+            <td>androidx.work</td>
+            <td class="v was">2.8.1</td>
+            <td class="v now2">2.10.1</td>
+          </tr>
+          <tr>
+            <td><code>workmanager</code></td>
+            <td class="v was">fork git</td>
+            <td class="v now2">upstream 0.10.9</td>
+          </tr>
+          <tr>
+            <td>Alineación de páginas</td>
+            <td class="v was">4 KB</td>
+            <td class="v now2">16 KB</td>
+          </tr>
+          <tr>
+            <td>minSdk iOS</td>
+            <td class="v was">12.0</td>
+            <td class="v now2">15.0</td>
+          </tr>
+          <tr>
+            <td><strong>targetSdk</strong></td>
+            <td class="v was">35</td>
+            <td class="v" style="color: var(--crit); font-weight: 500">
+              35 · pendiente
+            </td>
+          </tr>
         </tbody>
       </table>
     </div>
 
-    <h3>Los dos hallazgos iniciales, resueltos</h3>
+    <h3>Hallazgos iniciales resueltos</h3>
 
     <div class="changed">
-      <span class="eyebrow">Hallazgo 1 · Configuración contradictoria <span class="chip-done">Parcial</span></span>
-      <p><code>gradle.properties</code> declaraba <code>flutter.compileSdkVersion=36</code> mientras <code>app/build.gradle</code> lo pisaba con 35. El <code>compileSdk</code> ya está en 36 en los tres módulos, pero <code>targetSdk</code> sigue hardcodeado en 35 frente a <code>flutter.targetSdkVersion=36</code>. La contradicción se cierra del todo en la fase 3.</p>
-    </div>
-
-    <div class="changed">
-      <span class="eyebrow">Hallazgo 2 · Librerías nativas a 4 KB <span class="chip-done">Resuelto</span></span>
-      <p>Era el bloqueador que Play todavía no había reportado. Se resolvió solo con el cambio de AGP, tal como estaba previsto: las nueve <code>.so</code> del APK actual quedan alineadas a 16 KB, verificado sobre el artefacto final.</p>
-    </div>
-  </section>
-
-  <section>
-    <div class="rule-head">
-      <h2>Lo que el plan no anticipó</h2>
-      <span class="eyebrow">Correcciones al plan original</span>
-    </div>
-
-    <p>Cuatro supuestos cayeron durante la ejecución. Ninguno bloqueó el avance, pero cambian el mapa de riesgo de lo que queda.</p>
-
-    <div class="changed">
-      <span class="eyebrow">Flutter estable es 3.47.2, no 3.35.x</span>
-      <p>El plan se escribió con información hasta mayo de 2026. El salto real fue de 23 versiones menores. Aun así, <code>flutter analyze</code> terminó con cero errores: el código Dart de la app no usaba nada que se hubiera removido.</p>
-    </div>
-
-    <div class="changed">
-      <span class="eyebrow">Las versiones de la fase 1 se quedaron cortas</span>
-      <p>Flutter 3.47.2 exige Gradle ≥ 8.14.0, AGP ≥ 8.11.1 y Kotlin ≥ 2.2.20 como mínimos duros. Las que fijé en la fase 1 quedaron por debajo y hubo que volver a subirlas.</p>
-    </div>
-
-    <div class="changed">
-      <span class="eyebrow">El ecosistema ya compila contra API 37</span>
-      <p><code>permission_handler_android</code> 14 declara <code>compileSdk = 37</code>. Desde API 37 el esquema de nombres del SDK usa versión menor —<code>37.0</code>, <code>37.1</code>— y AGP 8.11 no lo entiende. Por eso el destino final fue AGP 8.13.2. Play exige 36 como mínimo, así que esto no cambia el objetivo, solo la toolchain.</p>
-    </div>
-
-    <div class="changed">
-      <span class="eyebrow">El fork de <code>workmanager</code> costó una línea</span>
-      <p>Era el riesgo estimado en ~35% y resultó el más barato de todos. Upstream ya incluye las dos APIs de iOS por las que existía el fork, así que no hubo cambios en Dart y en iOS solo cambió el nombre del módulo importado. La primera víctima real del v1 embedding fue otra: <code>flutter_libphonenumber_android</code>, resuelta con el upgrade mayor.</p>
+      <span class="eyebrow"
+        >Hallazgo 1 · Librerías nativas a 4 KB
+        <span class="chip-done">Resuelto</span></span
+      >
+      <p>
+        Era el bloqueador que Play todavía no había reportado. Se resolvió solo
+        con el cambio de AGP, tal como estaba previsto: las nueve
+        <code>.so</code> del APK actual quedan alineadas a 16 KB, verificado
+        sobre el artefacto final.
+      </p>
     </div>
   </section>
 
@@ -659,24 +826,67 @@
       <button class="btn" id="reset">Reiniciar</button>
     </div>
 
-    <p>Las fases están numeradas porque el orden es una dependencia real: no se puede compilar contra API 36 sin la toolchain, y no se pueden evaluar los cambios de comportamiento sin haber compilado. Cada fase termina con un <code>flutter build</code> verde.</p>
-    <p class="legend">Las tres primeras fases quedan marcadas como hechas. Tu propio avance se guarda en este navegador.</p>
+    <p>
+      Las fases están numeradas porque el orden es una dependencia real: no se
+      puede compilar contra API 36 sin la toolchain, y no se pueden evaluar los
+      cambios de comportamiento sin haber compilado. Cada fase termina con un
+      <code>flutter build</code> verde.
+    </p>
+    <p class="legend">
+      Las tres primeras fases quedan marcadas como hechas. Tu propio avance se
+      guarda en este navegador.
+    </p>
 
     <div class="phase complete" data-phase="0">
       <div class="phase-rail">
         <div class="phase-num">00</div>
         <div class="phase-days">0.5 día</div>
-        <div class="progress"><div class="bar"><span></span></div></div>
+        <div class="progress">
+          <div class="bar"><span></span></div>
+        </div>
       </div>
       <div class="phase-body">
         <h2>Preparación <span class="chip-done">Completa</span></h2>
-        <p>Asegurar la vía de escape antes de tocar nada: mientras dure la migración no se puede publicar un hotfix por el canal normal.</p>
+        <p>
+          Asegurar la vía de escape antes de tocar nada: mientras dure la
+          migración no se puede publicar un hotfix por el canal normal.
+        </p>
         <ul class="checks">
-          <li><label><input type="checkbox" data-id="p0-1" checked><span>Rama <code>feature/target-sdk-36</code> creada desde <code>dev</code></span></label></li>
-          <li><label><input type="checkbox" data-id="p0-2" checked><span>APK release archivado como referencia de regresión</span><span class="note">Baseline v2.1.0+8, 52,4 MB, guardado fuera del repo.</span></label></li>
-          <li><label><input type="checkbox" data-id="p0-3"><span>Revisar en Play Console si hay prórroga disponible</span><span class="note">Pendiente. Suele concederse hasta el 1 de noviembre y evita quedar sin canal para hotfixes.</span></label></li>
-          <li><label><input type="checkbox" data-id="p0-4" checked><span>Cambios funcionales congelados en <code>dev</code></span></label></li>
-          <li><label><input type="checkbox" data-id="p0-5" checked><span>Spike sobre el fork de <code>workmanager</code></span><span class="note">Detectó las cuatro referencias al v1 embedding y concluyó que convenía migrar a upstream en vez de parchear. Se validó por completo en la fase 2.</span></label></li>
+          <li>
+            <label
+              ><input type="checkbox" data-id="p0-1" /><span
+                >Rama <code>feature/target-sdk-36</code> creada desde
+                <code>dev</code></span
+              ></label
+            >
+          </li>
+          <li>
+            <label
+              ><input type="checkbox" data-id="p0-2" /><span
+                >APK release archivado como referencia de regresión</span
+              ><span class="note"
+                >Baseline v2.1.0+8, 52,4 MB, guardado fuera del repo.</span
+              ></label
+            >
+          </li>
+          <li>
+            <label
+              ><input type="checkbox" data-id="p0-4" /><span
+                >Cambios funcionales congelados en <code>dev</code></span
+              ></label
+            >
+          </li>
+          <li>
+            <label
+              ><input type="checkbox" data-id="p0-5" /><span
+                >Spike sobre el fork de <code>workmanager</code></span
+              ><span class="note"
+                >Detectó las cuatro referencias al v1 embedding y concluyó que
+                convenía migrar a upstream en vez de parchear. Se validó por
+                completo en la fase 2.</span
+              ></label
+            >
+          </li>
         </ul>
       </div>
     </div>
@@ -685,20 +895,82 @@
       <div class="phase-rail">
         <div class="phase-num">01</div>
         <div class="phase-days">1 día</div>
-        <div class="progress"><div class="bar"><span></span></div></div>
+        <div class="progress">
+          <div class="bar"><span></span></div>
+        </div>
       </div>
       <div class="phase-body">
         <h2>Toolchain de build <span class="chip-done">Completa</span></h2>
-        <p>Commit <code>35d9a20</code>. Cada paso se validó con su propio build release en verde. Las versiones se volvieron a subir en la fase 2 al descubrir los mínimos reales de Flutter 3.47.</p>
+        <p>
+          Commit <code>35d9a20</code>. Cada paso se validó con su propio build
+          release en verde. Las versiones se volvieron a subir en la fase 2 al
+          descubrir los mínimos reales de Flutter 3.47.
+        </p>
         <ul class="checks">
-          <li><label><input type="checkbox" data-id="p1-1" checked><span>Gradle actualizado</span></label></li>
-          <li><label><input type="checkbox" data-id="p1-2" checked><span>Línea huérfana <code>distributionUrl</code> eliminada de <code>gradle.properties</code></span></label></li>
-          <li><label><input type="checkbox" data-id="p1-3" checked><span>AGP actualizado</span></label></li>
-          <li><label><input type="checkbox" data-id="p1-4" checked><span>Kotlin actualizado</span><span class="note">El plan B de dejar los módulos de MokoSmart en 1.9.24 no hizo falta: compilaron limpio.</span></label></li>
-          <li><label><input type="checkbox" data-id="p1-5" checked><span>Java 1.8 → 17 en los tres módulos</span></label></li>
-          <li><label><input type="checkbox" data-id="p1-6" checked><span><code>androidx.work</code> 2.8.1 → 2.10.1</span></label></li>
-          <li><label><input type="checkbox" data-id="p1-7" checked><span><code>enableJetifier</code> removido</span><span class="note">Ya no había dependencias de la support library.</span></label></li>
-          <li><label><input type="checkbox" data-id="p1-8" checked><span>Alineación de 16 KB conseguida</span><span class="note">Solo con el cambio de AGP, sin tocar nada más.</span></label></li>
+          <li>
+            <label
+              ><input type="checkbox" data-id="p1-1" /><span
+                >Gradle actualizado</span
+              ></label
+            >
+          </li>
+          <li>
+            <label
+              ><input type="checkbox" data-id="p1-2" /><span
+                >Línea huérfana <code>distributionUrl</code> eliminada de
+                <code>gradle.properties</code></span
+              ></label
+            >
+          </li>
+          <li>
+            <label
+              ><input type="checkbox" data-id="p1-3" /><span
+                >AGP actualizado</span
+              ></label
+            >
+          </li>
+          <li>
+            <label
+              ><input type="checkbox" data-id="p1-4" /><span
+                >Kotlin actualizado</span
+              ><span class="note"
+                >El plan B de dejar los módulos de MokoSmart en 1.9.24 no hizo
+                falta: compilaron limpio.</span
+              ></label
+            >
+          </li>
+          <li>
+            <label
+              ><input type="checkbox" data-id="p1-5" /><span
+                >Java 1.8 → 17 en los tres módulos</span
+              ></label
+            >
+          </li>
+          <li>
+            <label
+              ><input type="checkbox" data-id="p1-6" /><span
+                ><code>androidx.work</code> 2.8.1 → 2.10.1</span
+              ></label
+            >
+          </li>
+          <li>
+            <label
+              ><input type="checkbox" data-id="p1-7" /><span
+                ><code>enableJetifier</code> removido</span
+              ><span class="note"
+                >Ya no había dependencias de la support library.</span
+              ></label
+            >
+          </li>
+          <li>
+            <label
+              ><input type="checkbox" data-id="p1-8" /><span
+                >Alineación de 16 KB conseguida</span
+              ><span class="note"
+                >Solo con el cambio de AGP, sin tocar nada más.</span
+              ></label
+            >
+          </li>
         </ul>
       </div>
     </div>
@@ -707,18 +979,79 @@
       <div class="phase-rail">
         <div class="phase-num">02</div>
         <div class="phase-days">1 día</div>
-        <div class="progress"><div class="bar"><span></span></div></div>
+        <div class="progress">
+          <div class="bar"><span></span></div>
+        </div>
       </div>
       <div class="phase-body">
         <h2>Upgrade de Flutter <span class="chip-done">Completa</span></h2>
-        <p>Commit <code>1d5e75f</code>. Era el tramo marcado como más incierto y salió más barato de lo previsto: 94 dependencias actualizadas sin un solo error de análisis.</p>
+        <p>
+          Commit <code>1d5e75f</code>: 94 dependencias actualizadas sin un
+          solo error de análisis.
+        </p>
         <ul class="checks">
-          <li><label><input type="checkbox" data-id="p2-1" checked><span>Flutter 3.24.4 → 3.47.2</span></label></li>
-          <li><label><input type="checkbox" data-id="p2-2" checked><span>Upgrade mayor de dependencias</span><span class="note"><code>bloc</code> 8→9, <code>permission_handler</code> 11→13, <code>geolocator</code> 13→14, <code>flutter_dotenv</code> 5→6, <code>android_intent_plus</code> 5→6, <code>vibration</code> 2→3. Ninguno rompió código Dart.</span></label></li>
-          <li><label><input type="checkbox" data-id="p2-3" checked><span><code>workmanager</code> migrado a upstream 0.10.9</span><span class="note">Una línea en <code>pubspec.yaml</code> y el rename del import a <code>workmanager_apple</code> en <code>AppDelegate.swift</code>.</span></label></li>
-          <li><label><input type="checkbox" data-id="p2-4" checked><span><code>flutter analyze</code> con 0 errores</span><span class="note">Quedan 15 warnings y 56 infos, todos preexistentes.</span></label></li>
-          <li><label><input type="checkbox" data-id="p2-5"><span>Suite de <code>test/</code> en verde</span><span class="note">No conseguido, y no es una regresión: <code>widget_test.dart</code> es el boilerplate del template que viene sin adaptar desde el primer commit y busca un contador que la app nunca tuvo. Falla desde siempre. Borrarlo o escribir uno real es trabajo aparte.</span></label></li>
-          <li><label><input type="checkbox" data-id="p2-6" checked><span>iOS compila</span><span class="note">El mínimo sube de 12.0 a 15.0, forzado por Flutter 3.47. No deja fuera ningún dispositivo: iOS 15 soporta la misma lista que iOS 14.</span></label></li>
+          <li>
+            <label
+              ><input type="checkbox" data-id="p2-1" /><span
+                >Flutter 3.24.4 → 3.47.2</span
+              ></label
+            >
+          </li>
+          <li>
+            <label
+              ><input type="checkbox" data-id="p2-2" /><span
+                >Upgrade mayor de dependencias</span
+              ><span class="note"
+                ><code>bloc</code> 8→9, <code>permission_handler</code> 11→13,
+                <code>geolocator</code> 13→14, <code>flutter_dotenv</code> 5→6,
+                <code>android_intent_plus</code> 5→6,
+                <code>vibration</code> 2→3. Ninguno rompió código Dart.</span
+              ></label
+            >
+          </li>
+          <li>
+            <label
+              ><input type="checkbox" data-id="p2-3" /><span
+                ><code>workmanager</code> migrado a upstream 0.10.9</span
+              ><span class="note"
+                >Una línea en <code>pubspec.yaml</code> y el rename del import a
+                <code>workmanager_apple</code> en
+                <code>AppDelegate.swift</code>.</span
+              ></label
+            >
+          </li>
+          <li>
+            <label
+              ><input type="checkbox" data-id="p2-4" /><span
+                ><code>flutter analyze</code> con 0 errores</span
+              ><span class="note"
+                >Quedan 15 warnings y 56 infos, todos preexistentes.</span
+              ></label
+            >
+          </li>
+          <li>
+            <label
+              ><input type="checkbox" data-id="p2-5" /><span
+                >Suite de <code>test/</code> en verde</span
+              ><span class="note"
+                >No conseguido, y no es una regresión:
+                <code>widget_test.dart</code> es el boilerplate del template que
+                viene sin adaptar desde el primer commit y busca un contador que
+                la app nunca tuvo. Falla desde siempre. Borrarlo o escribir uno
+                real es trabajo aparte.</span
+              ></label
+            >
+          </li>
+          <li>
+            <label
+              ><input type="checkbox" data-id="p2-6" /><span>iOS compila</span
+              ><span class="note"
+                >El mínimo sube de 12.0 a 15.0, forzado por Flutter 3.47. No
+                deja fuera ningún dispositivo: iOS 15 soporta la misma lista que
+                iOS 14.</span
+              ></label
+            >
+          </li>
         </ul>
       </div>
     </div>
@@ -727,20 +1060,126 @@
       <div class="phase-rail">
         <div class="phase-num">03</div>
         <div class="phase-days">3–5 días</div>
-        <div class="progress"><div class="bar"><span></span></div></div>
+        <div class="progress">
+          <div class="bar"><span></span></div>
+        </div>
       </div>
       <div class="phase-body">
         <h2>targetSdk 36 y cambios de comportamiento</h2>
-        <p>Aquí se concentra ahora casi todo el riesgo que queda. <code>compileSdk</code> ya está en 36; lo que falta es <code>targetSdk</code>, que es lo que activa los comportamientos nuevos de Android 16.</p>
+        <p>
+          Aquí se concentra ahora casi todo el riesgo que queda.
+          <code>compileSdk</code> ya está en 36; lo que falta es
+          <code>targetSdk</code>, que es lo que activa los comportamientos
+          nuevos de Android 16.
+        </p>
         <ul class="checks">
-          <li><label><input type="checkbox" data-id="p3-0"><span>Subir <code>targetSdk</code> a 36 y unificar con <code>flutter.targetSdkVersion</code></span><span class="note">Cierra el hallazgo 1: hoy conviven un 35 hardcodeado y un 36 en <code>gradle.properties</code>.</span></label></li>
-          <li><label><input type="checkbox" data-id="p3-1"><span>Edge-to-edge obligatorio</span><span class="note">Android 16 ignora <code>windowOptOutEdgeToEdgeEnforcement</code>. Revisar <code>SafeArea</code> en las pantallas Flutter y los insets en las activities translúcidas: <code>ButtonPressedActivity</code>, <code>TrampolineActivity</code>, <code>EmergencyCallActivity</code> y el <code>OverlayService</code>.</span></label></li>
-          <li><label><input type="checkbox" data-id="p3-2"><span>Orientación fija ignorada en pantallas grandes</span><span class="note">En sw≥600dp dejan de aplicarse <code>android:screenOrientation="portrait"</code> (<code>AndroidManifest.xml:40</code>) y <code>SystemChrome.setPreferredOrientations</code> (<code>lib/main.dart:32</code>). Opciones: adaptar la UI a landscape, o declarar el opt-out temporal <code>PROPERTY_COMPAT_ALLOW_RESTRICTED_RESIZABILITY</code>, válido hasta API 37.</span></label></li>
-          <li><label><input type="checkbox" data-id="p3-3"><span>Intents más estrictos<span class="tag block">Mayor riesgo</span></span><span class="note">Android 16 bloquea intents explícitos que apuntan a un componente con <code>intent-filter</code> sin coincidir con él, y los intents sin acción. Afecta a <code>OpenAppReceiver</code> (<code>OPEN_APP_FROM_BUTTON</code>) y <code>EmergencyCallReceiver</code> (<code>MAKE_EMERGENCY_CALL</code>), que son el camino crítico del botón de pánico. Revisar también <code>MkButtonBackgroundService.kt</code>.</span></label></li>
-          <li><label><input type="checkbox" data-id="p3-4"><span>Predictive back activado por defecto</span><span class="note">Declarar <code>android:enableOnBackInvokedCallback</code> de forma explícita y verificar los <code>PopScope</code> del lado Flutter.</span></label></li>
-          <li><label><input type="checkbox" data-id="p3-5"><span>Foreground service BLE</span><span class="note"><code>connectedDevice|location</code> no entra en los timeouts nuevos, que aplican a <code>dataSync</code> y <code>mediaProcessing</code>. Sí revalidar el arranque desde <code>BootReceiver</code> bajo las restricciones de BOOT_COMPLETED.</span></label></li>
-          <li><label><input type="checkbox" data-id="p3-6"><span>Cuotas de JobScheduler y WorkManager</span><span class="note">Más estrictas en Android 16. Validar que las tareas periódicas siguen ejecutándose con la app en background, ahora sobre upstream 0.10.9.</span></label></li>
-          <li><label><input type="checkbox" data-id="p3-7"><span>Notificaciones ongoing y cooldown</span><span class="note">Verificar que la notificación del servicio BLE y la de emergencia siguen visibles y no quedan agrupadas o silenciadas.</span></label></li>
+          <li>
+            <label
+              ><input type="checkbox" data-id="p3-0" /><span
+                >Subir <code>targetSdk</code> a 36 y unificar con
+                <code>flutter.targetSdkVersion</code></span
+              ><span class="note"
+                >Cierra el hallazgo 1: hoy conviven un 35 hardcodeado y un 36 en
+                <code>gradle.properties</code>.</span
+              ></label
+            >
+          </li>
+          <li>
+            <label
+              ><input type="checkbox" data-id="p3-1" /><span
+                >Edge-to-edge obligatorio</span
+              ><span class="note"
+                >Android 16 ignora
+                <code>windowOptOutEdgeToEdgeEnforcement</code>. Revisar
+                <code>SafeArea</code> en las pantallas Flutter y los insets en
+                las activities translúcidas: <code>ButtonPressedActivity</code>,
+                <code>TrampolineActivity</code>,
+                <code>EmergencyCallActivity</code> y el
+                <code>OverlayService</code>.</span
+              ></label
+            >
+          </li>
+          <li>
+            <label
+              ><input type="checkbox" data-id="p3-2" /><span
+                >Orientación fija ignorada en pantallas grandes</span
+              ><span class="note"
+                >En sw≥600dp dejan de aplicarse
+                <code>android:screenOrientation="portrait"</code>
+                (<code>AndroidManifest.xml:40</code>) y
+                <code>SystemChrome.setPreferredOrientations</code>
+                (<code>lib/main.dart:32</code>). Opciones: adaptar la UI a
+                landscape, o declarar el opt-out temporal
+                <code>PROPERTY_COMPAT_ALLOW_RESTRICTED_RESIZABILITY</code>,
+                válido hasta API 37.</span
+              ></label
+            >
+          </li>
+          <li>
+            <label
+              ><input type="checkbox" data-id="p3-3" /><span
+                >Intents más estrictos<span class="tag block"
+                  >Mayor riesgo</span
+                ></span
+              ><span class="note"
+                >Android 16 bloquea intents explícitos que apuntan a un
+                componente con <code>intent-filter</code> sin coincidir con él,
+                y los intents sin acción. Afecta a
+                <code>OpenAppReceiver</code> (<code>OPEN_APP_FROM_BUTTON</code>)
+                y
+                <code>EmergencyCallReceiver</code>
+                (<code>MAKE_EMERGENCY_CALL</code>), que son el camino crítico
+                del botón de pánico. Revisar también
+                <code>MkButtonBackgroundService.kt</code>.</span
+              ></label
+            >
+          </li>
+          <li>
+            <label
+              ><input type="checkbox" data-id="p3-4" /><span
+                >Predictive back activado por defecto</span
+              ><span class="note"
+                >Declarar <code>android:enableOnBackInvokedCallback</code> de
+                forma explícita y verificar los <code>PopScope</code> del lado
+                Flutter.</span
+              ></label
+            >
+          </li>
+          <li>
+            <label
+              ><input type="checkbox" data-id="p3-5" /><span
+                >Foreground service BLE</span
+              ><span class="note"
+                ><code>connectedDevice|location</code> no entra en los timeouts
+                nuevos, que aplican a <code>dataSync</code> y
+                <code>mediaProcessing</code>. Sí revalidar el arranque desde
+                <code>BootReceiver</code> bajo las restricciones de
+                BOOT_COMPLETED.</span
+              ></label
+            >
+          </li>
+          <li>
+            <label
+              ><input type="checkbox" data-id="p3-6" /><span
+                >Cuotas de JobScheduler y WorkManager</span
+              ><span class="note"
+                >Más estrictas en Android 16. Validar que las tareas periódicas
+                siguen ejecutándose con la app en background, ahora sobre
+                upstream 0.10.9.</span
+              ></label
+            >
+          </li>
+          <li>
+            <label
+              ><input type="checkbox" data-id="p3-7" /><span
+                >Notificaciones ongoing y cooldown</span
+              ><span class="note"
+                >Verificar que la notificación del servicio BLE y la de
+                emergencia siguen visibles y no quedan agrupadas o
+                silenciadas.</span
+              ></label
+            >
+          </li>
         </ul>
       </div>
     </div>
@@ -749,19 +1188,83 @@
       <div class="phase-rail">
         <div class="phase-num">04</div>
         <div class="phase-days">2 días</div>
-        <div class="progress"><div class="bar"><span></span></div></div>
+        <div class="progress">
+          <div class="bar"><span></span></div>
+        </div>
       </div>
       <div class="phase-body">
         <h2>Verificación</h2>
-        <p>La app es un sistema de alerta para adultos mayores: la regresión que importa no es la UI, es que el botón llegue a producir una llamada.</p>
+        <p>
+          La app es un sistema de alerta para adultos mayores: la regresión que
+          importa no es la UI, es que el botón llegue a producir una llamada.
+        </p>
         <ul class="checks">
-          <li><label><input type="checkbox" data-id="p4-1"><span>Confirmar alineación de 16 KB en el AAB final</span><span class="note">Ya se cumple en el APK actual; revalidar sobre el artefacto que se sube a Play.</span></label></li>
-          <li><label><input type="checkbox" data-id="p4-2"><span>Probar en emulador API 36</span></label></li>
-          <li><label><input type="checkbox" data-id="p4-3"><span>Probar en Samsung A06 físico</span><span class="note">Es el dispositivo con las restricciones de fabricante ya documentadas.</span></label></li>
-          <li><label><input type="checkbox" data-id="p4-4"><span>Probar con los dos MokoSmart reales</span></label></li>
-          <li><label><input type="checkbox" data-id="p4-5"><span>Regresión del camino crítico completo</span><span class="note">Presión de botón → servicio en background → app cerrada → SMS → llamada de emergencia.</span></label></li>
-          <li><label><input type="checkbox" data-id="p4-6"><span>Revalidar los dos bugs ya resueltos</span><span class="note">Permiso SMS hard-restricted (instalar con <code>adb install -r</code>) y el stale GATT al reconectar el TAG.</span></label></li>
-          <li><label><input type="checkbox" data-id="p4-7"><span>Revalidar iOS en dispositivo</span><span class="note">Nuevo: el upgrade tocó el mínimo del sistema, los pods y las tareas en background. Incluye la restauración de estado de CoreBluetooth.</span></label></li>
+          <li>
+            <label
+              ><input type="checkbox" data-id="p4-1" /><span
+                >Confirmar alineación de 16 KB en el AAB final</span
+              ><span class="note"
+                >Ya se cumple en el APK actual; revalidar sobre el artefacto que
+                se sube a Play.</span
+              ></label
+            >
+          </li>
+          <li>
+            <label
+              ><input type="checkbox" data-id="p4-2" /><span
+                >Probar en emulador API 36</span
+              ></label
+            >
+          </li>
+          <li>
+            <label
+              ><input type="checkbox" data-id="p4-3" /><span
+                >Probar en Samsung A06 físico</span
+              ><span class="note"
+                >Es el dispositivo con las restricciones de fabricante ya
+                documentadas.</span
+              ></label
+            >
+          </li>
+          <li>
+            <label
+              ><input type="checkbox" data-id="p4-4" /><span
+                >Probar con los dos MokoSmart reales</span
+              ></label
+            >
+          </li>
+          <li>
+            <label
+              ><input type="checkbox" data-id="p4-5" /><span
+                >Regresión del camino crítico completo</span
+              ><span class="note"
+                >Presión de botón → servicio en background → app cerrada → SMS →
+                llamada de emergencia.</span
+              ></label
+            >
+          </li>
+          <li>
+            <label
+              ><input type="checkbox" data-id="p4-6" /><span
+                >Revalidar los dos bugs ya resueltos</span
+              ><span class="note"
+                >Permiso SMS hard-restricted (instalar con
+                <code>adb install -r</code>) y el stale GATT al reconectar el
+                TAG.</span
+              ></label
+            >
+          </li>
+          <li>
+            <label
+              ><input type="checkbox" data-id="p4-7" /><span
+                >Revalidar iOS en dispositivo</span
+              ><span class="note"
+                >Nuevo: el upgrade tocó el mínimo del sistema, los pods y las
+                tareas en background. Incluye la restauración de estado de
+                CoreBluetooth.</span
+              ></label
+            >
+          </li>
         </ul>
       </div>
     </div>
@@ -770,17 +1273,52 @@
       <div class="phase-rail">
         <div class="phase-num">05</div>
         <div class="phase-days">1 día</div>
-        <div class="progress"><div class="bar"><span></span></div></div>
+        <div class="progress">
+          <div class="bar"><span></span></div>
+        </div>
       </div>
       <div class="phase-body">
         <h2>Publicación</h2>
-        <p>Dado el volumen de cambio acumulado, no saltarse etapas de testing aunque la fecha apriete.</p>
+        <p>
+          Dado el volumen de cambio acumulado, no saltarse etapas de testing
+          aunque la fecha apriete.
+        </p>
         <ul class="checks">
-          <li><label><input type="checkbox" data-id="p5-1"><span>Subir <code>versionCode</code> y generar AAB firmado</span></label></li>
-          <li><label><input type="checkbox" data-id="p5-2"><span>Testing interno</span></label></li>
-          <li><label><input type="checkbox" data-id="p5-3"><span>Testing cerrado</span></label></li>
-          <li><label><input type="checkbox" data-id="p5-4"><span>Producción</span></label></li>
-          <li><label><input type="checkbox" data-id="p5-5"><span>Merge a <code>dev</code> y a <code>main</code></span></label></li>
+          <li>
+            <label
+              ><input type="checkbox" data-id="p5-1" /><span
+                >Subir <code>versionCode</code> y generar AAB firmado</span
+              ></label
+            >
+          </li>
+          <li>
+            <label
+              ><input type="checkbox" data-id="p5-2" /><span
+                >Testing interno</span
+              ></label
+            >
+          </li>
+          <li>
+            <label
+              ><input type="checkbox" data-id="p5-3" /><span
+                >Testing cerrado</span
+              ></label
+            >
+          </li>
+          <li>
+            <label
+              ><input type="checkbox" data-id="p5-4" /><span
+                >Producción</span
+              ></label
+            >
+          </li>
+          <li>
+            <label
+              ><input type="checkbox" data-id="p5-5" /><span
+                >Merge a <code>dev</code> y a <code>main</code></span
+              ></label
+            >
+          </li>
         </ul>
       </div>
     </div>
@@ -789,13 +1327,42 @@
   <section>
     <div class="verdict">
       <h2>Dónde está el riesgo ahora</h2>
-      <p>El reparto cambió por completo respecto al plan original. Los dos grandes riesgos de las fases 1 y 2 —Kotlin 2.x sobre los módulos de MokoSmart y el fork de <code>workmanager</code>— no se materializaron.</p>
+      <p>
+        El reparto cambió por completo respecto al plan original. Los dos
+        grandes riesgos de las fases 1 y 2 —Kotlin 2.x sobre los módulos de
+        MokoSmart y el fork de <code>workmanager</code>.
+      </p>
       <ul class="risk-list">
-        <li><span class="risk-pct">~60%</span><span><strong>Los intents del flujo de emergencia</strong> (fase 3). Es el único punto donde un cambio de Android 16 puede romper silenciosamente la función que da sentido a la app: el botón deja de llamar y nada lo avisa hasta que alguien lo necesita.</span></li>
-        <li><span class="risk-pct">~25%</span><span><strong>Edge-to-edge y orientación</strong> sobre las activities translúcidas y el overlay, que son código nativo propio y poco convencional.</span></li>
-        <li><span class="risk-pct">~15%</span><span>Regresiones de runtime que el compilador no ve: cuotas de WorkManager, notificaciones ongoing y el comportamiento en iOS tras el cambio de pods y mínimo de sistema.</span></li>
+        <li>
+          <span class="risk-pct">~60%</span
+          ><span
+            ><strong>Los intents del flujo de emergencia</strong> (fase 3). Es
+            el único punto donde un cambio de Android 16 puede romper
+            silenciosamente la función que da sentido a la app: el botón deja de
+            llamar y nada lo avisa hasta que alguien lo necesita.</span
+          >
+        </li>
+        <li>
+          <span class="risk-pct">~25%</span
+          ><span
+            ><strong>Edge-to-edge y orientación</strong> sobre las activities
+            translúcidas y el overlay, que son código nativo propio y poco
+            convencional.</span
+          >
+        </li>
+        <li>
+          <span class="risk-pct">~15%</span
+          ><span
+            >Regresiones de runtime que el compilador no ve: cuotas de
+            WorkManager, notificaciones ongoing y el comportamiento en iOS tras
+            el cambio de pods y mínimo de sistema.</span
+          >
+        </li>
       </ul>
-      <p>La consecuencia práctica: la fase 4 pesa más que antes. Casi todo lo que queda por descubrir aparece en dispositivo, no en el build.</p>
+      <p>
+        La consecuencia práctica: la fase 4 pesa más que antes. Casi todo lo que
+        queda por descubrir aparece en dispositivo, no en el build.
+      </p>
     </div>
   </section>
 
@@ -808,7 +1375,9 @@
 <script>
   (function () {
     var KEY = "amaia-sdk36-plan";
-    var boxes = Array.prototype.slice.call(document.querySelectorAll("ul.checks input"));
+    var boxes = Array.prototype.slice.call(
+      document.querySelectorAll("ul.checks input"),
+    );
 
     function load() {
       try {
@@ -831,13 +1400,20 @@
         var pct = inputs.length ? (done / inputs.length) * 100 : 0;
         var bar = phase.querySelector(".phase-rail .bar span");
         if (bar) bar.style.width = pct + "%";
-        phase.classList.toggle("done", inputs.length > 0 && done === inputs.length);
+        phase.classList.toggle(
+          "done",
+          inputs.length > 0 && done === inputs.length,
+        );
       });
 
       var total = boxes.length;
-      var done = boxes.filter(function (b) { return b.checked; }).length;
-      document.getElementById("overall-bar").style.width = (total ? (done / total) * 100 : 0) + "%";
-      document.getElementById("overall-count").textContent = done + " / " + total;
+      var done = boxes.filter(function (b) {
+        return b.checked;
+      }).length;
+      document.getElementById("overall-bar").style.width =
+        (total ? (done / total) * 100 : 0) + "%";
+      document.getElementById("overall-count").textContent =
+        done + " / " + total;
     }
 
     var state = load();
@@ -856,7 +1432,9 @@
     document.getElementById("reset").addEventListener("click", function () {
       state = {};
       save(state);
-      boxes.forEach(function (b) { b.checked = b.hasAttribute("checked"); });
+      boxes.forEach(function (b) {
+        b.checked = b.hasAttribute("checked");
+      });
       render();
     });
 
