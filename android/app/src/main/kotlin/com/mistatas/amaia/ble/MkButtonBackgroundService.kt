@@ -137,6 +137,7 @@ class MkButtonBackgroundService : Service() {
         var isInitialized: Boolean = false,
         var reconnectAttempts: Int = 0,
         var lastButtonPressAt: Long = 0,
+        var notificationsEnabledAt: Long = 0,
     )
 
     private val deviceStates = mutableMapOf<String, DeviceState>()
@@ -382,17 +383,13 @@ class MkButtonBackgroundService : Service() {
                     state.support.enableSingleTriggerNotify()
                     state.support.enableDoubleTriggerNotify()
                     state.support.enableLongTriggerNotify()
+                    state.notificationsEnabledAt = System.currentTimeMillis()
                     android.util.Log.d("MkButtonBgService", "Notifications enabled: ${state.config.deviceName}")
 
                     handler.postDelayed({
                         if (!deviceStates.containsKey(mac) || !state.isConnected) return@postDelayed
                         state.isInitialized = true
                         android.util.Log.d("MkButtonBgService", "Device ready: ${state.config.deviceName}")
-                        handler.postDelayed({
-                            if (deviceStates.containsKey(mac) && state.isConnected) {
-                                state.support.startKeepAlive()
-                            }
-                        }, 15000)
                     }, 500)
                 }, 3000)
 
@@ -459,6 +456,11 @@ class MkButtonBackgroundService : Service() {
                 if (state != null) {
                     if (!state.isInitialized) {
                         android.util.Log.w("MkButtonBgService", "Ignoring click from ${state.config.deviceName} - not initialized yet")
+                        return
+                    }
+                    val sinceNotifications = System.currentTimeMillis() - state.notificationsEnabledAt
+                    if (state.notificationsEnabledAt > 0 && sinceNotifications < 3000) {
+                        android.util.Log.w("MkButtonBgService", "Ignoring phantom click from ${state.config.deviceName} (${sinceNotifications} ms after enabling notifications)")
                         return
                     }
                     val now = System.currentTimeMillis()
