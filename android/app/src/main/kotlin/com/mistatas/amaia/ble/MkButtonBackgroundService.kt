@@ -137,7 +137,7 @@ class MkButtonBackgroundService : Service() {
         var isInitialized: Boolean = false,
         var reconnectAttempts: Int = 0,
         var lastButtonPressAt: Long = 0,
-        var notificationsEnabledAt: Long = 0,
+        var connectedAt: Long = 0,
     )
 
     private val deviceStates = mutableMapOf<String, DeviceState>()
@@ -374,16 +374,30 @@ class MkButtonBackgroundService : Service() {
                 cancelDeviceLostNotification(mac)
                 state.isConnected = true
                 state.reconnectAttempts = 0
+                state.connectedAt = System.currentTimeMillis()
                 android.util.Log.d("MkButtonBgService", "Connected: ${state.config.deviceName} ($mac)")
 
                 val handler = android.os.Handler(android.os.Looper.getMainLooper())
+                state.support.writePasswordDirectly(byteArrayOf(0xEA.toByte(), 0x00, 0x23, 0x00))
+                handler.postDelayed({
+                    if (!deviceStates.containsKey(mac) || !state.isConnected) return@postDelayed
+                    val passwordBytes = state.config.password.toByteArray()
+                    val data = ByteArray(4 + passwordBytes.size)
+                    data[0] = 0xEA.toByte()
+                    data[1] = 0x01.toByte()
+                    data[2] = 0x55.toByte()
+                    data[3] = passwordBytes.size.toByte()
+                    passwordBytes.copyInto(data, 4)
+                    state.support.writePasswordDirectly(data)
+                    android.util.Log.d("MkButtonBgService", "Password sent: ${state.config.deviceName}")
+                }, 2500)
+
                 handler.postDelayed({
                     if (!deviceStates.containsKey(mac) || !state.isConnected) return@postDelayed
                     state.support.enableClickEventNotify()
                     state.support.enableSingleTriggerNotify()
                     state.support.enableDoubleTriggerNotify()
                     state.support.enableLongTriggerNotify()
-                    state.notificationsEnabledAt = System.currentTimeMillis()
                     android.util.Log.d("MkButtonBgService", "Notifications enabled: ${state.config.deviceName}")
 
                     handler.postDelayed({
@@ -391,7 +405,7 @@ class MkButtonBackgroundService : Service() {
                         state.isInitialized = true
                         android.util.Log.d("MkButtonBgService", "Device ready: ${state.config.deviceName}")
                     }, 500)
-                }, 3000)
+                }, 5000)
 
                 val connectedCount = deviceStates.count { it.value.isConnected }
                 updateNotification("$connectedCount dispositivo(s) conectado(s)")
@@ -458,9 +472,9 @@ class MkButtonBackgroundService : Service() {
                         android.util.Log.w("MkButtonBgService", "Ignoring click from ${state.config.deviceName} - not initialized yet")
                         return
                     }
-                    val sinceNotifications = System.currentTimeMillis() - state.notificationsEnabledAt
-                    if (state.notificationsEnabledAt > 0 && sinceNotifications < 3000) {
-                        android.util.Log.w("MkButtonBgService", "Ignoring phantom click from ${state.config.deviceName} (${sinceNotifications} ms after enabling notifications)")
+                    val sinceConnected = System.currentTimeMillis() - state.connectedAt
+                    if (state.connectedAt > 0 && sinceConnected < 6000) {
+                        android.util.Log.w("MkButtonBgService", "Ignoring phantom click from ${state.config.deviceName} (${sinceConnected} ms after connecting)")
                         return
                     }
                     val now = System.currentTimeMillis()
