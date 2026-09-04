@@ -87,6 +87,9 @@ class MkButtonBackgroundService : Service() {
         val foregroundMacs = mutableSetOf<String>()
         val pendingRemovals = mutableSetOf<String>()
 
+        private const val RECONNECT_MAX_DELAY_MS = 300_000L
+        private const val CONNECT_WATCHDOG_MS = 60_000L
+
         fun removeDevice(context: Context, mac: String, clearPrefs: Boolean = false) {
             val intent = Intent(context, MkButtonBackgroundService::class.java).apply {
                 action = ACTION_REMOVE_DEVICE
@@ -155,8 +158,8 @@ class MkButtonBackgroundService : Service() {
                         if (!state.isConnected) {
                             pendingReconnects.remove(mac)?.let { reconnectHandler.removeCallbacks(it) }
                             state.reconnectAttempts = 0
-                            state.support.connDevice(mac)
                             android.util.Log.d("MkButtonBgService", "Retry after BT ON: ${state.config.deviceName}")
+                            connectWithWatchdog(mac)
                         }
                     }
                 }, 2000)
@@ -213,7 +216,7 @@ class MkButtonBackgroundService : Service() {
                     isInitialized = alreadyInForeground
                 )
                 if (!alreadyInForeground) {
-                    support.connDevice(mac)
+                    connectWithWatchdog(mac)
                 }
 
                 android.util.Log.d("MkButtonBgService", "Device added: $mac (${config.deviceName}), alreadyInForeground=$alreadyInForeground. Total: ${deviceStates.size}")
@@ -319,7 +322,7 @@ class MkButtonBackgroundService : Service() {
             val support = DMokoSupport(applicationContext, mac)
             support.setPassword(config.password)
             deviceStates[mac] = DeviceState(config = config, support = support)
-            support.connDevice(mac)
+            connectWithWatchdog(mac)
         }
         if (deviceStates.isEmpty()) {
             android.util.Log.d("MkButtonBgService", "No devices to restore, stopping service")
@@ -428,22 +431,7 @@ class MkButtonBackgroundService : Service() {
                 val connectedCount = deviceStates.count { it.value.isConnected }
                 updateNotification(if (connectedCount > 0) "$connectedCount dispositivo(s) conectado(s)" else "Reconectando...")
 
-                if (state.reconnectAttempts < 10) {
-                    state.reconnectAttempts++
-                    val delay = minOf(5000L * (1L shl (state.reconnectAttempts - 1)), 300_000L)
-                    android.util.Log.d("MkButtonBgService", "Reconnecting ${state.config.deviceName} in ${delay}ms (attempt ${state.reconnectAttempts})")
-                    pendingReconnects.remove(mac)?.let { reconnectHandler.removeCallbacks(it) }
-                    val runnable = Runnable {
-                        pendingReconnects.remove(mac)
-                        if (deviceStates.containsKey(mac) && !state.isConnected) {
-                            state.support.connDevice(mac)
-                        }
-                    }
-                    pendingReconnects[mac] = runnable
-                    reconnectHandler.postDelayed(runnable, delay)
-                } else {
-                    android.util.Log.w("MkButtonBgService", "Max reconnect attempts for ${state.config.deviceName}")
-                }
+                scheduleReconnect(mac)
             }
         }
     }
@@ -501,6 +489,37 @@ class MkButtonBackgroundService : Service() {
             }
             else -> {}
         }
+    }
+
+    private fun scheduleReconnect(mac: String) {
+        val state = deviceStates[mac] ?: return
+        if (state.isConnected) return
+
+        state.reconnectAttempts++
+        val step = minOf(state.reconnectAttempts - 1, 6)
+        val delay = minOf(5000L * (1L shl step), RECONNECT_MAX_DELAY_MS)
+        android.util.Log.d("MkButtonBgService", "Reconnecting ${state.config.deviceName} in ${delay}ms (attempt ${state.reconnectAttempts})")
+
+        pendingReconnects.remove(mac)?.let { reconnectHandler.removeCallbacks(it) }
+        val runnable = Runnable {
+            pendingReconnects.remove(mac)
+            connectWithWatchdog(mac)
+        }
+        pendingReconnects[mac] = runnable
+        reconnectHandler.postDelayed(runnable, delay)
+    }
+
+    private fun connectWithWatchdog(mac: String) {
+        val state = deviceStates[mac] ?: return
+        if (state.isConnected) return
+        state.support.forceConnDevice(mac)
+        reconnectHandler.postDelayed({
+            val watched = deviceStates[mac] ?: return@postDelayed
+            if (!watched.isConnected && !pendingReconnects.containsKey(mac)) {
+                android.util.Log.w("MkButtonBgService", "Reconnect watchdog: ${watched.config.deviceName} did not answer, retrying")
+                scheduleReconnect(mac)
+            }
+        }, CONNECT_WATCHDOG_MS)
     }
 
     private fun clearDevicePrefs(mac: String) {
